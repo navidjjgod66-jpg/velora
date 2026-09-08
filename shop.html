@@ -7,6 +7,11 @@
 <meta name="description" content="VELORA — کفش سفارشی زنانه. قالب‌گیری دستی با چرم گوسالهٔ ایتالیایی، ابریشم و طلای ۱۸ عیار شامپاینی. دویست جفت در هر فصل. نه یکی بیشتر."/>
 <meta name="theme-color" content="#080604"/>
 <meta name="color-scheme" content="dark light"/>
+<meta name="robots" content="index,follow"/>
+<meta property="og:type" content="website"/>
+<meta property="og:title" content="VELORA — خانهٔ کفش"/>
+<meta property="og:description" content="کفش سفارشی زنانه. قالب‌گیری دستی با چرم گوسالهٔ ایتالیایی، ابریشم و طلای ۱۸ عیار شامپاینی."/>
+<link rel="canonical" href="https://velora.ir/shop.html"/>
 <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
 <link rel="dns-prefetch" href="https://images.unsplash.com">
 <link rel="preload" as="image" fetchpriority="high" href="https://images.unsplash.com/photo-1543163521-1bf539c55dd6?auto=format&fit=crop&w=1100&q=82">
@@ -778,7 +783,7 @@ const fine=matchMedia('(pointer: fine)').matches;
 const html=document.documentElement;
 const faNum=n=>Number(n).toLocaleString('fa-IR');
 const money=n=>faNum(Math.round(n))+' تومان';
-const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const LS={get(k,f){try{const v=JSON.parse(localStorage.getItem(k));return v??f}catch(e){return f}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const K={bag:'velora.bag.v4',wish:'velora.wish.v2',ann:'velora.ann.v2',recent:'velora.recent.v2',exit:'velora.exit.v2',promo:'velora.promo.v2',dir:'velora.dir',custom:'velora.custom.v1',profile:'velora.profile.v1',orders:'velora.orders.v1',reviews:'velora.reviews.v1',view:'velora.view.v1'};
 const eta=()=>new Intl.DateTimeFormat('fa-IR',{weekday:'long',month:'long',day:'numeric'}).format(new Date(Date.now()+3*864e5));
@@ -864,7 +869,7 @@ function handleRoute(){const h=location.hash;const pm=h.match(/^#\/pdp\/([a-z0-9
 window.addEventListener('hashchange',()=>{if(suppressHash)return;handleRoute()});
 document.addEventListener('click',e=>{const t=e.target.closest('[data-open-pdp]');if(!t)return;e.preventDefault();const id=t.dataset.id||t.closest('.prod')?.dataset.id;if(!id)return;location.hash='#/pdp/'+id});
 function paintInBag(){const inBag=new Set(state.cart.map(i=>i.id));$$('.prod',grid).forEach(c=>{const on=inBag.has(c.dataset.id);c.classList.toggle('inbag',on);const t=$('.quick-t',c);if(t)t.textContent=on?'در سبد ✓':'انتخاب سایز'})}
-function renderFamChips(){const counts={all:PRODUCTS.length,wish:state.wish.length};PRODUCTS.forEach(p=>counts[p.family]=(counts[p.family]||0)+1);$('#famChips').innerHTML=Object.keys(FAM).map(k=>`<button class="chip" type="button" data-fam="${k}" aria-pressed="${k===state.fam}">${FAM[k]} <span class="n">${faNum(counts[k]||0)}</span></button>`).join('')}renderFamChips();
+function renderFamChips(){const counts={all:PRODUCTS.length,wish:state.wish.length};PRODUCTS.forEach(p=>counts[p.family]=(counts[p.family]||0)+1);$('#famChips').innerHTML=Object.keys(FAM).map(k=>`<button class="chip" type="button" data-fam="${esc(k)}" aria-pressed="${k===state.fam}">${esc(FAM[k])} <span class="n">${faNum(counts[k]||0)}</span></button>`).join('')}renderFamChips();
 $('#famChips').addEventListener('click',e=>{const c=e.target.closest('.chip');if(!c)return;state.fam=c.dataset.fam;captureGridState();renderFamChips();apply();setTimeout(animateGridFlip,50)});
 $('#vSort').addEventListener('change',e=>{captureGridState();state.sort=e.target.value;apply();setTimeout(animateGridFlip,50)});
 let qDeb=null;$('#vSearch').addEventListener('input',e=>{grid.classList.add('is-loading');clearTimeout(qDeb);qDeb=setTimeout(()=>{captureGridState();state.q=e.target.value;apply();grid.classList.remove('is-loading');setTimeout(animateGridFlip,50)},240)});$('#vSearchForm').addEventListener('submit',e=>e.preventDefault());
