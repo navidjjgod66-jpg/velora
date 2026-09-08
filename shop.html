@@ -178,13 +178,6 @@ main>section[data-cv]{content-visibility:auto;contain-intrinsic-size:auto 1100px
 .prog-wrap{position:fixed;top:var(--chrome);inset-inline:0;height:2px;z-index:10001;background:var(--line)}
 .prog{position:absolute;inset:0;background:var(--grad-gold);background-size:200% 100%;transform:scaleX(0);transform-origin:right;box-shadow:0 0 16px color-mix(in oklch,var(--gold) 62%,transparent);animation:foil 6s linear infinite}
 html[dir="ltr"] .prog{transform-origin:left}
-.rail{position:fixed;inset-inline-start:clamp(.6rem,1.4vw,1.4rem);top:50%;translate:0 -50%;z-index:120;display:flex;flex-direction:column;gap:.15rem;padding:.78rem .62rem;border:1px solid var(--line);border-radius:var(--r-pill);background:color-mix(in oklch,var(--bg) 82%,transparent);backdrop-filter:var(--glass)}
-.rail a{position:relative;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-family:var(--font-mono);font-size:.55rem;color:var(--ink-4);transition:color var(--dur-2),background var(--dur-2)}
-.rail a::after{content:attr(data-t);position:absolute;inset-inline-start:calc(100% + 12px);top:50%;translate:0 -50%;white-space:nowrap;font-size:.62rem;color:var(--gold);opacity:0;transform:translateX(-6px);transition:opacity var(--dur-2),transform var(--dur-2);pointer-events:none;background:var(--bg-2);border:1px solid var(--gold-line);padding:.42rem .78rem;border-radius:var(--r-2)}
-.rail a:hover,.rail a:focus-visible{color:var(--gold)}
-.rail a:hover::after,.rail a:focus-visible::after{opacity:1;transform:none}
-.rail a[aria-current="true"]{color:var(--gold-ink);background:var(--grad-gold);box-shadow:var(--sh-glow)}
-@media(max-width:1380px){.rail{display:none}}
 
 /* ── announcement / offline ─────────────────────────────── */
 .annonce{position:fixed;inset-block-start:0;inset-inline:0;z-index:1200;height:42px;background:linear-gradient(90deg,color-mix(in oklch,var(--bg-2) 94%,transparent),color-mix(in oklch,var(--bordeaux) 30%,var(--bg-2)),color-mix(in oklch,var(--bg-2) 94%,transparent));backdrop-filter:blur(18px);border-block-end:1px solid var(--line);transform:translateY(-100%);transition:transform var(--dur-3) var(--ease)}
@@ -323,7 +316,7 @@ html[dir="ltr"] .pl-rule i{transform-origin:left}
 @keyframes fabPulse{0%{opacity:.8;transform:scale(1)}100%{opacity:0;transform:scale(1.75)}}
 @media(pointer:coarse){.cur-dot,.cur-ring{display:none!important}.chat-fab{bottom:calc(env(safe-area-inset-bottom,0px) + 88px)}}
 @media(pointer:fine) and (prefers-reduced-motion:no-preference){body,a,button,input,select,textarea,label{cursor:none}}
-@media(prefers-reduced-transparency:reduce){#nav.scrolled,.rail,#toTop,.dock,#toast,.chat-fab{background:var(--bg-2);backdrop-filter:none}}
+@media(prefers-reduced-transparency:reduce){#nav.scrolled,#toTop,.dock,#toast,.chat-fab{background:var(--bg-2);backdrop-filter:none}}
 
 /* ── atoms ──────────────────────────────────────────────── */
 .gld{background:var(--grad-gold);background-size:180% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;display:inline-block}
@@ -952,9 +945,6 @@ dialog.nf:not([open]){opacity:0;transform:scale(.96)}
 .hero-flare{position:absolute;top:34%;inset-inline:-20%;height:1px;background:linear-gradient(90deg,transparent,color-mix(in oklch,var(--gold-1) 72%,transparent),transparent);filter:blur(.6px);opacity:0;z-index:4;pointer-events:none;animation:flare 11s var(--ease-io) infinite}
 @keyframes flare{0%,72%{opacity:0;transform:translateX(-30%) scaleY(1)}80%{opacity:.85;transform:translateX(0) scaleY(3)}100%{opacity:0;transform:translateX(30%) scaleY(1)}}
 .hero-ghost{position:absolute;top:4%;inset-inline-end:-1%;z-index:1;font-family:var(--font-didone);font-weight:400;font-size:clamp(9.5rem,25vw,23rem);line-height:1;color:transparent;-webkit-text-stroke:1px var(--line-2);paint-order:stroke fill;opacity:.52;pointer-events:none;user-select:none;will-change:transform;transition:translate .5s cubic-bezier(.3,.9,.2,1)}
-.hero-rail{position:absolute;top:50%;inset-inline-end:calc(var(--pad)*.35);transform:translateY(-50%);writing-mode:vertical-rl;font-family:var(--font-mono);font-size:.6rem;color:var(--ink-4);display:flex;align-items:center;gap:1.4rem;z-index:4;letter-spacing:.14em}
-.hero-rail::after{content:'';width:1px;height:90px;background:linear-gradient(180deg,var(--gold),transparent)}
-@media(max-width:1200px){.hero-rail{display:none}}
 .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(2.6rem,5vw,5.6rem);align-items:center;position:relative;z-index:3}
 @media(max-width:1000px){.hero-grid{grid-template-columns:1fr}.hero-visual{max-width:530px;margin-inline:auto}}
 .hero-ey{display:flex;align-items:center;gap:1.2rem;margin-bottom:2.9rem;flex-wrap:wrap}
@@ -982,7 +972,7 @@ body.loaded .hero-meta{opacity:1;transform:none}
 .sh-line::after{content:'';position:absolute;left:0;width:100%;height:50%;background:var(--grad-gold);animation:shDrop 2.7s var(--ease-io) infinite}
 @keyframes shDrop{0%{top:-55%}70%,100%{top:105%}}
 @media(max-width:768px){.scroll-hint{display:none}}
-.hero-visual{padding-top:clamp(2.2rem,4vw,3rem);padding-bottom:1rem;will-change:transform}
+.hero-visual{padding-top:0;padding-bottom:0;will-change:transform;margin-bottom:2rem}
 .hero-visual .frame{max-width:min(492px,100%);margin-inline:auto}
 .mirror{position:relative;transform-style:preserve-3d;perspective:1420px}
 .mirror__plane{position:absolute;inset:0;pointer-events:none;will-change:transform}
@@ -998,9 +988,9 @@ body.loaded .hero-visual .frame{clip-path:inset(0 0 0 0)}
 .mirror__refract{position:absolute;inset:0;z-index:5;pointer-events:none;border-radius:var(--r-5);overflow:hidden;mix-blend-mode:screen;opacity:0;transition:opacity .5s var(--ease)}
 .mirror:hover .mirror__refract{opacity:1}
 .mirror__refract i{position:absolute;top:-32%;bottom:-32%;width:40%;background:linear-gradient(100deg,transparent,color-mix(in oklch,var(--gold-1) 26%,transparent),transparent);transform:translateX(var(--rx,-145%)) rotate(12deg);filter:blur(7px)}
-.spiral-box{position:absolute;inset-inline-start:-16%;bottom:-8%;width:clamp(150px,20vw,250px);z-index:0;pointer-events:none;opacity:.5}
+.spiral-box{position:relative;inset-inline-start:0;bottom:0;width:clamp(180px,24vw,280px);z-index:5;pointer-events:none;opacity:1;margin:0 auto 1.5rem}
 .spiral-box svg{width:100%;height:auto;overflow:visible}
-.spiral-box path{fill:none;stroke:var(--gold-line);stroke-width:1.2;vector-effect:non-scaling-stroke;stroke-linecap:round}
+.spiral-box path{fill:none;stroke:var(--gold);stroke-width:1.6;vector-effect:non-scaling-stroke;stroke-linecap:round}
 
 /* ── marquees ───────────────────────────────────────────── */
 .ticker{border-block:1px solid var(--line);background:color-mix(in oklch,var(--bg-2) 64%,transparent);overflow:hidden;position:relative}
@@ -1204,7 +1194,7 @@ html:not(.js) .mask-line>span,html.fx-off .mask-line>span,html.gsap-on .mask-lin
 .badge,.chip,.quick,.size,.btn,.sw,.pay-sigil,.f-seal{border:1px solid ButtonText}
 }
 @media print{
-#pl,#dust,.aurora,.grain,.vig,.guilloche,.prog-wrap,.rail,.dock,#toTop,.chat-fab,.annonce,.offline-bar,.cur-dot,.cur-ring,#toast,.ticker,.press,nav#nav,footer,.skip-links,.hero-flare,.spiral-box{display:none!important}
+#pl,#dust,.aurora,.grain,.vig,.guilloche,.prog-wrap,.dock,#toTop,.chat-fab,.annonce,.offline-bar,.cur-dot,.cur-ring,#toast,.ticker,.press,nav#nav,footer,.skip-links,.hero-flare,.spiral-box{display:none!important}
 body{background:#fff;color:#000}
 }
 }
@@ -1219,8 +1209,6 @@ body{background:#fff;color:#000}
 <div class="grain" aria-hidden="true"></div>
 <div class="vig" aria-hidden="true"></div>
 <div class="prog-wrap" aria-hidden="true"><div class="prog" id="prog"></div></div>
-
-<nav class="rail" aria-label="نقشهٔ صحنه‌ها"><a href="#top" data-t="ورود">◆</a><a href="#drop" data-t="رونمایی هفته">۰۱</a><a href="#vault" data-t="فروشگاه">۰۲</a><a href="#atelier" data-t="آتلیه">۰۳</a><a href="#craft" data-t="هنر">۰۴</a><a href="#lookbook" data-t="لوک‌بوک">۰۵</a><a href="#voices" data-t="صداها">۰۶</a><a href="#archive" data-t="آرشیو">۰۷</a><a href="#appoint" data-t="تماس">۰۸</a></nav>
 
 <div class="annonce" id="annonce" role="region" aria-label="اعلان‌های خانه"><div class="annonce-in"><span class="annonce-glyph" aria-hidden="true">◆</span><div class="annonce-viewport"><p class="annonce-msg is-live">کلکسیون پاییز/زمستان ۱۴۰۴ — <b>دویست جفت، نه یکی بیشتر</b></p><p class="annonce-msg">ارسال اکسپرس <b>همیشه رایگان</b> · سی روز مرجوعی، بدون سؤال</p><p class="annonce-msg">کد <b>VELORA10</b> — ۱۰٪ نخستین خرید شما</p></div><button class="annonce-x" id="annonceX" type="button" aria-label="بستن اعلان‌ها">✕</button></div></div>
 
@@ -1275,16 +1263,13 @@ body{background:#fff;color:#000}
 <div class="hero-grid-bg" aria-hidden="true"></div>
 <div class="hero-flare" aria-hidden="true"></div>
 <div class="hero-ghost" id="heroGhost" aria-hidden="true" lang="en">φ</div>
-<div class="hero-rail" aria-hidden="true">پاییز/زمستان ۱۴۰۴ — تهران · استانبول · دبی</div>
 <div class="container"><div class="hero-grid">
 
 <div class="hero-copy">
 <div class="hero-ey"><span class="num">کلکسیون جدید</span><span class="line" aria-hidden="true"></span><span data-decode>خانهٔ کفش ولورا · پاییز/زمستان ۱۴۰۴</span></div>
 <h1 id="heroTitle" aria-label="تاجی بر سر، در سکوتی مطلق."><span class="mask-line"><span>تاجی بر سر،</span></span><span class="mask-line"><span>در <span class="gld-foil">سکوتی مطلق.</span></span></span></h1>
 <p class="hero-sub">کفش زنانهٔ دست‌ساز با چرم گوسالهٔ ایتالیایی، ابریشم کومو و طلای ۱۸ عیار شامپاینی — طراحی در تهران، پرداخت با دست، ساخته‌شده برای دهه‌ها. دویست جفت در هر فصل. نه یکی بیشتر.</p>
-<div class="hero-cta"><a href="#drop" class="btn btn-solid" data-cursor="رونمایی"><span>رونمایی هفته</span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a><a href="#vault" class="btn btn-ghost"><span>مشاهدهٔ فروشگاه</span></a></div>
 <div class="hero-proof"><span class="rate-row" aria-label="امتیاز ۴.۹ از ۵ توسط ۸۱۲ مشتری"><span class="stars" id="heroStars" aria-hidden="true"></span><b>۴.۹</b><span>· ۸۱۲ دیدگاه</span></span><span class="live-view" aria-live="polite"><span class="lv" aria-hidden="true"></span><b id="heroLive">۱۴</b><span>&nbsp;نفر در حال بازدید</span></span></div>
-<dl class="hero-meta"><div><dt>تأسیس</dt><dd>۱۳۹۸ · تهران</dd></div><div><dt>مراحل ساخت</dt><dd>۶۸، با دست</dd></div><div><dt>نسخهٔ محدود</dt><dd>۲۰۰ جفت در فصل</dd></div></dl>
 </div>
 
 <div class="hero-visual rv" id="heroVisual">
@@ -1297,6 +1282,8 @@ body{background:#fff;color:#000}
 <svg class="seal" viewBox="0 0 160 160" aria-hidden="true"><defs><path id="sealPath" d="M80,80 m-60,0 a60,60 0 1,1 120,0 a60,60 0 1,1 -120,0"/></defs><circle class="sr" cx="80" cy="80" r="78"/><circle class="sr" cx="80" cy="80" r="44" stroke-width=".7"/><text class="st"><textPath href="#sealPath">MAISON VELORA · FINE SHOES · TEHRAN · EST 1398 ·</textPath></text><text class="ae" x="80" y="91" text-anchor="middle">V</text></svg>
 </div></div>
 
+<div class="hero-cta"><a href="#drop" class="btn btn-solid" data-cursor="رونمایی"><span>رونمایی هفته</span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a><a href="#vault" class="btn btn-ghost"><span>مشاهدهٔ فروشگاه</span></a></div>
+<dl class="hero-meta"><div><dt>تأسیس</dt><dd>۱۳۹۸ · تهران</dd></div><div><dt>مراحل ساخت</dt><dd>۶۸، با دست</dd></div><div><dt>نسخهٔ محدود</dt><dd>۲۰۰ جفت در فصل</dd></div></dl>
 </div></div>
 <div class="scroll-hint" aria-hidden="true"><span class="mono">اسکرول</span><span class="sh-line"></span></div>
 </section>
@@ -1774,7 +1761,7 @@ $$('dialog').forEach(enableTrap);
 let goldCache='#d4af37';
 const readGold=()=>{goldCache=getComputedStyle(html).getPropertyValue('--gold').trim()||'#d4af37'};
 readGold();new MutationObserver(readGold).observe(html,{attributes:true,attributeFilter:['data-theme']});
-const INERT_SEL=['#nav','main','footer','.dock','#toTop','.chat-fab','.annonce,.rail'];
+const INERT_SEL=['#nav','main','footer','.dock','#toTop','.chat-fab','.annonce'];
 let inertCount=0;
 const lockInert=()=>{inertCount++;if(inertCount===1)INERT_SEL.forEach(s=>{const el=$(s);if(el)el.setAttribute('inert','')})};
 const unlockInert=()=>{inertCount=Math.max(0,inertCount-1);if(inertCount===0)INERT_SEL.forEach(s=>{const el=$(s);if(el)el.removeAttribute('inert')})};
@@ -1913,13 +1900,13 @@ if(hasGSAP&&!reduced){
 }
 
 /* ═══════════ 10 · SCROLL CHROME ═══════════ */
-const prog=$('#prog'),toTop=$('#toTop'),progRing=$('#toTop .prog-ring'),dock=$('#dock'),railLinks=$$('.rail a');
+const prog=$('#prog'),toTop=$('#toTop'),progRing=$('#toTop .prog-ring'),dock=$('#dock');
 let sTk=false,lastY=0;
 const onScroll=()=>{const y=scrollY,max=document.documentElement.scrollHeight-innerHeight,k=max>0?y/max:0;prog.style.transform=`scaleX(${k})`;if(progRing)progRing.style.setProperty('--rot',`${k*360}deg`);nav.classList.toggle('scrolled',y>40);if(!mmenu.classList.contains('open')){if(y>lastY+10&&y>240)nav.classList.add('nav-hidden');else if(y<lastY-10||y<=240)nav.classList.remove('nav-hidden')}toTop?.classList.toggle('show',y>700);if(dock)dock.classList.toggle('dock-hidden',y>lastY+6&&y>240);lastY=y;sTk=false};
 addEventListener('scroll',()=>{if(!sTk){requestAnimationFrame(onScroll);sTk=true}},{passive:true});onScroll();
 toTop?.addEventListener('click',smoothTop);
 $('#dockBag')?.addEventListener('click',()=>$('#bagBtn').click());$('#dockWish')?.addEventListener('click',()=>$('#wishBtn').click());$('#dockProf')?.addEventListener('click',()=>openProfile());$('#dockMenu')?.addEventListener('click',()=>burger.click());$('#fProf')?.addEventListener('click',()=>openProfile());$('#fWish')?.addEventListener('click',openWish);$('#fBag')?.addEventListener('click',openBag);
-const spy=new IntersectionObserver(es=>es.forEach(e=>{if(!e.isIntersecting)return;const id='#'+e.target.id;$$('.nav-a').forEach(a=>a.classList.toggle('act',a.getAttribute('href')===id));railLinks.forEach(a=>{if(a.getAttribute('href')===id)a.setAttribute('aria-current','true');else if(a.getAttribute('href')!=='#top'||id==='#top')a.removeAttribute('aria-current')});if(dock)$$('a[href^="#"]',dock).forEach(a=>a.setAttribute('aria-current',a.getAttribute('href')===id?'true':'false'))}),{rootMargin:'-40% 0px -55% 0px'});
+const spy=new IntersectionObserver(es=>es.forEach(e=>{if(!e.isIntersecting)return;const id='#'+e.target.id;$$('.nav-a').forEach(a=>a.classList.toggle('act',a.getAttribute('href')===id));if(dock)$$('a[href^="#"]',dock).forEach(a=>a.setAttribute('aria-current',a.getAttribute('href')===id?'true':'false'))}),{rootMargin:'-40% 0px -55% 0px'});
 $$('main section[id]').forEach(s=>spy.observe(s));
 
 /* ═══════════ 11 · IMAGE LOADER ═══════════ */
