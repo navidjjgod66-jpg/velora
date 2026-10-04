@@ -44,6 +44,18 @@ function ae_config(): array
         'otp_ttl_seconds' => 180, 'otp_resend_after' => 60, 'otp_max_attempts' => 5,
         'otp_rate_window' => 3600, 'otp_rate_max' => 6,
         'data_dir' => $root . '/api/data',
+
+        /* ─── پنل مدیریت (admin) ────────────────────────────────────────────
+           شماره‌های مجاز فقط در سمت سرور نگه داشته می‌شوند و هرگز در
+           جاوااسکریپت یا HTML به مرورگر فرستاده نمی‌شوند. */
+        'admin' => [
+            'phones'       => ['09386130082'],
+            'uploads_dir'  => '',            /* خالی = <root>/uploads */
+            'max_upload_mb'=> 8,
+            'max_products' => 120,
+        ],
+        /* کد آزمایشی ثابت — فقط برای تست محلی. روی هاست واقعی false بماند. */
+        'dev_otp' => false,
     ];
     $cache = array_replace_recursive($def, $cfg);
     if (empty($cache['data_dir'])) $cache['data_dir'] = $root . '/api/data';
@@ -274,13 +286,26 @@ function ae_log(string $line): void
    رمز توسط سرویس ساخته می‌شود؛ ما آن را به‌صورت hash در سرور نگه می‌داریم. */
 function ae_meli_send_otp(string $to): array
 {
-    $cfg = ae_config()['otp'];
-    $key = trim((string) ($cfg['service_key'] ?? ''));
+    $cfg = ae_config();
+    $key = trim((string) ($cfg['otp']['service_key'] ?? ''));
     if ($key === '') {
         return ['ok' => false, 'error' => 'not_configured',
                 'message' => 'کلید سرویس ملی پیامک در config.php تنظیم نشده است.'];
     }
-    $url = rtrim((string) ($cfg['endpoint_base'] ?? 'https://console.melipayamak.com/api/send/otp/'), '/')
+
+    /* حالت آزمایشی — فقط وقتی کلید دقیقاً همین باشد.
+       بدون کلید سرویس، هیچ راهی برای آزمودن جریان ورود نیست؛ کد ثابت
+       ۱۲۳۴ همان چیزی است که رابط کاربری هم در حالت نمایشی نشان می‌دهد.
+       روی هاست واقعی این کلید را نگذارید. */
+    if (!empty($cfg['dev_otp'])) {
+        if ($key !== 'TEST') {
+            ae_log('dev_otp on but service_key is not TEST — real SMS path used');
+        } else {
+            return ['ok' => true, 'code' => '1234'];
+        }
+    }
+
+    $url = rtrim((string) ($cfg['otp']['endpoint_base'] ?? 'https://console.melipayamak.com/api/send/otp/'), '/')
            . '/' . rawurlencode($key);
     $payload = json_encode(['to' => $to], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     $res = ae_http($url, $payload, [
@@ -510,10 +535,24 @@ function ae_catalog(): array
         preg_match_all("/\{\s*id:'([a-zA-Z]+)',\s*name:'([^']*)'[^\n]*?price:(\d+)/u", $js, $m, PREG_SET_ORDER);
         foreach ($m as $row) $cat[$row[1]] = ['name' => $row[2], 'price' => (int) $row[3]];
     }
+    /* لایهٔ مدیریت: نام و قیمت ویرایش‌شده همان چیزی است که مرورگر می‌بیند.
+       محصول پنهان هم قیمت خود را نگه می‌دارد تا سبدِ کهنه به مبلغ صفر نرسد. */
+    foreach (ae_catalog_store()['items'] as $id => $p) {
+        if (!is_array($p)) continue;
+        $id = (string) preg_replace('/[^a-z0-9\-]/i', '', (string) $id);
+        if ($id === '') continue;
+        if (!isset($cat[$id])) $cat[$id] = ['name' => (string) ($p['name'] ?? $id), 'price' => 0];
+        if (isset($p['name'])  && $p['name'] !== '')  $cat[$id]['name'] = (string) $p['name'];
+        if (isset($p['price']) && (int) $p['price'] > 0) $cat[$id]['price'] = (int) $p['price'];
+    }
     return $cat;
 }
 
-function ae_promo(): array { return ['code' => 'VELORA10', 'pct' => 10]; }
+function ae_promo(): array
+{
+    $s = ae_settings();
+    return ['code' => (string) $s['promo_code'], 'pct' => (int) $s['promo_pct']];
+}
 
 function ae_normalize_items($raw): array
 {
@@ -590,6 +629,411 @@ function ae_auth_phone(): ?string
     ae_session_start();
     $p = $_SESSION['ae_phone'] ?? null;
     return (is_string($p) && preg_match('/^09\d{9}$/', $p)) ? $p : null;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   پنل مدیریت — دروازهٔ دسترسی، پوشهٔ رسانه، انبارهٔ محصولات
+   ───────────────────────────────────────────────────────────────────────
+   • تنها راه ورود: نشست معتبرِ همان شماره‌ای که در config.php آمده است.
+   • شمارهٔ مدیر هرگز به مرورگر داده نمی‌شود (فقط یک پرچم boolean).
+   • رسانه‌ها در پوشهٔ عمومی uploads/ می‌نشینند تا <img> بتواند آن‌ها را
+     بخواند؛ آن پوشه اجرای اسکریپت را قفل می‌کند.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/** شماره‌های مجاز پنل — نرمال‌شده و یکتا. */
+function ae_admin_phones(): array
+{
+    static $out = null;
+    if ($out !== null) return $out;
+    $cfg   = ae_config()['admin'] ?? [];
+    $raw   = is_array($cfg['phones'] ?? null) ? $cfg['phones'] : [$cfg['phones'] ?? ''];
+    $out   = [];
+    foreach ($raw as $p) {
+        $n = ae_norm_mobile((string) $p);
+        if ($n !== null) $out[$n] = $n;
+    }
+    return $out;
+}
+
+function ae_is_admin(): bool
+{
+    $phone = ae_auth_phone();
+    return $phone !== null && isset(ae_admin_phones()[$phone]);
+}
+
+/** نگهبان همهٔ endpointهای مدیریتی. */
+function ae_require_admin(): string
+{
+    $phone = ae_auth_phone();
+    if ($phone === null) ae_err('ابتدا وارد حساب شوید.', 'unauthorized', 401);
+    if (!ae_is_admin()) ae_err('این بخش فقط برای مدیر است.', 'forbidden', 403);
+    return $phone;
+}
+
+/* ─── پوشهٔ عمومی رسانه ─────────────────────────────────────────────────── */
+function ae_uploads_dir(): string
+{
+    $cfg = ae_config()['admin'] ?? [];
+    $dir = trim((string) ($cfg['uploads_dir'] ?? ''));
+    if ($dir === '') $dir = dirname(__DIR__) . '/uploads';
+    if (!is_dir($dir)) @mkdir($dir, 0755, true);
+
+    /* محافظ: فهرست‌گیری خاموش، اجرای اسکریپت ممنوع، فقط تصویر خوانده شود */
+    $idx = "<?php http_response_code(404); ?>\n";
+    if (!is_file($dir . '/index.php'))  @file_put_contents($dir . '/index.php', $idx);
+    if (!is_file($dir . '/index.html')) @file_put_contents($dir . '/index.html', '');
+    if (!is_file($dir . '/.htaccess'))  @file_put_contents($dir . '/.htaccess', ae_uploads_guard());
+    return $dir;
+}
+
+function ae_uploads_guard(): string
+{
+    return <<<'HT'
+# MAISON AURELLE — پوشهٔ رسانه‌ها
+# این پوشه فقط برای نگه‌داری تصویر است؛ اجرای هرگونه اسکریپت ممنوع.
+Options -Indexes -ExecCGI
+AddType text/plain .php .phtml .php3 .php4 .php5 .php7 .pht .phps .cgi .pl .py .sh
+
+<IfModule mod_php.c>
+  php_flag engine off
+</IfModule>
+<IfModule mod_php7.c>
+  php_flag engine off
+</IfModule>
+
+<FilesMatch "\.(?i:php|phtml|php3|php4|php5|php7|phps|phar|cgi|pl|py|sh|htaccess)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
+HT;
+}
+
+/** مسیر نسبی امن برای ذخیره/نمایش یک فایل رسانه. */
+function ae_media_rel(string $file): string
+{
+    $file = ltrim(str_replace('\\', '/', $file), '/');
+    return 'uploads/' . basename($file);
+}
+function ae_media_abs(string $rel): string
+{
+    return ae_uploads_dir() . '/' . basename((string) preg_replace('#^uploads/#', '', (string) $rel));
+}
+
+/* ─── انبارهٔ کاتالوگ (لایهٔ روی data.js) ────────────────────────────────── */
+function ae_store_file(string $name): string
+{
+    return ae_data_dir('store') . '/' . (string) preg_replace('/[^a-z0-9_\-]/i', '', $name) . '.json';
+}
+
+/** خواندن انباره با قفل — همیشه ساختار سالم برمی‌گرداند. */
+function ae_store_read(string $name, array $shape): array
+{
+    $j = ae_read_json(ae_store_file($name));
+    if (!is_array($j)) $j = [];
+    foreach ($shape as $k => $default) {
+        if (is_array($default) && (!isset($j[$k]) || !is_array($j[$k]))) $j[$k] = $default;
+        elseif (!array_key_exists($k, $j)) $j[$k] = $default;
+    }
+    $j['v']       = isset($j['v']) ? (int) $j['v'] : 1;
+    $j['updated'] = isset($j['updated']) ? (int) $j['updated'] : 0;
+    return $j;
+}
+
+function ae_store_write(string $name, array $data): bool
+{
+    $fp = ae_lock('store-' . $name);
+    $data['v']       = 1;
+    $data['updated'] = time();
+    $ok = ae_write_json(ae_store_file($name), $data);
+    ae_unlock($fp);
+    return $ok;
+}
+
+/**
+ * نگاشت محصولات برای مرورگر: همان کلیدهای data.js
+ * ساختار: { seeded:bool, items:{ id => {fields} }, order:[id],
+ *           settings:{promo_code,promo_pct}, removed:[id] }
+ * `seeded` یعنی پنل یک‌بار کاتالوگ پایهٔ data.js را در خود کپی کرده است؛
+ * از آن پس سرور مرجع کامل است و ویترین هر چه اینجا هست همان را می‌بیند.
+ * `removed` سنگ قبر محصولات حذف‌شده است: ویترین باید آن‌ها را از data.js
+ * هم پاک کند، وگرنه محصول حذف‌شده به سایت برمی‌گردد.
+ */
+function ae_catalog_store(): array
+{
+    return ae_store_read('catalog', [
+        'seeded' => false, 'items' => [], 'order' => [], 'settings' => [], 'removed' => [],
+    ]);
+}
+function ae_settings(): array
+{
+    $s   = ae_catalog_store()['settings'];
+    $set = array_key_exists('promo_code', $s);
+    if (!$set) {
+        /* هنوز چیزی ذخیره نشده → همان پیش‌فرض data.js تا دو طرف هم‌خوان بمانند */
+        return ['promo_code' => 'VELORA10', 'promo_pct' => 10, 'set' => false];
+    }
+    $code = strtoupper((string) preg_replace('/[^A-Za-z0-9]/', '', (string) $s['promo_code']));
+    $pct  = (int) ($s['promo_pct'] ?? 0);
+    if ($code === '' || $pct < 1) return ['promo_code' => '', 'promo_pct' => 0, 'set' => true];
+    return ['promo_code' => substr($code, 0, 24), 'promo_pct' => max(1, min(90, $pct)), 'set' => true];
+}
+
+/** پاک‌سازی یک رکورد محصول: فقط کلیدهای شناخته‌شده، با سقف طول. */
+function ae_clean_product(array $in, array $base = []): array
+{
+    $out = [];
+    $txt = static function ($v, int $max): string { return ae_clean($v, $max); };
+
+    $out['id']     = (string) preg_replace('/[^a-z0-9\-]/i', '', (string) ($in['id'] ?? $base['id'] ?? ''));
+    if ($out['id'] === '') $out['id'] = 'p' . substr(bin2hex(random_bytes(3)), 0, 6);
+    $out['name']   = $txt($in['name']   ?? $base['name']   ?? 'فرم تازه', 60);
+    $out['sub']    = $txt($in['sub']    ?? $base['sub']    ?? '', 220);
+    $out['cat']    = $txt($in['cat']    ?? $base['cat']    ?? '', 60);
+    $out['family'] = (string) preg_replace('/[^a-z]/', '', strtolower((string) ($in['family'] ?? $base['family'] ?? 'loafer')));
+    $out['heel']   = max(0, min(300, (int) ($in['heel']   ?? $base['heel']   ?? 0)));
+    $out['price']  = max(0, min(9999999999, (int) ($in['price'] ?? $base['price'] ?? 0)));
+    $old = (int) ($in['oldPrice'] ?? $base['oldPrice'] ?? 0);
+    $out['oldPrice'] = ($old > $out['price']) ? min(9999999999, $old) : 0;
+    $out['badge']  = $txt($in['badge']  ?? $base['badge']  ?? '', 24);
+    $out['isNew']   = !empty($in['isNew'] ?? $base['isNew'] ?? false);
+    $out['hidden']  = !empty($in['hidden'] ?? $base['hidden'] ?? false);
+    $out['stock']   = max(0, min(9999, (int) ($in['stock'] ?? $base['stock'] ?? 0)));
+    $out['rating']  = max(0, min(5, round((float) ($in['rating'] ?? $base['rating'] ?? 4.8), 1)));
+    $out['reviews'] = max(0, min(999999, (int) ($in['reviews'] ?? $base['reviews'] ?? 0)));
+
+    /* تصاویر: فقط مسیرهای داخلی رسانه یا لینک کامل https */
+    $url = static function ($v, string $fallback = ''): string {
+        $s = trim((string) $v);
+        if ($s === '') return $fallback;
+        if (preg_match('#^https://[^\s"\'<>]+$#i', $s)) return substr($s, 0, 600);
+        if (preg_match('#^uploads/[A-Za-z0-9._\-]+$#', $s)) return $s;
+        return $fallback;
+    };
+    $out['img'] = $url($in['img'] ?? $base['img'] ?? '', '');
+
+    $gallery = [];
+    foreach ((array) ($in['gallery'] ?? $base['gallery'] ?? []) as $g) {
+        $u = $url($g, '');
+        if ($u !== '' && !in_array($u, $gallery, true)) $gallery[] = $u;
+        if (count($gallery) >= 24) break;
+    }
+    $out['gallery'] = $gallery;
+
+    /* رنگ‌ها: نام + کد رنگ + تصویر */
+    $swatches = [];
+    foreach ((array) ($in['sw'] ?? $base['sw'] ?? []) as $s) {
+        if (!is_array($s)) continue;
+        $c = (string) ($s['c'] ?? '#161310');
+        if (!preg_match('/^#[0-9a-fA-F]{3,8}$/', $c)) $c = '#161310';
+        $swatches[] = [
+            'n'   => $txt($s['n'] ?? '', 24),
+            'c'   => strtolower($c),
+            'img' => $url($s['img'] ?? '', $out['img']),
+        ];
+        if (count($swatches) >= 12) break;
+    }
+    if (!$swatches) {
+        $swatches[] = ['n' => $out['name'] !== '' ? $out['name'] : 'رنگ پیش‌فرض',
+                       'c' => '#161310', 'img' => $out['img']];
+    }
+    $out['sw'] = $swatches;
+
+    return $out;
+}
+
+/* ─── انبارهٔ رسانه ──────────────────────────────────────────────────────── */
+function ae_media_store(): array
+{
+    return ae_store_read('media', ['items' => []]);
+}
+
+/** MIMEهای مجاز → پسوند امن. کلید = نوع واقعی تشخیص‌داده‌شده، نه نام فایل. */
+function ae_media_types(): array
+{
+    return [
+        'image/jpeg' => 'jpg',
+        'image/png'  => 'png',
+        'image/webp' => 'webp',
+        'image/gif'  => 'gif',
+        'image/avif' => 'avif',
+    ];
+}
+
+/** پاک‌سازی فهرست رسانه از فایل‌های گم‌شده و ساخت نقشهٔ استفاده. */
+function ae_media_index(): array
+{
+    $store = ae_media_store();
+    $items = [];
+    foreach ($store['items'] as $it) {
+        if (!is_array($it) || empty($it['file'])) continue;
+        $abs = ae_media_abs((string) $it['file']);
+        if (!is_file($abs)) continue;                       /* فایل نیست → رکورد پاک */
+        $items[(string) $it['id']] = [
+            'id'      => (string) $it['id'],
+            'file'    => (string) $it['file'],
+            'name'    => (string) ($it['name'] ?? basename((string) $it['file'])),
+            'alt'     => (string) ($it['alt']  ?? ''),
+            'w'       => (int) ($it['w'] ?? 0),
+            'h'       => (int) ($it['h'] ?? 0),
+            'size'    => (int) ($it['size'] ?? 0),
+            'mime'    => (string) ($it['mime'] ?? ''),
+            'created' => (int) ($it['created'] ?? 0),
+        ];
+    }
+    /* نقشهٔ استفاده: هر رسانه، کجا در کاتالوگ دیده می‌شود */
+    $cat = ae_catalog_store()['items'];
+    $use = [];
+    $mark = static function (string $url, string $pid, string $role) use (&$use): void {
+        if ($url === '') return;
+        if (!isset($use[$url])) $use[$url] = [];
+        if (!in_array(['pid' => $pid, 'role' => $role], $use[$url], true)) {
+            $use[$url][] = ['pid' => $pid, 'role' => $role];
+        }
+    };
+    foreach ($cat as $pid => $p) {
+        if (!is_array($p)) continue;
+        $mark((string) ($p['img'] ?? ''), (string) $pid, 'main');
+        foreach ((array) ($p['gallery'] ?? []) as $i => $g) $mark((string) $g, (string) $pid, 'gallery:' . ($i + 1));
+        foreach ((array) ($p['sw'] ?? []) as $i => $s) {
+            if (is_array($s)) $mark((string) ($s['img'] ?? ''), (string) $pid, 'swatch:' . ($i + 1));
+        }
+    }
+    $out = [];
+    foreach ($items as $id => $it) {
+        $it['used'] = $use[$it['file']] ?? [];
+        $out[] = $it;
+    }
+    usort($out, static fn($a, $b) => ($b['created'] <=> $a['created']) ?: strcmp($a['id'], $b['id']));
+    return $out;
+}
+
+/** ذخیرهٔ یک فایل آپلودشده در uploads/ و برگرداندن رکورد رسانه. */
+function ae_media_store_upload(array $file): array
+{
+    if (!isset($file['tmp_name']) || (int) ($file['error'] ?? 4) !== UPLOAD_ERR_OK) {
+        $code = (int) ($file['error'] ?? 4);
+        $msg = [
+            UPLOAD_ERR_INI_SIZE  => 'حجم فایل از حد مجاز سرور بیشتر است.',
+            UPLOAD_ERR_FORM_SIZE => 'حجم فایل بیش از حد مجاز است.',
+            UPLOAD_ERR_NO_FILE   => 'فایلی انتخاب نشده است.',
+            UPLOAD_ERR_PARTIAL   => 'فایل به‌طور کامل آپلود نشد.',
+            UPLOAD_ERR_NO_TMPDIR => 'پوشهٔ موقت سرور در دسترس نیست.',
+            UPLOAD_ERR_CANT_WRITE=> 'نوشتن روی سرور ممکن نشد.',
+            UPLOAD_ERR_EXTENSION => 'آپلود توسط افزونهٔ هاست متوقف شد.',
+        ];
+        ae_err($msg[$code] ?? 'آپلود فایل ناموفق بود.', 'upload_failed', 422);
+    }
+
+    $cfg   = ae_config()['admin'] ?? [];
+    $maxMb = max(1, (int) ($cfg['max_upload_mb'] ?? 8));
+    $size  = (int) @filesize($file['tmp_name']);
+    if ($size <= 0)                     ae_err('فایل خالی است.', 'empty_file', 422);
+    if ($size > $maxMb * 1024 * 1024)   ae_err('حجم فایل بیش از ' . $maxMb . ' مگابایت است.', 'too_large', 413);
+
+    /* نوع واقعی از محتوای فایل — نه از نام یا هدر مرورگر */
+    $mime = '';
+    if (function_exists('finfo_open')) {
+        $fi = @finfo_open(FILEINFO_MIME_TYPE);
+        if ($fi) { $mime = (string) @finfo_file($fi, $file['tmp_name']); @finfo_close($fi); }
+    }
+    if ($mime === '') {
+        $info = @getimagesize($file['tmp_name']);
+        $mime = $info ? (string) ($info['mime'] ?? '') : '';
+    }
+    $types = ae_media_types();
+    if (!isset($types[$mime])) {
+        ae_err('فقط تصویرهای JPG، PNG، WebP، GIF و AVIF پذیرفته می‌شوند.', 'bad_type', 415);
+    }
+    $info = @getimagesize($file['tmp_name']);
+    if (!$info || (int) $info[0] < 1 || (int) $info[1] < 1) {
+        ae_err('فایل تصویر معتبر نیست.', 'not_image', 415);
+    }
+
+    $ext  = $types[$mime];
+    $name = (string) preg_replace('/[^A-Za-z0-9._\-]/', '-', (string) ($file['name'] ?? 'image'));
+    $name = trim((string) preg_replace('/-+/', '-', $name), '-');
+    if ($name === '') $name = 'image';
+    if (strlen($name) > 80) $name = substr($name, 0, 80);
+    $stem = pathinfo($name, PATHINFO_FILENAME);
+    $base = substr($stem === '' ? 'media' : $stem, 0, 40);
+    $hash = substr(bin2hex(random_bytes(10)), 0, 12);
+    $file2 = $base . '-' . $hash . '.' . $ext;
+
+    $dest = ae_uploads_dir() . '/' . $file2;
+    $moved = is_uploaded_file($file['tmp_name'])
+        ? @move_uploaded_file($file['tmp_name'], $dest)
+        : @rename($file['tmp_name'], $dest);
+    if (!$moved) ae_err('ذخیرهٔ فایل روی سرور ممکن نشد — پوشهٔ uploads نوشتنی نیست.', 'store_failed', 500);
+    @chmod($dest, 0644);
+
+    $id = 'm_' . $hash;
+    $store = ae_media_store();
+    $store['items'][$id] = [
+        'id'      => $id,
+        'file'    => ae_media_rel($file2),
+        'name'    => $name,
+        'alt'     => '',
+        'w'       => (int) $info[0],
+        'h'       => (int) $info[1],
+        'size'    => $size,
+        'mime'    => $mime,
+        'created' => time(),
+    ];
+    ae_store_write('media', $store);
+
+    $rec = $store['items'][$id];
+    $rec['used'] = [];
+    return $rec;
+}
+
+/** حذف رکورد رسانه (و در صورت نیاز آزادکردن ارجاع‌های کاتالوگ). */
+function ae_media_delete(string $id, bool $detach): bool
+{
+    $store = ae_media_store();
+    if (!isset($store['items'][$id])) return false;
+    $rel  = (string) $store['items'][$id]['file'];
+
+    if ($detach) ae_media_detach($rel);
+
+    unset($store['items'][$id]);
+    ae_store_write('media', $store);
+    $abs = ae_media_abs($rel);
+    if (is_file($abs)) @unlink($abs);
+    return true;
+}
+
+/** پاک‌کردن هر ارجاعی به یک فایل از لایهٔ مدیریت محصولات. */
+function ae_media_detach(string $rel): int
+{
+    $cat = ae_catalog_store();
+    $n = 0;
+    foreach ($cat['items'] as $pid => $p) {
+        if (!is_array($p)) continue;
+        $touched = false;
+        if (($p['img'] ?? '') === $rel) { $p['img'] = ''; $touched = true; }
+        if (isset($p['gallery']) && is_array($p['gallery'])) {
+            $g = array_values(array_filter($p['gallery'], static fn($u) => (string) $u !== $rel));
+            if (count($g) !== count($p['gallery'])) { $p['gallery'] = $g; $touched = true; }
+        }
+        if (isset($p['sw']) && is_array($p['sw'])) {
+            foreach ($p['sw'] as $i => $s) {
+                if (is_array($s) && (string) ($s['img'] ?? '') === $rel) {
+                    /* تصویر رنگ باید بماند؛ به عکس اصلی محصول برمی‌گردد */
+                    $s['img'] = (string) ($p['img'] ?? '');
+                    $p['sw'][$i] = $s;
+                    $touched = true;
+                }
+            }
+        }
+        if ($touched) { $cat['items'][$pid] = $p; $n++; }
+    }
+    if ($n) ae_store_write('catalog', $cat);
+    return $n;
 }
 
 /* ═══ ابزار کمکی متن ═════════════════════════════════════════════════════ */

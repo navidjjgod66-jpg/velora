@@ -149,6 +149,66 @@ async function contactSend(payload) {
   return r;
 }
 
+/* ─── لایهٔ همگام‌سازی: ویترین ← پنل مدیریت ────────────────────────────────
+   کاتالوگ پایه در js/data.js است؛ اگر مدیر چیزی ذخیره کرده باشد، لایهٔ
+   مدیریت روی آن می‌نشیند. اگر سرور در دسترس نبود اصلاً چیزی عوض نمی‌شود. */
+let catalogEtag = '';
+async function catalogFetch(force = false) {
+  const headers = { 'Accept': 'application/json' };
+  if (catalogEtag && !force) headers['If-None-Match'] = catalogEtag;
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 8000);
+  try {
+    const res = await fetch(BASE + 'catalog.php', {
+      method: 'GET', credentials: 'same-origin', headers, cache: 'no-store', signal: ctrl.signal,
+    });
+    const etag = res.headers.get('ETag');
+    if (etag) catalogEtag = etag;
+    if (res.status === 304) return { changed: false };
+    let data = null;
+    try { data = await res.json(); } catch (_) { throw new Error('catalog-unreadable'); }
+    if (!res.ok || !data || data.ok !== true) {
+      throw Object.assign(new Error((data && data.message) || ('http-' + res.status)), { status: res.status });
+    }
+    return { changed: true, data };
+  } finally { clearTimeout(t); }
+}
+
+/* ─── پنل مدیریت ─────────────────────────────────────────────────────────── */
+async function adminPost(action, body = {}) {
+  const r = await post('admin.php', Object.assign({ action }, body));
+  if (r.ok !== true) throw Object.assign(new Error(r.message || 'درخواست پنل ناموفق بود.'), { code: r.error });
+  return r;
+}
+
+/* آپلود با نوار پیشرفت — fetch این را ندارد، پس XHR */
+function adminUpload(file, onProgress) {
+  return new Promise((resolve, reject) => {
+    const fd = new FormData();
+    fd.append('action', 'media_upload');
+    fd.append('file', file, file.name || 'image');
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', BASE + 'admin.php', true);
+    xhr.withCredentials = true;
+    xhr.setRequestHeader('Accept', 'application/json');
+    if (xhr.upload && typeof onProgress === 'function') {
+      xhr.upload.addEventListener('progress', e => {
+        if (e.lengthComputable) onProgress(e.loaded / e.total);
+      });
+    }
+    xhr.addEventListener('load', () => {
+      let d = null;
+      try { d = JSON.parse(xhr.responseText); } catch (_) {}
+      if (xhr.status >= 200 && xhr.status < 300 && d && d.ok === true) resolve(d);
+      else reject(Object.assign(new Error((d && d.message) || ('http-' + xhr.status)), { code: d && d.error }));
+    });
+    xhr.addEventListener('error', () => reject(new Error('ارتباط با سرور قطع شد.')));
+    xhr.addEventListener('abort', () => reject(Object.assign(new Error('آپلود لغو شد.'), { aborted: true })));
+    xhr.send(fd);
+    return xhr;
+  });
+}
+
 window.aeApi = {
   BASE,
   get available() { return !!(probe && probe.available); },
@@ -157,5 +217,6 @@ window.aeApi = {
   otpSend, otpVerify, otpSession,
   paymentStart, paymentGo, paymentReturn,
   ordersList, orderCreate, contactSend,
+  catalogFetch, adminPost, adminUpload,
 };
 })();

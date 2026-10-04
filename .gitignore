@@ -1,1 +1,18 @@
-(empty)
+# رازهای سرور — هرگز commit نشوند
+/config.php
+/api/config.php
+
+# داده‌های runtime (سفارش‌ها، نشست، OTP، انبارهٔ مدیریت)
+/api/data/
+
+# رسانه‌های آپلودشده از پنل مدیریت
+/uploads/
+
+# سیستمی و ویرایشی
+.DS_Store
+Thumbs.db
+*.log
+*.lock
+.idea/
+.vscode/
+node_modules/

@@ -20,7 +20,7 @@
 'use strict';
 
 /* ═══ نسخه و نام کش‌ها ═══ */
-const VERSION        = 'aurelle-v4.0.0';
+const VERSION        = 'aurelle-v4.1.0';
 const SHELL_CACHE    = VERSION + '-shell';
 const FONT_CACHE     = VERSION + '-fonts';
 const IMAGE_CACHE    = VERSION + '-images';
@@ -52,10 +52,13 @@ const SHELL_ASSETS = [
   './css/sections.css',
   './css/dialogs.css',
   './css/animations.css',
+  './css/admin.css',
 
   /* JS — ترتیب مهم برای بارگذاری درست */
   './js/core.js',
+  './js/api.js',
   './js/data.js',
+  './js/sync.js',
   './js/state.js',
   './js/ui.js',
   './js/cart.js',
@@ -64,6 +67,7 @@ const SHELL_ASSETS = [
   './js/auth.js',
   './js/concierge.js',
   './js/atelier.js',
+  './js/admin.js',
   './js/main.js',
 
   /* آیکون‌ها (مسیر جدید در assets/) */
@@ -252,6 +256,11 @@ self.addEventListener('fetch', event => {
   const isSameOrigin = url.origin === self.location.origin;
   const isNav = req.mode === 'navigate';
   const isHTML = isSameOrigin && /\.html?$/i.test(url.pathname);
+
+  /* ── 0. لایهٔ PHP (api/) و پوشهٔ رسانه ─────────────────────────
+     هرگز کش نمی‌شوند: قیمت، موجودی، سفارش و وضعیت مدیریت باید همیشه
+     تازه باشند. بدون respondWith یعنی مستقیم می‌رود سراغ شبکه. */
+  if (isSameOrigin && (/\/api\//i.test(url.pathname) || /\/uploads\//i.test(url.pathname))) return;
 
   /* ── ۱. ناوبری (صفحه‌ها) ────────────────────────────────────────
      Network-first + Navigation Preload + fallback به index.html / offline.html */

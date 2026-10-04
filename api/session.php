@@ -4,7 +4,7 @@
    وضعیت نشست کاربر (برای رفرش صفحه) + خروج
    ─────────────────────────────────────────────────────────────────────
    ورودی : { "action": "get" | "logout" }
-   خروجی : { ok:true, auth:true, phone:"0912…" }  یا  { ok:true, auth:false }
+   خروجی : { ok:true, auth:true, phone:"0912…", admin:true }  یا  { ok:true, auth:false }
    ═══════════════════════════════════════════════════════════════════════ */
 
 require __DIR__ . '/bootstrap.php';
@@ -27,6 +27,8 @@ $lastRef = isset($_SESSION['ae_last_ref']) ? (string) $_SESSION['ae_last_ref'] :
 ae_ok([
     'auth'      => $phone !== null,
     'phone'     => $phone,
+    /* فقط یک پرچم بولی — شمارهٔ مدیر هرگز به مرورگر نمی‌رود */
+    'admin'     => ae_is_admin(),
     'last_ref'  => $lastRef,
     'gateway'   => ['otp' => ae_config()['otp']['service_key'] !== '',
                     'pay' => ae_zarinpal_merchant() !== ''],

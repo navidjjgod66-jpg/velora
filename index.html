@@ -40,6 +40,7 @@
 <link rel="stylesheet" href="css/sections.css">
 <link rel="stylesheet" href="css/dialogs.css">
 <link rel="stylesheet" href="css/animations.css">
+<link rel="stylesheet" href="css/admin.css">
 
 <link rel="stylesheet" media="print" onload="this.media='all'" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300..700;1,400&family=Markazi+Text:wght@400..700&family=Vazirmatn:wght@100..900&display=swap">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300..700;1,400&family=Markazi+Text:wght@400..700&family=Vazirmatn:wght@100..900&display=swap"></noscript>
@@ -1037,9 +1038,43 @@ if(raw('ae.ann.v3')===true)d.classList.add('ann-off');
 <div class="prof-card"><h5>اندازه‌های سفارشی</h5><div id="profCst"><p class="ps2">هنوز ثبت نشده — از دکمهٔ زیر شروع کنید.</p></div><button class="btn btn-ghost btn-sm js-mz" type="button">اندازه‌گیری پای من</button></div>
 <div class="prof-card prof-card--full"><h5>سفارش‌های من</h5><div id="profOrders"><p class="ps2">هنوز سفارشی ثبت نشده است.</p></div></div>
 </div>
+<button class="btn btn-solid btn-full adm-entry" id="profAdmin" type="button" hidden><span>ورود به پنل مدیریت</span></button>
 <button class="btn btn-ghost btn-full" id="profOut" type="button"><span>خروج از حساب</span></button>
 <p class="mono prof-saved-note">ذخیره‌شده در دستگاه</p>
 </div>
+</div>
+</dialog>
+
+<dialog class="admin" id="admin" aria-labelledby="admT" aria-modal="true" data-lenis-prevent>
+<div class="adm__in">
+<header class="adm__top">
+<div class="adm__brand"><span class="dot" aria-hidden="true"></span><h2 id="admT">پنل مدیریت خانهٔ اُرِل</h2></div>
+<div class="adm__top-r"><span class="mono adm__stamp" id="admStamp"></span>
+<button class="btn btn-ghost btn-sm" id="admReload" type="button">تازه‌سازی</button>
+<button class="close-btn" id="admX" type="button" aria-label="بستن پنل"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+</header>
+<nav class="adm__tabs" role="tablist" aria-label="بخش‌های پنل">
+<button role="tab" type="button" class="on" data-atab="dash" aria-selected="true">داشبورد</button>
+<button role="tab" type="button" data-atab="prod" aria-selected="false">محصولات</button>
+<button role="tab" type="button" data-atab="media" aria-selected="false">رسانه</button>
+<button role="tab" type="button" data-atab="orders" aria-selected="false">سفارش‌ها</button>
+<button role="tab" type="button" data-atab="set" aria-selected="false">تنظیمات</button>
+</nav>
+<div class="adm__body">
+<section class="adm__pane" id="admDash" role="tabpanel" aria-label="داشبورد"></section>
+<section class="adm__pane" id="admProd" role="tabpanel" aria-label="محصولات" hidden></section>
+<section class="adm__pane" id="admMedia" role="tabpanel" aria-label="رسانه" hidden></section>
+<section class="adm__pane" id="admOrders" role="tabpanel" aria-label="سفارش‌ها" hidden></section>
+<section class="adm__pane" id="admSet" role="tabpanel" aria-label="تنظیمات" hidden></section>
+</div>
+<footer class="adm__foot"><span class="adm__msg" id="admMsg" role="status" aria-live="polite"></span></footer>
+</div>
+</dialog>
+
+<dialog class="adm-pick" id="admPick" aria-label="انتخاب از رسانه‌ها" data-lenis-prevent>
+<div class="adm-pick__in">
+<header class="adm-pick__top"><h3>انتخاب تصویر</h3><button class="close-btn" id="admPickX" type="button" aria-label="بستن"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></header>
+<div class="adm-pick__grid" id="admPickGrid"></div>
 </div>
 </dialog>
 
@@ -1236,7 +1271,9 @@ if(raw('ae.ann.v3')===true)d.classList.add('ann-off');
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js" defer crossorigin="anonymous"></script>
 
 <script src="js/core.js" defer></script>
+<script src="js/api.js" defer></script>
 <script src="js/data.js" defer></script>
+<script src="js/sync.js" defer></script>
 <script src="js/state.js" defer></script>
 <script src="js/ui.js" defer></script>
 <script src="js/cart.js" defer></script>
@@ -1245,6 +1282,7 @@ if(raw('ae.ann.v3')===true)d.classList.add('ann-off');
 <script src="js/auth.js" defer></script>
 <script src="js/concierge.js" defer></script>
 <script src="js/atelier.js" defer></script>
+<script src="js/admin.js" defer></script>
 <script src="js/main.js" defer></script>
 </body>
 </html>

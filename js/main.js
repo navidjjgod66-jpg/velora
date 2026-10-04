@@ -45,7 +45,10 @@ ${p.stock <= 3 ? `<span class="pl-badge low">فقط ${faNum(p.stock)} مانده
 <div class="p-row"><div class="p-sw" aria-hidden="true">${p.sw.map(s => `<span class="sw" style="--c:${s.c}"></span>`).join('')}</div><span class="mono" style="font-size:.56rem">۳۶ تا ۴۶</span></div>
 <button class="quick" type="button" data-quick data-cursor="سایز"><span class="quick-t">انتخاب سایز</span></button>
 </div></article>`;
-if (grid) grid.innerHTML = PRODUCTS.map(cardHTML).join('');
+function renderGrid() {
+  if (grid) grid.innerHTML = PRODUCTS.map(cardHTML).join('');
+}
+renderGrid();
 
 /* ═══ Selection rail ═══ */
 (() => {
@@ -89,6 +92,14 @@ const wireCards = root => {
   });
 };
 if (grid) wireCards(grid);
+
+/* لایهٔ مدیریت روی ویترین نشست — شبکه و شمارنده‌ها باید دوباره ساخته شوند */
+addEventListener('ae:catalog-sync', () => {
+  renderGrid();
+  if (grid) wireCards(grid);
+  window.AE_UI.renderFamChips && window.AE_UI.renderFamChips();
+  apply();
+});
 
 /* ═══ Apply filters ═══ */
 function apply() {
@@ -283,6 +294,7 @@ function handleRoute() {
   const pm = h.match(/^#\/pdp\/([a-z0-9-]+)/i);
   if (pm) { if (CATALOG[pm[1]]) openPDPByRoute(pm[1]); else openNf(); return; }
   if (h === '#/profile') { openProfile(true); return; }
+  if (h === '#/admin')   { if (window.AE_ADMIN) AE_ADMIN.open(true); return; }
   if (h === '' || h === '#' || h === '#/') { const pdp = $('#pdp'); if (pdp.open) pdp.close(); return; }
   if (h.startsWith('#/')) { openNf(); return; }
   const pdp = $('#pdp'); if (pdp.open) pdp.close();
@@ -1220,6 +1232,18 @@ renderFamChips(); /* ✅ از window.AE_UI هم می‌آید ولی صریح ب
 $$('[data-theme-set]').forEach(b => b.classList.toggle('on', b.dataset.themeSet === html.getAttribute('data-theme')));
 $$('[data-scene-set]').forEach(b => b.classList.toggle('on', b.dataset.sceneSet === html.getAttribute('data-scene')));
 $$('[data-act="mode"]').forEach(b => b.classList.toggle('on', b.dataset.mode === html.getAttribute('data-mode')));
+
+/* ═══ لایهٔ مدیریت ═══
+   ویترین با data.js بالا آمده (بدون انتظار سرور). اگر پنل مدیریت چیزی
+   ذخیره کرده باشد، این لایه روی همان کاتالوگ می‌نشیند. بی‌صدا: اگر سرور
+   نبود یا انباره خالی بود، هیچ چیز تغییر نمی‌کند. */
+if (window.AE_SYNC) AE_SYNC.run(false);
+
+/* دسترسی به پنل: پرچم مدیریت که از سرور می‌آید */
+window.addEventListener('ae:session-admin', () => {
+  const btn = $('#profAdmin');
+  if (btn) btn.hidden = !(window.AE_AUTH && AE_AUTH.isAdmin());
+});
 
 console.log('%c ◆ خانهٔ اُرِل — Modular Build v4.0 · Golden ◆ ',
   'background:linear-gradient(115deg,#f6e7ab,#d4af37,#875f10);color:#080604;padding:.5rem 1.2rem;font-family:Georgia;font-size:14px;letter-spacing:.1em');
