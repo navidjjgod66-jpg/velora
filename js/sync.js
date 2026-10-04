@@ -17,6 +17,43 @@ if (!D || !window.aeApi) return;
 const SET_FIELDS = ['name','sub','cat','family','heel','price','oldPrice','badge',
                     'isNew','stock','rating','reviews','img','gallery','sw'];
 
+/* ─── سپر ورودی سرور: هرگز HTML خام از پاسخ سرور به DOM نرود ─── */
+const cleanText = (v, max) => {
+  if (v === undefined || v === null) return '';
+  const s = String(v).replace(/[\u0000-\u001F<>]/g, '').trim();
+  return s.slice(0, max || 240);
+};
+const cleanUrl = u => {
+  const s = String(u || '');
+  return (/^https:\/\//i.test(s) || /^(?:\.\/)?uploads\//i.test(s)) ? s.slice(0, 500) : '';
+};
+const cleanNum = (v, dflt) => { const n = Number(v); return Number.isFinite(n) ? n : (dflt || 0); };
+
+/** داده‌های lایهٔ مدیریت را پیش از نشستن روی AE_DATA گندزنی می‌کند. */
+function sanitizeItem(rec) {
+  if (!rec || typeof rec !== 'object') return {};
+  const out = {};
+  out.name   = cleanText(rec.name, 80);
+  out.sub    = cleanText(rec.sub, 200);
+  out.cat    = cleanText(rec.cat, 80);
+  out.family = cleanText(rec.family, 30);
+  out.badge  = rec.badge === undefined ? undefined : cleanText(rec.badge, 30);
+  out.heel   = cleanNum(rec.heel);
+  out.price  = cleanNum(rec.price);
+  out.oldPrice = rec.oldPrice === undefined ? undefined : cleanNum(rec.oldPrice);
+  out.isNew  = !!rec.isNew;
+  out.stock  = cleanNum(rec.stock);
+  out.rating = Math.min(5, Math.max(0, cleanNum(rec.rating)));
+  out.reviews = cleanNum(rec.reviews);
+  if (rec.img !== undefined) out.img = cleanUrl(rec.img);
+  if (Array.isArray(rec.gallery)) out.gallery = rec.gallery.map(g =>
+    g && typeof g === 'object' ? { src: cleanUrl(g.src || g.url), label: cleanText(g.label || g.n, 40) } : cleanUrl(g));
+  if (Array.isArray(rec.sw)) out.sw = rec.sw.map(s => s && typeof s === 'object' ? ({
+    n: cleanText(s.n || s.name, 30), c: /^#[0-9a-fA-F]{3,8}$/.test(String(s.c||s.color||'')) ? String(s.c||s.color) : '#888',
+    img: cleanUrl(s.img) }) : s);
+  return out;
+}
+
 /** داده‌های تازه را روی AE_DATA می‌نشاند و ۱ اگر چیزی عوض شده باشد. */
 function apply(d) {
   if (!d || typeof d !== 'object') return 0;
@@ -38,8 +75,9 @@ function apply(d) {
   }
 
   /* ۲) روی‌نشستن لایهٔ مدیریت روی فرم‌های موجود و ساختن فرم‌های تازه */
-  for (const [id, rec] of Object.entries(items)) {
-    if (!rec || typeof rec !== 'object') continue;
+  for (const [id, rawRec] of Object.entries(items)) {
+    if (!rawRec || typeof rawRec !== 'object') continue;
+    const rec = sanitizeItem(rawRec);           /* هیچ فیلد خام از سرور عبور نمی‌کند */
     const cur = D.CATALOG[id];
     if (cur) {
       for (const f of SET_FIELDS) {
@@ -71,8 +109,8 @@ function apply(d) {
   /* ۴) کد تخفیف — همان آبجکت زنده، پس ماژول‌های دیگر هم می‌بینند */
   const p = d.promo;
   if (p && p.set && p.code && D.PROMO && D.PROMO.code !== p.code) {
-    D.PROMO.code = p.code;
-    D.PROMO.pct  = Number(p.pct) || 0;
+    D.PROMO.code = cleanText(p.code, 40);       /* کد از سرور هم گندزنی می‌شود */
+    D.PROMO.pct  = Math.min(90, Math.max(0, Number(p.pct) || 0));
     touched++;
   }
 

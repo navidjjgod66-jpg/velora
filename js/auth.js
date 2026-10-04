@@ -13,10 +13,13 @@ const {
   faNum, moneyT, esc, toast, haptic,
   dlStop, dlStart, backdropClose
 } = window.AE;
-const { DEMO_OTP } = window.AE_DATA;
+/* DEMO_OTP فقط در حالت توسعه (localhost) مجاز است — هرگز روی پروداکشن */
+const AE_HOSTS = ['localhost', '127.0.0.1'];
+const IS_DEV   = AE_HOSTS.indexOf(location.hostname) !== -1;
+const DEMO_OTP = IS_DEV && window.AE_DATA ? window.AE_DATA.DEMO_OTP : null;
 const { getCustom } = window.AE_STATE;
 
-const api  = window.aeApi || null;          /* اگر سرور نیست، حالت نمایشی */
+const api  = window.aeApi || null;          /* اگر سرور نیست، ورود فقط در حالت توسعه باز می‌ماند */
 const profile = $('#profile');
 
 let profPhone = '', otpLeft = 0, otpDemo = !api;
@@ -41,18 +44,26 @@ async function loadSession() {
     }
     adminState.isAdmin = !!(s && s.admin);
   } catch (_) {}
+  window.dispatchEvent(new CustomEvent('ae:session-admin'));
   return adminState.isAdmin;
 }
 
 async function requestOtpSend() {
-  if (!serverOn()) { otpDemo = true; return { demo: true }; }
+  if (!serverOn()) {
+    /* بدون سرور: کد ثابت فقط در حالت توسعه؛ روی پروداکشن ورود بسته است */
+    if (DEMO_OTP) { otpDemo = true; return { demo: true, resend: OTP_TTL }; }
+    throw Object.assign(new Error('سرور در دسترس نیست — ورود با پیامک موقتاً ممکن نیست.'), { code: 'server-unreachable' });
+  }
   const r = await api.otpSend(profPhone);
   otpDemo = false;
   return r;
 }
 
 async function requestOtpValidation(code) {
-  if (!serverOn()) { otpDemo = true; return { ok: code === DEMO_OTP, demo: true }; }
+  if (!serverOn()) {
+    if (DEMO_OTP) return { ok: code === DEMO_OTP, demo: true };
+    throw Object.assign(new Error('سرور در دسترس نیست — تأیید کد ممکن نیست.'), { code: 'server-unreachable' });
+  }
   return api.otpVerify(profPhone, code);
 }
 
@@ -199,6 +210,8 @@ $('#sendOtp') && $('#sendOtp').addEventListener('click', async () => {
     const chip = $('#profAuth [data-ps="otp"] .devchip');
     if (chip) chip.hidden = !!(r && r.demo);
   } catch (e) {
+    /* خطای سرور → بازگشت به گام شماره تا پیام خوانا دیده شود */
+    showStep('phone');
     toast((e && e.message) || 'ارسال کد ممکن نشد.', 'err');
     haptic('warn');
   } finally {
@@ -274,7 +287,17 @@ async function verifyOTPFlow() {
   stopOtpTimer();
   const prev = getProfile() || {};
   setProfile({ phone: profPhone, name: prev.name || '', size: prev.size || '', authAt: Date.now() });
+  /* کوکی نشست HttpOnly تنها منبع هویت است؛ کش محلی گمراه‌کننده را پاک کن */
+  LS.del(K.session);
   await loadSession();
+  const srv = getProfile();
+  if (!(serverOn() && srv && srv.phone === profPhone) && !(DEMO_OTP && res && res.ok)) {
+    /* سرور نشست را تأیید نکرد → ورود را نگه ندار */
+    LS.del(K.profile);
+    renderProfile();
+    toast('تأیید نشست از سرور انجام نشد. دوباره تلاش کنید.', 'err');
+    return;
+  }
   renderProfile();
   toast('به خانه خوش آمدید.');
 }
