@@ -291,6 +291,8 @@ nf && nf.addEventListener('close', () => {
 });
 function handleRoute() {
   const h = location.hash;
+  /* بازگشت از درگاه: #/checkout?status=… — هندل در checkout.js؛ اینجا فقط رد کن */
+  if (/^#\/checkout\?/.test(h)) return;
   const pm = h.match(/^#\/pdp\/([a-z0-9-]+)/i);
   if (pm) { if (CATALOG[pm[1]]) openPDPByRoute(pm[1]); else openNf(); return; }
   if (h === '#/profile') { openProfile(true); return; }

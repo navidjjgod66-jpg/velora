@@ -20,7 +20,10 @@
 'use strict';
 
 /* ═══ نسخه و نام کش‌ها ═══ */
-const VERSION        = 'aurelle-v4.1.0';
+/* v5: پوستهٔ محلی از cache-first خالص به stale-while-revalidate تغییر کرد؛
+   deployment جدید بدون نیاز به تغییر VERSION هم ظرف یک بازدید تازه می‌شود.
+   VERSION همچنان مرز ایمنیِ پاک‌سازی کش قدیمی است. */
+const VERSION        = 'aurelle-v5.0.0';
 const SHELL_CACHE    = VERSION + '-shell';
 const FONT_CACHE     = VERSION + '-fonts';
 const IMAGE_CACHE    = VERSION + '-images';
@@ -335,9 +338,17 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  /* ── ۵. دارایی‌های محلی (CSS/JS/تصاویر/فونت) ─────────────────
-     Cache-first چون پوسته در نصب کش شده و با VERSION مدیریت می‌شود */
-  if (isSameOrigin && /\.(?:css|js|png|jpg|jpeg|svg|webp|woff2?|ico)$/i.test(url.pathname)) {
+  /* ── ۵. اسکریپت/استایل محلی ───────────────────────────────────
+     Stale-while-revalidate: نسخهٔ کشی فوراً سرو می‌شود و نسخهٔ تازه در
+     پس‌زمینه جایگزین می‌شود. این «تلهٔ کهنه‌ماندگی» را حذف می‌کند که
+     قبلاً با VERSION دستی مدیریت می‌شد و فراموش‌پذیر بود. */
+  if (isSameOrigin && /\.(?:css|js)$/i.test(url.pathname)) {
+    event.respondWith(shellSWR(req));
+    return;
+  }
+
+  /* ── ۵ب. تصویر/فونت/آیکون محلی — cache-first (با VERSION عوض می‌شوند) */
+  if (isSameOrigin && /\.(?:png|jpg|jpeg|svg|webp|avif|gif|woff2?|ico)$/i.test(url.pathname)) {
     event.respondWith(cacheFirst(req, SHELL_CACHE));
     return;
   }
@@ -349,24 +360,9 @@ self.addEventListener('fetch', event => {
   }
 
   /* ── ۷. سایر درخواست‌ها ───────────────────────────────────────
-     Network-first با fallback به کش */
-  event.respondWith((async () => {
-    try {
-      const res = await fetch(req);
-      if (res && res.ok && res.type !== 'opaque') {
-        const cache = await caches.open(SHELL_CACHE);
-        cache.put(req, res.clone()).catch(() => {});
-      }
-      return res;
-    } catch (_) {
-      try {
-        const cache = await caches.open(SHELL_CACHE);
-        const hit = await cache.match(req);
-        if (hit) return hit;
-      } catch (_) {}
-      return new Response('', { status: 504 });
-    }
-  })());
+     عبور مستقیم به شبکه، بدون نوشتن در کش.
+     دلیل امنیتی: نسخهٔ پیشین هر پاسخ موفق تصادفی را در SHELL_CACHE
+     می‌ریخت و مسموم‌شدن کش (cache poisoning) ممکن بود. */
 });
 
 /* ═══════════════════════════════════════════════════════════════════════

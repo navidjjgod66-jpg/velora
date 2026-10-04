@@ -22,7 +22,7 @@ if ($mobile === null) ae_err('شمارهٔ موبایل معتبر نیست.', '
 $res = ae_otp_issue($mobile);
 if (!$res['ok']) {
     $status = in_array($res['error'], ['not_configured', 'sms_unreachable', 'gateway_rejected'], true) ? 502 : 429;
-    if ($res['error'] === 'too_fast' || $res['error'] === 'rate_limited') $status = 429;
+    if (in_array($res['error'], ['too_fast', 'rate_limited', 'daily_cap'], true)) $status = 429;
     ae_err($res['message'], $res['error'], $status, isset($res['retry_in']) ? ['retry_in' => $res['retry_in']] : []);
 }
 

@@ -11,6 +11,7 @@ const {
 } = window.AE;
 const { CATALOG, PROMO, MAX_ORDERS } = window.AE_DATA;
 const { state, itemsSum, discount, cartSum, persBag } = window.AE_STATE;
+const api = window.aeApi || null;
 
 const cko = $('#cko');
 const ckoStepsL = $$('#ckoSteps li');
@@ -159,15 +160,34 @@ ckoNext && ckoNext.addEventListener('click', () => {
     id:i.id, name:CATALOG[i.id] ? CATALOG[i.id].name : null,
     size:i.size, color:i.color, qty:i.qty
   }));
-  TIMERS.once(() => {
+  /* ─── گام آخر: پرداخت سمت سرور (زرین‌پال) با fallback رزرو ───
+     مبلغ هرگز از مرورگر باور نمی‌شود؛ payment_request.php آن را از
+     کاتالوگ سرور محاسبه می‌کند. اگر درگاه تنظیم نبود یا PHP در دسترس
+     نبود، سفارش «رزرو» روی سرور ثبت می‌شود و در نهایت فقط localStorage. */
+  const profile = LS.get(K.profile, {}) || {};
+  const payload = {
+    items: state.cart.map(i => ({ id:i.id, size:i.size, color:i.color, qty:i.qty })),
+    promo: state.promo ? state.promo.code : null,
+    contact: {
+      name:  $('#ckName').value.trim(),
+      email: $('#ckMail').value.trim(),
+      phone: profile.phone || ''
+    },
+    address: {
+      line1: $('#ckAddr').value.trim(),
+      city:  $('#ckCity').value.trim(),
+      zip:   $('#ckZip').value.trim()
+    }
+  };
+
+  const finishLocal = (ref, total) => {
     ckoBack.disabled = false;
-    const ref = 'V-' + Date.now().toString(36).toUpperCase().slice(-6);
     $('#ckoRef').textContent = ref;
     const orders = Array.isArray(LS.get(K.orders, [])) ? LS.get(K.orders, []) : [];
     orders.unshift({
-      ref, total:paidTotal, count, items:itemsSnap.slice(0, 12),
+      ref, total, count, items:itemsSnap.slice(0, 12),
       date:new Date().toISOString(),
-      phone:(LS.get(K.profile, {})).phone || ''
+      phone:profile.phone || ''
     });
     LS.set(K.orders, orders.slice(0, MAX_ORDERS));
     $('#ckoForm').style.display = 'none';
@@ -180,9 +200,80 @@ ckoNext && ckoNext.addEventListener('click', () => {
     window.dispatchEvent(new CustomEvent('ae:apply'));
     $('#ckoDoneX').focus();
     window.dispatchEvent(new CustomEvent('ae:log-atelier', { detail:{ text:`سفارش جدید ${ref} به صف تولید پیوست` } }));
-    toast('سفارش رزرو شد — میزبان ظرف ۲۴ ساعت تأیید می‌کند.');
-  }, 1000, 'cko:pay');
+    toast('سفارش ثبت شد — میزبان ظرف ۲۴ ساعت تأیید می‌کند.');
+  };
+
+  (async () => {
+    if (api) {
+      try {
+        const r = await api.paymentStart(payload);
+        if (r && r.url) {
+          /* نشانهٔ تراکنش در-flight — برای تشخیص بازگشت مبهم از درگاه */
+          LS.set(K.payPend, { ref:r.ref, at:Date.now() });
+          api.paymentGo(r.url);
+          return; /* صفحه به درگاه می‌رود؛ اینجا کاری نداریم */
+        }
+      } catch (e) {
+        /* not_configured / gateway_* / unreachable → رزرو مستقیم روی سرور */
+        if (String(e && e.message) !== 'server-unreachable') {
+          try {
+            const r2 = await api.orderCreate(payload);
+            if (r2 && r2.ref) { finishLocal(r2.ref, r2.total || paidTotal); return; }
+          } catch (_) { /* سرور در دسترس نیست → حالت محلی */ }
+        }
+      }
+    }
+    finishLocal('V-' + Date.now().toString(36).toUpperCase().slice(-6), paidTotal);
+  })();
 });
+
+/* ═══ بازگشت از درگاه: #/checkout?status=success|failed&ref=…&open=1 ═══
+   payment_verify.php پس از تأیید زرین‌پال کاربر را همین‌جا می‌آورد.
+   این هندلر دیالوگ نتیجه را باز می‌کند، سبد را خالی می‌کند و رکورد
+   سفارش را در لیست محلی می‌گذارد تا با پنل «حساب من» هم‌خوان بماند. */
+let payReturnSeen = false;
+function ckoHandlePaymentReturn() {
+  if (!api || payReturnSeen) return false;
+  const ret = api.paymentReturn();
+  if (!ret) return false;
+  payReturnSeen = true;
+  LS.del(K.payPend);
+  const pend = (location.hash.match(/[?&]open=1/) !== null);
+  if (ret.status === 'success') {
+    const ref = ret.ref || '';
+    const orders = Array.isArray(LS.get(K.orders, [])) ? LS.get(K.orders, []) : [];
+    if (ref && !orders.some(o => o.ref === ref)) {
+      orders.unshift({ ref, total: ret.amount || 0, count: 0, items: [],
+                       date: new Date().toISOString(), phone: '', paid: true });
+      LS.set(K.orders, orders.slice(0, MAX_ORDERS));
+    }
+    state.cart = []; persBag();
+    window.dispatchEvent(new CustomEvent('ae:render-bag'));
+    window.dispatchEvent(new CustomEvent('ae:apply'));
+    if (pend || ref) {
+      $('#ckoRef').textContent = ref || '—';
+      $('#ckoForm').style.display = 'none';
+      $('.cko__sum', cko).style.display = 'none';
+      $('.cko__nav', cko).style.display = 'none';
+      ckoDone.hidden = false;
+      cko.showModal(); dlStop();
+      requestAnimationFrame(() => $('#ckoDoneX').focus());
+    }
+    toast('پرداخت تأیید شد — سفارش ' + (ref || '') + ' ثبت شد.');
+  } else {
+    toast(ret.message || 'پرداخت تکمیل نشد. سبد شما حفظ شده است.', 'err');
+  }
+  /* پاک کردن query از آدرس تا refresh دوباره هندل را اجرا نکند */
+  ckoClearHash();
+  return true;
+}
+function ckoClearHash(){ try{ history.replaceState(null,'','#/'); }catch(_){} }
+
+/* اگر کاربر با URL بازگشت لند کرد (بعد از boot main.js) */
+addEventListener('load', () => setTimeout(ckoHandlePaymentReturn, 300));
+/* اگر hashchange در همان نشست رخ داد */
+addEventListener('hashchange', () => { setTimeout(ckoHandlePaymentReturn, 60); });
+
 $('#ckoDoneX') && $('#ckoDoneX').addEventListener('click', () => cko.close());
 
 /* ═══ Exports ═══ */

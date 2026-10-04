@@ -159,8 +159,10 @@ async function catalogFetch(force = false) {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), 8000);
   try {
+    /* default (no explicit cache) → مرورگر با ETag/Cache-Control خودش
+       تصمیم می‌گیرد؛ 304ها تقریباً رایگان هستند و بار PHP کم می‌شود. */
     const res = await fetch(BASE + 'catalog.php', {
-      method: 'GET', credentials: 'same-origin', headers, cache: 'no-store', signal: ctrl.signal,
+      method: 'GET', credentials: 'same-origin', headers, signal: ctrl.signal,
     });
     const etag = res.headers.get('ETag');
     if (etag) catalogEtag = etag;
