@@ -5,11 +5,11 @@
 (() => {
 'use strict';
 const {
-  $, $$, reduced, faNum, moneyT, esc, PHI, PHI2,
+  $, reduced, faNum, moneyT, esc,
   dlStop, dlStart, TIMERS
 } = window.AE;
 const { CATALOG, PRODUCTS, PROMO } = window.AE_DATA;
-const { P, state } = window.AE_STATE;
+const { P } = window.AE_STATE;
 
 let concOpen = false;
 

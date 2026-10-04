@@ -7,10 +7,11 @@
 const {
   $, $$, html, body, reduced, TIMERS, LS, K,
   faNum, moneyT, esc, toast, haptic, withLoad,
-  dlStop, dlStart, backdropClose
+  dlStop, wireDialog
 } = window.AE;
-const { CATALOG, PROMO, MAX_ORDERS } = window.AE_DATA;
-const { state, itemsSum, discount, cartSum, persBag } = window.AE_STATE;
+const { CATALOG, PROMO } = window.AE_DATA;
+const { state, itemsSum, discount, cartSum } = window.AE_STATE;
+const { recordOrder, completeCheckout } = window.AE_CART;
 const api = window.aeApi || null;
 
 const cko = $('#cko');
@@ -102,11 +103,7 @@ function openCko() {
   requestAnimationFrame(() => $('#ckMail').focus());
 }
 $('#ckoX') && $('#ckoX').addEventListener('click', () => cko.close());
-backdropClose(cko);
-cko && cko.addEventListener('close', () => {
-  cko._opener && cko._opener.focus && cko._opener.focus({ preventScroll:true });
-  cko._opener = null; dlStart();
-});
+wireDialog(cko);
 ckoBack && ckoBack.addEventListener('click', () => { if (ckoStep > 0) { ckoStep--; ckoPaint(); } });
 
 /* ═══ Promo ═══ */
@@ -183,21 +180,16 @@ ckoNext && ckoNext.addEventListener('click', () => {
   const finishLocal = (ref, total) => {
     ckoBack.disabled = false;
     $('#ckoRef').textContent = ref;
-    const orders = Array.isArray(LS.get(K.orders, [])) ? LS.get(K.orders, []) : [];
-    orders.unshift({
+    recordOrder({
       ref, total, count, items:itemsSnap.slice(0, 12),
       date:new Date().toISOString(),
       phone:profile.phone || ''
     });
-    LS.set(K.orders, orders.slice(0, MAX_ORDERS));
     $('#ckoForm').style.display = 'none';
     $('.cko__sum', cko).style.display = 'none';
     $('.cko__nav', cko).style.display = 'none';
     ckoDone.hidden = false;
-    state.cart = [];
-    window.dispatchEvent(new CustomEvent('ae:render-bag'));
-    persBag();
-    window.dispatchEvent(new CustomEvent('ae:apply'));
+    completeCheckout();
     $('#ckoDoneX').focus();
     window.dispatchEvent(new CustomEvent('ae:log-atelier', { detail:{ text:`سفارش جدید ${ref} به صف تولید پیوست` } }));
     toast('سفارش ثبت شد — میزبان ظرف ۲۴ ساعت تأیید می‌کند.');
@@ -252,15 +244,9 @@ function ckoHandlePaymentReturn() {
   }
   if (ret.status === 'success') {
     const ref = ret.ref || '';
-    const orders = Array.isArray(LS.get(K.orders, [])) ? LS.get(K.orders, []) : [];
-    if (ref && !orders.some(o => o.ref === ref)) {
-      orders.unshift({ ref, total: ret.amount || 0, count: 0, items: [],
-                       date: new Date().toISOString(), phone: '', paid: true });
-      LS.set(K.orders, orders.slice(0, MAX_ORDERS));
-    }
-    state.cart = []; persBag();
-    window.dispatchEvent(new CustomEvent('ae:render-bag'));
-    window.dispatchEvent(new CustomEvent('ae:apply'));
+    recordOrder({ ref, total: ret.amount || 0, count: 0, items: [],
+                  date: new Date().toISOString(), phone: '', paid: true });
+    completeCheckout();
     if (openDlg || ref) {
       $('#ckoRef').textContent = ref || '—';
       $('#ckoForm').style.display = 'none';

@@ -6,7 +6,7 @@
 'use strict';
 const {
   $, $$, body, reduced, LS, K, fdate,
-  faNum, faPad, moneyT, esc, toast, haptic, dlStop, dlStart, wireDialog
+  faNum, faPad, moneyT, esc, toast, haptic, dlStop, wireDialog
 } = window.AE;
 const { CATALOG, SIZES, CONV, MAX_ORDERS } = window.AE_DATA;
 const {
@@ -244,10 +244,13 @@ function openWish() {
 }
 $('#wishClose') && $('#wishClose').addEventListener('click', () => wishd.close());
 $('#wishEmptyShop') && $('#wishEmptyShop').addEventListener('click', () => wishd.close());
-wishd && wishd.addEventListener('close', () => {
-  wishFocus && wishFocus.focus && wishFocus.focus({ preventScroll:true });
-  wishFocus = null; dlStart();
-});
+if (wishd) {
+  wireDialog(wishd);
+  wishd.addEventListener('close', () => {
+    wishFocus && wishFocus.focus && wishFocus.focus({ preventScroll:true });
+    wishFocus = null;
+  });
+}
 
 /* ═══ Fly to cart ═══ */
 function flyToCart(srcImg) {
@@ -338,11 +341,7 @@ sheetSizes && sheetSizes.addEventListener('mouseover', e => {
   sheetConv.textContent = b ? CONV[b.dataset.s] || '' : '';
 });
 $('#sheetX') && $('#sheetX').addEventListener('click', () => sheet.close());
-backdropClose(sheet);
-sheet && sheet.addEventListener('close', () => {
-  sheet._opener && sheet._opener.focus && sheet._opener.focus({ preventScroll:true });
-  sheet._opener = null; dlStart();
-});
+wireDialog(sheet);
 
 /* ═══ Initial render ═══ */
 renderBag();
@@ -354,7 +353,8 @@ paintInBag();
 window.AE_CART = {
   renderBag, addToCart, paintInBag,
   openBag, openWish, toggleWish, paintWish, renderWishDrawer,
-  openSheet, showConfirmPill, flyToCart
+  openSheet, showConfirmPill, flyToCart,
+  recordOrder, completeCheckout
 };
 
 /* Listen for updates from other modules */

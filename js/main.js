@@ -15,9 +15,11 @@ const {
   CATALOG, PRODUCTS, ORDER, FAM, R_NAMES, R_TEXTS, FIT_STEPS
 } = window.AE_DATA;
 const {
-  P, saveP, state, persBag, persWish, getCustom, smartScore
+  P, saveP, state, getCustom, smartScore
 } = window.AE_STATE;
-const { wireImg, revealIO, setTheme, setMode, setMnav, scrollToFilters } = window.AE_UI;
+const {
+  wireImg, revealIO, setTheme, setMode, setMnav, scrollToFilters, renderFamChips
+} = window.AE_UI;
 const { openBag, openWish, toggleWish, openSheet } = window.AE_CART;
 const { hydrate } = window.AE_PDP;
 const { openCko } = window.AE_CKO;
@@ -1034,6 +1036,10 @@ bootSync();
 
 /* ═══ Phase 2 — network + images + metrics ═══ */
 (() => {
+  const safeSession = (k, v) => {
+    try { if (v === undefined) return sessionStorage.getItem(k); sessionStorage.setItem(k, v); }
+    catch (_) { return null; }
+  };
   const conn = navigator.connection || {};
   const saveData = !!conn.saveData || /(^|-)2g/.test(conn.effectiveType || '');
   let tier = html.classList.contains('p2-low') ? 'low' : html.classList.contains('p2-mid') ? 'mid' : 'high';
@@ -1230,10 +1236,6 @@ if ('serviceWorker' in navigator) {
     else { $$(SELECTOR).forEach(thaw); }
   });
 })();
-function safeSession(k, v) {
-  try { if (v === undefined) return sessionStorage.getItem(k); sessionStorage.setItem(k, v); }
-  catch (_) { return null; }
-}
 /* ═══ Bootstrap ═══ */
 handleRoute();
 apply();          /* ✅ شمارش و pills اولیه */
