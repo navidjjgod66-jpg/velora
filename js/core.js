@@ -126,6 +126,15 @@ const LS = {
       return JSON.parse(raw) ?? f;
     } catch { return memory.has(k) ? memory.get(k) : f; }
   },
+  /* مقدار خام رشته‌ای (براههٔ اسکریپت anti-FOUC در index.html با همین قالب ذخیره می‌کند) */
+  getRaw(k, f) {
+    try {
+      let v = localStorage.getItem(k);
+      if (v === null) return f;
+      if (v.charAt(0) === '"' || v.charAt(0) === '{') { try { v = JSON.parse(v); } catch (_) {} }
+      return v == null ? f : v;
+    } catch { return f; }
+  },
   set(k, v) {
     memory.set(k, v);
     try { localStorage.setItem(k, JSON.stringify(v)); return true; }

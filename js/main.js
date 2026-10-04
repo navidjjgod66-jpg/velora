@@ -625,6 +625,8 @@ function cmpRender() {
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-act]'); if (!t) return;
   const act = t.dataset.act;
+  /* لینک‌های واقعی با href — رفتار پیش‌فرض ناوبری حفظ شود (دکمه‌های بدون href استثنا هستند) */
+  if (t.tagName === 'A' && t.getAttribute('href') && !['home', 'idx'].includes(act)) return;
   switch (act) {
     case 'menu': setMnav(!body.classList.contains('mnav-on')); break;
     case 'home': {
@@ -756,12 +758,14 @@ $('#nlForm') && $('#nlForm').addEventListener('submit', e => {
 
 /* ═══ Boot sync ═══ */
 function bootSync() {
-  const curT = html.getAttribute('data-theme') || 'nuit';
-  const curS = html.getAttribute('data-scene') || 'night';
+  /* ترمیم ناهمگامی ذخیره‌سازی: اسکریپت in-head با localStorage.setItem خام
+     می‌نویسد و JSON.stringify دوبار کوئوت می‌کند؛ پس اینجا با getRaw بخوان. */
+  const curT = LS.getRaw(K.theme, null) || html.getAttribute('data-theme') || 'nuit';
+  const curS = LS.getRaw(K.scene, null) || html.getAttribute('data-scene') || 'night';
   $$('[data-theme-set]').forEach(b => b.classList.toggle('on', b.dataset.themeSet === curT));
   $$('[data-scene-set]').forEach(b => b.classList.toggle('on', b.dataset.sceneSet === curS));
   document.querySelector('meta[name=theme-color]')?.setAttribute('content', curT === 'ivoire' ? '#F6F2E8' : '#08090F');
-  const savedMode = LS.get(K.mode, 'boutique');
+  const savedMode = LS.getRaw(K.mode, 'boutique');
   if (savedMode === 'atelier') {
     html.setAttribute('data-mode', 'atelier');
     body.dataset.mode = 'atelier';

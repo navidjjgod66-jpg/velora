@@ -48,8 +48,11 @@ function openProfile(fromRoute) {
   profile._opener = document.activeElement;
   renderProfile();
   profile.showModal(); dlStop();
+  /* فقط وقتی از ناوبری هش باز می‌کنیم آدرس را به‌روزرسانی کنیم؛
+     در غیر این صورت history.replaceState باعث می‌شود hashchange
+     برای بستن دیالوگ (که به '#/' برمی‌گردد) هرگز شلیک نشود. */
   if (!fromRoute && !location.hash.startsWith('#/profile')) {
-    history.replaceState(null, '', '#/profile');
+    location.hash = '#/profile';
   }
 }
 $('#profX') && $('#profX').addEventListener('click', () => profile.close());
