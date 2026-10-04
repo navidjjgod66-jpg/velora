@@ -149,7 +149,9 @@ const K = {
   bag:'ae.bag.v5', wish:'ae.wish.v3', theme:'ae.theme.v2', mode:'ae.mode.v2',
   scene:'ae.scene.v2', ann:'ae.ann.v3', recent:'ae.recent.v3', exit:'ae.exit.v3',
   promo:'ae.promo.v3', custom:'ae.custom.v2', profile:'ae.profile.v2',
-  orders:'ae.orders.v2', urevs:'ae.urevs.v2', dna:'ae.dna.v2'
+  orders:'ae.orders.v2', urevs:'ae.urevs.v2', dna:'ae.dna.v2',
+  /* نشست سروری (PHP) — فقط نشانه‌ها، رمز در سرور می‌ماند */
+  session:'ae.session.v1', otpSess:'ae.otpsess.v1', payPend:'ae.paypend.v1'
 };
 
 /* ═══ Stars ═══ */
