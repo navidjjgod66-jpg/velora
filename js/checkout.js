@@ -230,15 +230,26 @@ ckoNext && ckoNext.addEventListener('click', () => {
 /* ═══ بازگشت از درگاه: #/checkout?status=success|failed&ref=…&open=1 ═══
    payment_verify.php پس از تأیید زرین‌پال کاربر را همین‌جا می‌آورد.
    این هندلر دیالوگ نتیجه را باز می‌کند، سبد را خالی می‌کند و رکورد
-   سفارش را در لیست محلی می‌گذارد تا با پنل «حساب من» هم‌خوان بماند. */
+   سفارش را در لیست محلی می‌گذارد تا با پنل «حساب من» هم‌خوان بماند.
+   اعتبار: فقط وقتی نشانهٔ in-flight (K.payPend) تازه باشد نتیجه پذیرفته
+   می‌شود — لینک bookmark شدهٔ قدیمی دیگر سفارش جعلی نمی‌سازد. */
 let payReturnSeen = false;
+const PAY_PEND_TTL = 30 * 60 * 1000;
 function ckoHandlePaymentReturn() {
   if (!api || payReturnSeen) return false;
   const ret = api.paymentReturn();
   if (!ret) return false;
   payReturnSeen = true;
-  LS.del(K.payPend);
-  const pend = (location.hash.match(/[?&]open=1/) !== null);
+  const pend = LS.get(K.payPend, null);
+  LS.del(K.payPend); /* یک‌بار مصرف — هرگز دوباره پردازش نشود */
+  const pendFresh = !!(pend && pend.at && (Date.now() - Number(pend.at)) < PAY_PEND_TTL);
+  const openDlg = (location.hash.match(/[?&]open=1/) !== null);
+  if (!pendFresh) {
+    /* بازگشت بدون درخواست in-flight → پیام هشدار، بدون تغییر سبد/سفارش */
+    toast('بازگشت مبهم از درگاه — سفارشی ثبت نشد.', 'err');
+    ckoClearHash();
+    return true;
+  }
   if (ret.status === 'success') {
     const ref = ret.ref || '';
     const orders = Array.isArray(LS.get(K.orders, [])) ? LS.get(K.orders, []) : [];
@@ -250,7 +261,7 @@ function ckoHandlePaymentReturn() {
     state.cart = []; persBag();
     window.dispatchEvent(new CustomEvent('ae:render-bag'));
     window.dispatchEvent(new CustomEvent('ae:apply'));
-    if (pend || ref) {
+    if (openDlg || ref) {
       $('#ckoRef').textContent = ref || '—';
       $('#ckoForm').style.display = 'none';
       $('.cko__sum', cko).style.display = 'none';

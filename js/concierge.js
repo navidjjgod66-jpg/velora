@@ -86,7 +86,7 @@ function concAsk(q) {
       const rec = PRODUCTS.filter(p => ['highheel','sandal'].includes(p.family)).sort((a, b) => b.rating - a.rating)[0];
       concMsg('bot', `برای مجالس: <div class="prod-mini" data-concp="${rec.id}"><span class="th">${shoeSVG(rec, 0)}</span><span><b class="ltr">${esc(rec.name)}</b><small>${moneyT(rec.price)}</small></span></div>`);
     } else if (t.includes('تخفیف') || t.includes('کد')) {
-      concMsg('bot', `کد: <b dir="ltr">${PROMO.code}</b> — ٪۱۰ تخفیف. ✦`);
+      concMsg('bot', `کد: <b dir="ltr">${esc(String(PROMO.code))}</b> — ${faNum(PROMO.pct)}٪ تخفیف. ✦`);
     } else {
       concMsg('bot', 'دربارهٔ <b>سایز</b>، <b>DNA سبک</b>، <b>هزینهٔ پوشش</b>، <b>ارسال</b>، <b>مراقبت</b> یا <b>پیشنهاد فرم</b> بپرسید.');
     }

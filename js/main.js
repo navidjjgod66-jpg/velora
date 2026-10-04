@@ -283,6 +283,21 @@ function openPDPByRoute(id) {
 }
 const nf = $('#nf');
 function openNf() { nf._opener = document.activeElement; nf.showModal(); dlStop(); }
+
+/* مسیرهای نیازمند تأیید سرور (admin) — با پرچم واقعی باز/بسته می‌شوند */
+let pendingAdminRoute = false;
+function resolveAdminRoute() {
+  if (!pendingAdminRoute) return;
+  pendingAdminRoute = false;
+  if (location.hash !== '#/admin') return;
+  if (window.AE_AUTH && AE_AUTH.isAdmin()) {
+    if (window.AE_ADMIN) AE_ADMIN.open(true);
+  } else {
+    toast('این بخش فقط برای مدیر است.', 'err');
+    setRouteSilent('#/');
+  }
+}
+window.addEventListener('ae:session-admin', resolveAdminRoute);
 $('#nfTop') && $('#nfTop').addEventListener('click', () => nf.close());
 nf && nf.addEventListener('close', () => {
   nf._opener && nf._opener.focus && nf._opener.focus({ preventScroll:true });
@@ -296,7 +311,14 @@ function handleRoute() {
   const pm = h.match(/^#\/pdp\/([a-z0-9-]+)/i);
   if (pm) { if (CATALOG[pm[1]]) openPDPByRoute(pm[1]); else openNf(); return; }
   if (h === '#/profile') { openProfile(true); return; }
-  if (h === '#/admin')   { if (window.AE_ADMIN) AE_ADMIN.open(true); return; }
+  if (h === '#/admin')   {
+    /* هرگز با پرچم محلی باز نکن؛ منتظر پاسخ واقعی سرور بمان */
+    if (window.AE_ADMIN && window.AE_AUTH && AE_AUTH.isAdmin()) { AE_ADMIN.open(true); return; }
+    pendingAdminRoute = true;
+    if (window.AE_AUTH) AE_AUTH.reloadSession();      /* loadSession → ae:session-admin → resolveAdminRoute */
+    else { toast('این بخش فقط برای مدیر است.', 'err'); setRouteSilent('#/'); }
+    return;
+  }
   if (h === '' || h === '#' || h === '#/') { const pdp = $('#pdp'); if (pdp.open) pdp.close(); return; }
   if (h.startsWith('#/')) { openNf(); return; }
   const pdp = $('#pdp'); if (pdp.open) pdp.close();

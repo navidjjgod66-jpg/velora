@@ -8,6 +8,11 @@
 const { PHI, PHI2, faNum, faPad, esc } = window.AE;
 
 /* ═══ Image URLs ═══ */
+/* فقط HTTPS و مسیرهای نسبی uploads/ (آپلود ادمین) — هر اسکیم دیگری رد می‌شود */
+const IMG = u => {
+  const s = String(u || '');
+  return (/^https:\/\//i.test(s) || /^(?:\.\/)?uploads\//i.test(s)) ? s : '';
+};
 const U = {
   a:'https://images.unsplash.com/photo-1543163521-1bf539c55dd6?auto=format&fit=crop&w=1200&q=82',
   b:'https://images.unsplash.com/photo-1579783483458-83d559840e52?auto=format&fit=crop&w=1200&q=82',
