@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0b12">
+<title>آفلاین — خانهٔ اُرِل</title>
+<style>
+  :root {
+    color-scheme: dark light;
+    --bg: #0a0b12;
+    --surface: #14161f;
+    --line: rgba(246,242,232,.14);
+    --text: #f4f1e8;
+    --text-3: #a9a49a;
+    --accent: #d4af37;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    min-height: 100dvh;
+    display: grid; place-items: center;
+    padding: 2rem max(1.5rem, env(safe-area-inset-left));
+    background: radial-gradient(120% 90% at 50% 18%, #171a26 0%, var(--bg) 62%);
+    color: var(--text);
+    font-family: Vazirmatn, system-ui, -apple-system, "Segoe UI", sans-serif;
+    text-align: center;
+    line-height: 2;
+  }
+  .box { max-width: 34rem; }
+  .seal {
+    width: 88px; height: 88px; margin: 0 auto 1.6rem;
+    display: grid; place-items: center;
+    border: 1px solid var(--accent);
+    border-radius: 50%;
+    color: var(--accent);
+    font-size: 2.2rem;
+    box-shadow: 0 0 32px rgba(212,175,55,.22);
+  }
+  h1 { font-size: clamp(1.5rem, 5vw, 2rem); margin-bottom: .8rem; }
+  p { color: var(--text-3); font-size: .95rem; }
+  .note {
+    margin-top: 1.6rem; padding: 1rem 1.2rem;
+    border: 1px solid var(--line); border-radius: 14px;
+    background: var(--surface);
+    font-size: .82rem; color: var(--text-3);
+  }
+  .phi {
+    margin-top: 1.8rem; font-size: .7rem;
+    letter-spacing: .12em; color: var(--accent);
+  }
+  a.retry {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 48px; margin-top: 1.6rem; padding: 0 1.9rem;
+    border-radius: 999px; border: 0; cursor: pointer;
+    background: linear-gradient(115deg,#f6e7ab,#d4af37,#8b6914);
+    color: #080604; font: inherit; font-weight: 800; font-size: .84rem;
+    text-decoration: none;
+  }
+  a.retry:active { transform: scale(.97); }
+</style>
+</head>
+<body>
+<main class="box">
+  <div class="seal" aria-hidden="true">اُ</div>
+  <h1>شما آفلاین هستید</h1>
+  <p>ارتباط با خانهٔ اُرِل قطع شده است. صفحه‌ای که می‌خوانید از حافظهٔ دستگاه بازیابی شده — سبد، علاقه‌مندی‌ها و سایز اختصاصی شما دست‌نخورده باقی مانده‌اند.</p>
+  <p class="note">با بازگشت شبکه، این صفحه به‌طور خودکار دوباره بارگذاری می‌شود.</p>
+  <a class="retry" href="./">تلاش دوباره</a>
+  <p class="phi">φ = ۱.۶۱۸۰۳۳۹۸۸۷۴۹۸۹ — خانهٔ اُرِل</p>
+</main>
+<script>
+  /* اگر شبکه برگشت، خودکار برگرد — بدون نیاز به لمس دکمه */
+  addEventListener('online', () => location.replace('./'), { once: true });
+</script>
+</body>
+</html>

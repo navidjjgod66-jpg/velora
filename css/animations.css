@@ -1,0 +1,214 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   MAISON AURELLE — animations.css
+   Keyframes · Reduced motion · High contrast · Print
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+@keyframes pop { 40% { transform: scale(1.5); } }
+@keyframes shimmer { to { transform: translateX(100%); } }
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-5px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes ciIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes chipSwap {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes msgIn { from { opacity: 0; transform: translateY(12px); } }
+@keyframes typ {
+  0%, 100% { opacity: 0.3; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-5px); }
+}
+@keyframes eyeLine { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes brandPulse {
+  0%, 100% { box-shadow: 0 0 14px var(--accent), 0 0 30px color-mix(in oklch, var(--accent) 40%, transparent); }
+  50% { box-shadow: 0 0 20px var(--accent), 0 0 44px color-mix(in oklch, var(--accent) 50%, transparent); }
+}
+@keyframes aur {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(4.1vw, -3.1vh, 0) scale(1.092); }
+  100% { transform: translate3d(-5.1vw, 3.1vh, 0) scale(0.958); }
+}
+@keyframes breathe {
+  from { transform: scale(0.94); opacity: 0.44; }
+  to { transform: scale(1.08); opacity: 0.68; }
+}
+@keyframes mote {
+  0% { transform: translateY(100vh) translateX(0) scale(0.6); opacity: 0; }
+  10% { opacity: 0.5; }
+  50% { transform: translateY(50vh) translateX(20px) scale(0.9); }
+  90% { opacity: 0.3; }
+  100% { transform: translateY(-10vh) translateX(-10px) scale(1); opacity: 0; }
+}
+@keyframes sealSpin { to { transform: rotate(360deg); } }
+@keyframes kb {
+  from { transform: scale(1) translate3d(0, 0, 0); }
+  to { transform: scale(1.07) translate3d(-1.4%, -1.8%, 0); }
+}
+@keyframes refract {
+  0%, 80% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+@keyframes shDrop {
+  0% { top: -55%; }
+  70%, 100% { top: 105%; }
+}
+@keyframes tick { to { transform: translateX(-50%); } }
+@keyframes tick-rtl { to { transform: translateX(50%); } }
+@keyframes mq { to { transform: translateX(-50%); } }
+@keyframes mq-rtl { to { transform: translateX(50%); } }
+@keyframes luxBreathe {
+  from { transform: scale(0.92); opacity: 0.38; }
+  to { transform: scale(1.06); opacity: 0.6; }
+}
+@keyframes luxSheen {
+  0%, 55% { transform: translateX(-130%); }
+  100% { transform: translateX(130%); }
+}
+@keyframes certShine {
+  0%, 60% { transform: translateX(-120%); }
+  100% { transform: translateX(120%); }
+}
+@keyframes fabPulse {
+  0% { opacity: 0.8; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.7); }
+}
+@keyframes sparkFly {
+  from { opacity: 0.95; transform: translate(-50%, -50%) scale(1); }
+  to { opacity: 0; transform: translate(calc(-50% + var(--sx)), calc(-50% + var(--sy))) scale(0.2); }
+}
+@keyframes lbxIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes confirmIn { to { opacity: 1; transform: none; } }
+@keyframes luxBurst {
+  from { opacity: 1; transform: translate(-50%, -50%) scale(0.4); }
+  to { opacity: 0; transform: translate(-50%, -140%) scale(1.6) rotate(45deg); }
+}
+@keyframes ripple { to { transform: scale(4); opacity: 0; } }
+
+/* ─── Pause infinite animations offscreen ─── */
+.anim-paused, .anim-paused * { animation-play-state: paused !important; }
+html.scrolling .aurora i,
+html.scrolling .grain,
+html.scrolling .motes i { animation-play-state: paused; }
+html.scrolling .seal { animation-play-state: paused; }
+html.scrolling .mirror__img,
+html.scrolling .mirror__glow,
+html.scrolling .mirror__ring { animation-play-state: paused; }
+
+/* ─── Reduced motion ─── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .rv { opacity: 1; transform: none; }
+  .aurora, #dust, .grain, .mirror__refract, .cursor, .cursor-dot,
+  .chat-fab__pulse, .hero::after, .annonce::after, .gold-foil::after,
+  .motes { display: none !important; animation: none !important; }
+  .hero::after { opacity: 0.3; transform: none; display: block; }
+  .confirm-pill { animation: none; opacity: 1; transform: none; }
+  html { scroll-behavior: auto; }
+}
+
+/* ─── Reduced data ─── */
+@media (prefers-reduced-data: reduce) {
+  #dust, .motes, .grain, .aurora, .mirror__refract { display: none !important; }
+  .aurora i, .grain { animation: none !important; }
+  .hero::after, .annonce::after { animation: none !important; }
+}
+
+/* ─── Reduced transparency ─── */
+@media (prefers-reduced-transparency: reduce) {
+  .hdr, .dock, .chat-fab, .annonce, .form, .cpw-calc, .pdp__bar,
+  dialog, .conc, .cmp-bar, .count .c-cell { backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .hdr { background: var(--bg); }
+}
+
+/* ─── High contrast ─── */
+@media (prefers-contrast: more) {
+  :root, [data-theme] {
+    --line-1: oklch(1 0 0 / 0.2);
+    --line-2: oklch(1 0 0 / 0.3);
+    --line-3: oklch(1 0 0 / 0.5);
+    --border: color-mix(in oklch, var(--text) 22%, transparent);
+    --border-2: color-mix(in oklch, var(--text) 34%, transparent);
+    --border-3: color-mix(in oklch, var(--text) 52%, transparent);
+    --gold-line: color-mix(in oklch, var(--accent) 60%, transparent);
+  }
+  :focus-visible { outline-width: 3px; }
+  .gold-foil, .plat-foil { filter: none; text-shadow: none; }
+}
+
+/* ─── Forced colors ─── */
+@media (forced-colors: active) {
+  .gold-foil, .plat-foil, .brand-text, .stat-v, .bag__row-v,
+  .cpw-result .v, .rec-stats b, .kpi .v, .ring-center b, .lg-c .v em {
+    background: none; -webkit-text-fill-color: currentColor; color: CanvasText;
+  }
+  .aurora, .grain, .vig, .motes, .cursor, .cursor-dot, #dust { display: none; }
+  body, button, input, select, textarea { cursor: auto; }
+  :focus-visible { outline-color: Highlight; }
+}
+
+/* ─── Print ─── */
+@media print {
+  @page { margin: 14mm; }
+  .hdr, .ticker, .ticker-bar, .chat-fab, .conc, .aurora, .grain, .vig,
+  .motes, #pl, .prog-wrap, .dock, .cmp-bar, .fit-wiz, .cmp-dialog,
+  .bag, .wishd, .cko, .sg, .mz, .profile, .contact-sheet, .exit, .nf,
+  .sheet, .cmdk, .lbx, .rail, #dust, #toTop, .annonce, .lux-spark, .hero::after { display: none !important; }
+  body { background: white; color: black; cursor: auto; }
+  .rv { opacity: 1; transform: none; }
+  .gold-foil, .plat-foil, .brand-text, .stat-v, .bag__row-v,
+  .cpw-result .v, .hero h1 em { background: none; -webkit-text-fill-color: currentColor; color: #111; }
+  a { text-decoration: underline; }
+  h1, h2, h3 { break-after: avoid; }
+  dialog.passport { box-shadow: none; border: 1px solid #b98; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  html.printing-passport body > *:not(#passport) { display: none !important; }
+  html.printing-passport dialog.passport { display: block; position: static; }
+  .pp__holo { display: none; }
+  .btn { border: 1px solid #333; }
+}
+
+/* ─── View Transitions ─── */
+::view-transition-old(root) { animation: 220ms both vtFadeOut; }
+::view-transition-new(root) { animation: 320ms 60ms both vtFadeIn; }
+@keyframes vtFadeOut { to { opacity: 0; } }
+@keyframes vtFadeIn { from { opacity: 0; } }
+::view-transition-group(vt-product) { animation-duration: 420ms; animation-timing-function: cubic-bezier(.32, .72, .28, 1); }
+::view-transition-old(vt-product), ::view-transition-new(vt-product) { animation-duration: 260ms; height: 100%; object-fit: cover; }
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
+}
+
+/* ─── Scroll-driven (progressive) ─── */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .mat-row, .trust__i, .bench__c, .c-meta-item {
+      animation: fadeUp linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 55%;
+    }
+  }
+}
+
+/* ─── Focus ring (universal) ─── */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }

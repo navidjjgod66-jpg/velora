@@ -1,0 +1,32 @@
+{
+  "name": "خانهٔ اُرِل — نسخهٔ ابدی",
+  "short_name": "اُرِل",
+  "description": "کفش دست‌ساز زنانه — تیراژ ۲۰۰ جفت در هر فصل. چرم توسکانی، ابریشم کومو، طلای شامپاینی ۱۸ عیار، زیره‌دوزی مادام‌العمر.",
+  "lang": "fa",
+  "dir": "rtl",
+  "start_url": "./index.html",
+  "scope": "./",
+  "id": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0a0b12",
+  "theme_color": "#0a0b12",
+  "categories": ["shopping", "lifestyle"],
+  "icons": [
+  { "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+  { "src": "assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+  { "src": "assets/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+],
+"shortcuts": [
+  {
+    "name": "فروشگاه",
+    "url": "./index.html#/pdp/termeh",
+    "icons": [{ "src": "assets/icons/icon-192.png", "sizes": "192x192" }]
+  },
+  {
+    "name": "راهنمای سایز",
+    "url": "./index.html#boutique",
+    "icons": [{ "src": "assets/icons/icon-192.png", "sizes": "192x192" }]
+  }
+]
+}
