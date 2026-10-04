@@ -43,6 +43,8 @@ function ae_config(): array
         'concierge_email' => '', 'email_from' => '',
         'otp_ttl_seconds' => 180, 'otp_resend_after' => 60, 'otp_max_attempts' => 5,
         'otp_rate_window' => 3600, 'otp_rate_max' => 6,
+        /* سقف هزینهٔ SMS: محدودیت هر IP (دور زدن با چرخش شماره) + سقف سراسری روزانه */
+        'otp_ip_window' => 3600, 'otp_ip_max' => 12, 'otp_daily_total' => 300,
         'data_dir' => $root . '/api/data',
 
         /* ─── پنل مدیریت (admin) ────────────────────────────────────────────
@@ -157,7 +159,12 @@ function ae_uid(): string
 {
     $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');
     $ua = (string) ($_SERVER['HTTP_USER_AGENT'] ?? '');
-    return substr(hash('sha256', $ip . '|' . $ua), 0, 32);
+    /* salt از کلید سرویس: سطل‌ها قابل پیش‌بینی/رشته‌بازی نمی‌مانند؛
+       اگر کلید نبود از مسیر داده به‌عنوان آنتروپی بومی استفاده می‌شود. */
+    $cfg = ae_config();
+    $salt = (string) ($cfg['otp']['service_key'] ?? '');
+    if ($salt === '') $salt = (string) ($cfg['data_dir'] ?? 'aurelle');
+    return substr(hash('sha256', $salt . '|' . $ip . '|' . $ua), 0, 32);
 }
 
 /* ─── قفل فایل (نوشتن امن روی هاست اشتراکی) ─────────────────────────────── */
@@ -284,6 +291,40 @@ function ae_log(string $line): void
    POST https://console.melipayamak.com/api/send/otp/<service_key>
    body: {"to":"09123456789"}   →   response: {"code":"...","status":"..."}
    رمز توسط سرویس ساخته می‌شود؛ ما آن را به‌صورت hash در سرور نگه می‌داریم. */
+/**
+ * دو گارد هزینه‌ای SMS قبل از هر تماس با سرویس پولی:
+ *  1) سقف هر IP در ساعت — جلوی SMS-pumping با چرخش شماره‌ها؛
+ *  2) سقف سراسری روزانه — حتی اگر همه گاردها دور زده شوند، خرج کنترل می‌ماند.
+ * فقط وقتی واقعاً درخواست ارسال ثبت شود شمارنده بالا می‌رود.
+ */
+function ae_sms_cap(): ?array
+{
+    $cfg = ae_config();
+    $ipMax   = (int) ($cfg['otp_ip_max'] ?? 12);
+    $ipWin   = (int) ($cfg['otp_ip_window'] ?? 3600);
+    $dayMax  = (int) ($cfg['otp_daily_total'] ?? 300);
+
+    if ($ipMax > 0 && !ae_throttle('sms-ip', $ipMax, $ipWin)) {
+        return ['ok' => false, 'error' => 'rate_limited', 'retry_in' => $ipWin,
+                'message' => 'از این اتصال، درخواست پیامک بیش از حد مجاز شده است — کمی دیگر تلاش کنید.'];
+    }
+
+    if ($dayMax > 0) {
+        $file = ae_data_dir('msgs') . '/sms-daily.json';
+        $fp = ae_lock('sms-daily');
+        $st = ae_read_json($file) ?: ['d' => date('Ymd'), 'n' => 0];
+        if ((string) ($st['d'] ?? '') !== date('Ymd')) $st = ['d' => date('Ymd'), 'n' => 0];
+        if ((int) $st['n'] >= $dayMax) { ae_unlock($fp);
+            return ['ok' => false, 'error' => 'daily_cap', 'retry_in' => 3600,
+                    'message' => 'سقف روزانهٔ پیامک پر شده است — لطفاً بعداً تلاش کنید یا با واتساپ خانه تماس بگیرید.'];
+        }
+        $st['n']++;
+        ae_write_json($file, $st);
+        ae_unlock($fp);
+    }
+    return null; /* آزاد */
+}
+
 function ae_meli_send_otp(string $to): array
 {
     $cfg = ae_config();
@@ -361,6 +402,14 @@ function ae_otp_issue(string $mobile): array
         ae_unlock($fp);
         return ['ok' => false, 'error' => 'rate_limited',
                 'message' => 'تعداد درخواست‌ها بیش از حد مجاز است — بعداً دوباره تلاش کنید.'];
+    }
+
+    /* حالت آزمایشی (dev_otp + کلید TEST): بدون تماس با سرویس پولی،
+       پس گارد هزینه لازم نیست. */
+    if (!(ae_config()['dev_otp'] ?? false) || trim((string) (ae_config()['otp']['service_key'] ?? '')) === 'TEST') {
+        /* گارد هزینه‌ای: سقف IP + سقف روزانهٔ سراسری — قبل از هر خرج واقعی */
+        $cap = ae_sms_cap();
+        if ($cap !== null) { ae_unlock($fp); return $cap; }
     }
 
     $sent = ae_meli_send_otp($mobile);
@@ -733,7 +782,16 @@ function ae_store_file(string $name): string
 /** خواندن انباره با قفل — همیشه ساختار سالم برمی‌گرداند. */
 function ae_store_read(string $name, array $shape): array
 {
-    $j = ae_read_json(ae_store_file($name));
+    /* مویز درون‌درخواستی: هر فایل انباره تا پایان همین request فقط یک بار از
+       دیسک خوانده می‌شود؛ ae_store_write آن را بی‌اعتبار می‌کند. روی هاست
+       اشتراکی IO تکراری catalog/settings را حذف می‌کند. */
+    if (isset($GLOBALS['ae_store_memo'][$name])) {
+        $j = $GLOBALS['ae_store_memo'][$name];
+    } else {
+        $raw = ae_read_json(ae_store_file($name));
+        $j = is_array($raw) ? $raw : [];
+        $GLOBALS['ae_store_memo'][$name] = $j;
+    }
     if (!is_array($j)) $j = [];
     foreach ($shape as $k => $default) {
         if (is_array($default) && (!isset($j[$k]) || !is_array($j[$k]))) $j[$k] = $default;
@@ -746,6 +804,8 @@ function ae_store_read(string $name, array $shape): array
 
 function ae_store_write(string $name, array $data): bool
 {
+    /* بی‌اعتبارسازی مویز ae_store_read در همین request */
+    unset($GLOBALS['ae_store_memo'][$name]);
     $fp = ae_lock('store-' . $name);
     $data['v']       = 1;
     $data['updated'] = time();

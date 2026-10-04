@@ -57,7 +57,10 @@ foreach ($items as $id => $p) {
 $order = array_values(array_filter((array) $store['order'], static fn($id) => isset($vis[(string) $id])));
 $etag  = '"' . substr(hash('sha256', (string) $store['updated'] . '|' . count($vis) . '|' . $promo['promo_code']), 0, 24) . '"';
 header('ETag: ' . $etag);
-header('Cache-Control: no-cache, must-revalidate');
+/* ETag/If-None-Match مرجع تازگی است؛ این هدر فقط CPU هاست اشتراکی را برای
+   بازدیدهای مکرر کوتاه کم می‌کند و stale-while-revalidate اجازهٔ سرو سریع
+   نسخهٔ کش‌شده تا ۱۰ دقیقه را می‌دهد در حالی که نسخهٔ تازه گرفته می‌شود. */
+header('Cache-Control: public, max-age=60, stale-while-revalidate=600, must-revalidate');
 
 if (trim((string) ($_SERVER['HTTP_IF_NONE_MATCH'] ?? '')) === $etag) {
     http_response_code(304);
