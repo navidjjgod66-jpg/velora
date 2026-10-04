@@ -58,8 +58,19 @@ const faPad  = (n, l = 2) => String(n).padStart(l, '0').replace(/\d/g, d => FA[d
 const moneyT = n => faNum(Math.round(n)) + ' تومان';
 const esc    = s => String(s).replace(/[&<>"'`]/g, c =>
   ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;', '`':'&#96;' }[c]));
-const eta    = () => new Intl.DateTimeFormat('fa-IR', { weekday:'long', month:'long', day:'numeric' })
-                     .format(new Date(Date.now() + 3 * 864e5));
+/* ═══ Persian date formatters (single source, memoized instances) ═══ */
+const FDATE = {
+  long:   new Intl.DateTimeFormat('fa-IR', { dateStyle:'long' }),
+  medium: new Intl.DateTimeFormat('fa-IR', { dateStyle:'medium', timeStyle:'short' }),
+  eta:    new Intl.DateTimeFormat('fa-IR', { weekday:'long', month:'long', day:'numeric' })
+};
+const fdate = (v, style = 'long') => {
+  const d = v instanceof Date ? v : new Date(typeof v === 'number' ? v * 1000 : v);
+  if (isNaN(d)) return '';
+  try { return FDATE[style] ? FDATE[style].format(d) : FDATE.long.format(d); }
+  catch (_) { return ''; }
+};
+const eta = () => FDATE.eta.format(new Date(Date.now() + 3 * 864e5));
 const buzz   = p => { try { if (navigator.vibrate) navigator.vibrate(p); } catch(_){} };
 const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
 
@@ -263,6 +274,19 @@ function overlayHide(host) {
   back && back.focus && back.focus({ preventScroll:true });
 }
 
+/* ═══ Shared dialog lifecycle (native <dialog>) — opener focus restore + lenis pause ═══ */
+const dialogCloseH = d => {
+  d._opener && d._opener.focus && d._opener.focus({ preventScroll:true });
+  d._opener = null; dlStart();
+};
+const wireDialog = d => {
+  if (!d || d.dataset.aeDlg) return d;
+  d.dataset.aeDlg = '1';
+  backdropClose(d);
+  d.addEventListener('close', () => dialogCloseH(d));
+  return d;
+};
+
 /* ═══ Lenis motion (boot deferred) ═══ */
 let lenis = null;
 const useLenis = !reduced && !coarse;
@@ -431,10 +455,10 @@ window.AE = {
   clamp, lerp, PHI, PHI2, wait, reduced, fine, coarse, FA,
   TIER, lowTier,
   RAF, TIMERS, LS, K,
-  faNum, faPad, moneyT, esc, eta, buzz, debounce,
+  faNum, faPad, moneyT, esc, eta, fdate, buzz, debounce,
   memoize,
   STAR, starsHTML,
-  backdropClose, withLoad,
+  backdropClose, withLoad, wireDialog, dialogCloseH,
   HAPTIC, haptic, toast,
   trapFocus, overlayShow, overlayHide, overlayOpen, FOCUSABLE,
   lenis: () => lenis, dlStop, dlStart, scrollToEl
