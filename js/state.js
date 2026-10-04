@@ -4,7 +4,7 @@
    ═══════════════════════════════════════════════════════════════════════ */
 (() => {
 'use strict';
-const { LS, K, clamp, PHI, PHI2 } = window.AE;
+const { LS, K, clamp } = window.AE;
 const { CATALOG, ORDER, PRODUCTS, PROMO, MAX_PER_LINE } = window.AE_DATA;
 
 /* ═══ Personal profile (fit data) ═══ */
@@ -23,8 +23,7 @@ const state = {
   fam:'all', sort:'featured', q:'', priceMax:30000000,
   size:null, color:null, colorHex:'', pdpId:null, lastFocus:null,
   promo:  PROMO.valid(savedPromo) ? savedPromo : null,
-  cmp:    [],
-  recent: []
+  cmp:    []
 };
 if (!PROMO.valid(state.promo)) { state.promo = null; LS.set(K.promo, null); }
 

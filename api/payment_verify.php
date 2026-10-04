@@ -54,10 +54,10 @@ $finish = static function (string $html) use ($page): void {
 };
 
 if ($status !== 'ok' || $refId === '') {
-    $tx['status'] = 'canceled';
-    ae_tx_save($tx);
     $msg = 'کاربر پرداخت را در درگاه تکمیل نکرد.';
     $href = $back(['status' => 'failed', 'message' => $msg, 'open' => 1]);
+    /* یک ذخیرهٔ اتمیک (status + redirect) — به‌جای دو IO قفل‌دار */
+    $tx['status'] = 'canceled';
     $tx['redirect'] = $href; ae_tx_save($tx);
     $finish('<div class="seal">اُ</div><h2>پرداخت انجام نشد</h2><p>' . htmlspecialchars($msg, ENT_QUOTES, 'UTF-8')
           . '</p><p><a href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '">بازگشت به خانه</a></p>');
@@ -65,9 +65,9 @@ if ($status !== 'ok' || $refId === '') {
 
 $verify = ae_zarinpal_verify($authority, $refId, (int) $tx['amount_rial']);
 if (!$verify['ok']) {
-    $tx['status'] = 'failed';
-    ae_tx_save($tx);
     $href = $back(['status' => 'failed', 'message' => $verify['message'], 'open' => 1]);
+    /* یک ذخیرهٔ اتمیک (status + redirect) */
+    $tx['status'] = 'failed';
     $tx['redirect'] = $href; ae_tx_save($tx);
     $finish('<div class="seal">اُ</div><h2>تراکنش تأیید نشد</h2><p>'
           . htmlspecialchars($verify['message'], ENT_QUOTES, 'UTF-8')
@@ -117,7 +117,6 @@ ae_mail('سفارش ' . $order['ref'] . ' — پرداخت تأیید شد', imp
 $tx['status']  = 'paid';
 $tx['ref_id']  = $refId;
 $tx['verified'] = time();
-ae_tx_save($tx);
 
 ae_session_start();
 $_SESSION['ae_last_ref'] = $order['ref'];
@@ -126,7 +125,7 @@ $_SESSION['ae_last_ref'] = $order['ref'];
    (وگرنه کاربر فقط هوم‌پیج می‌بیند و فکر می‌کند پرداخت گم شده است). */
 $href = $back(['status' => 'success', 'ref' => $order['ref'], 'amount' => $order['total'], 'open' => 1]);
 $tx['redirect'] = $href;
-ae_tx_save($tx);
+ae_tx_save($tx);            /* یک ذخیرهٔ اتمیک به‌جای دو IO قفل‌دار */
 
 /* پرش نرم به سایت (با تگ noscript هم کار می‌کند) */
 echo $page . '<div class="seal">اُ</div><h2>سفارش ثبت شد</h2><p>شمارهٔ پیگیری: <b>'

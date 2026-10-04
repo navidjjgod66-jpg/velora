@@ -39,6 +39,10 @@ if ($action === 'list') {
 }
 
 if ($action === 'create') {
+    /* ضداسپم: هر IP حداکثر ۸ رزرو در ساعت — از پر شدن orders.json و ایمیل‌اسپم جلوگیری می‌کند */
+    if (!ae_throttle('reserve', 8, 3600)) {
+        ae_err('تعداد سفارش‌های شما زیاد شده است — کمی دیگر تلاش کنید.', 'rate_limited', 429, ['retry_in' => 3600]);
+    }
     $items  = ae_normalize_items($in['items'] ?? null);
     if (!$items) ae_err('سبد خرید خالی است.', 'empty_cart', 422);
     $priced = ae_price_cart($items, isset($in['promo']) ? ae_clean($in['promo'], 32) : null);

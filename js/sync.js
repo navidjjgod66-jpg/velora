@@ -29,7 +29,7 @@ const cleanUrl = u => {
 };
 const cleanNum = (v, dflt) => { const n = Number(v); return Number.isFinite(n) ? n : (dflt || 0); };
 
-/** داده‌های lایهٔ مدیریت را پیش از نشستن روی AE_DATA گندزنی می‌کند. */
+/** داده‌های لایهٔ مدیریت را پیش از نشستن روی AE_DATA گندزنی می‌کند. */
 function sanitizeItem(rec) {
   if (!rec || typeof rec !== 'object') return {};
   const out = {};

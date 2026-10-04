@@ -29,12 +29,18 @@ const { renderAtelier } = window.AE_ATELIER;
 
 /* ═══ Product grid ═══ */
 const grid = $('#grid');
-const cardHTML = (p, i) => `<article class="prod rv${i%3===1?' rv-d1':i%3===2?' rv-d2':''}" data-id="${p.id}" role="listitem">
+/* نگاشت O(1) شناسه→شمارهٔ فرم — از PRODUCTS.indexOf داخل map (O(n²)) جلوگیری می‌کند */
+let FORM_NO = null;
+const formNo = id => {
+  if (!FORM_NO) FORM_NO = new Map(PRODUCTS.map((p, i) => [p.id, i + 1]));
+  return FORM_NO.get(id) || 0;
+};
+const cardHTML = p => `<article class="prod rv" data-id="${p.id}" role="listitem">
 <a class="prod-media skl" href="#/pdp/${p.id}" data-open-pdp aria-label="مشاهدهٔ جزئیات — ${esc(p.name)}">
 <img src="${p.img}" alt="${esc(p.name)} — ${esc(p.sub)}" loading="lazy" decoding="async" width="640" height="800">
 ${p.badge ? `<span class="pl-badge${p.badge==='جدید'||p.badge==='رونمایی هفته'?' hot':''}">${esc(p.badge)}</span>` : ''}
 ${p.stock <= 3 ? `<span class="pl-badge low">فقط ${faNum(p.stock)} مانده</span>` : ''}
-<span class="pl-num">فرم ${faPad(PRODUCTS.indexOf(p)+1)}</span>
+<span class="pl-num">فرم ${faPad(formNo(p.id))}</span>
 <span class="prod-line" aria-hidden="true"></span></a>
 <button class="wish" type="button" aria-label="ذخیرهٔ ${esc(p.name)}" aria-pressed="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 21s-7.5-4.7-10-9.3C.4 8.6 2.4 5 6 5c2.2 0 3.6 1.2 4.4 2.6h1.2C12.4 6.2 13.8 5 16 5c3.6 0 5.6 3.6 4 6.7C19.5 16.3 12 21 12 21z"/></svg></button>
 <button class="cmp-toggle" type="button" data-act="cmp-add" data-id="${p.id}" aria-label="افزودن ${esc(p.name)} به مقایسه" aria-pressed="false"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="16" rx="1"/><rect x="13" y="4" width="7" height="16" rx="1"/></svg></button>
@@ -48,7 +54,10 @@ ${p.stock <= 3 ? `<span class="pl-badge low">فقط ${faNum(p.stock)} مانده
 <button class="quick" type="button" data-quick data-cursor="سایز"><span class="quick-t">انتخاب سایز</span></button>
 </div></article>`;
 function renderGrid() {
-  if (grid) grid.innerHTML = PRODUCTS.map(cardHTML).join('');
+  if (!grid) return;
+  FORM_NO = null;                       /* کاتالوگ عوض شده — نگاشت شماره بازسازی شود */
+  grid.innerHTML = PRODUCTS.map(cardHTML).join('');
+  $$('.rv', grid).forEach((el, i) => { if (i % 3 === 1) el.classList.add('rv-d1'); else if (i % 3 === 2) el.classList.add('rv-d2'); });
 }
 renderGrid();
 
@@ -80,11 +89,6 @@ renderGrid();
 const wireCards = root => {
   $$('img', root).forEach(wireImg);
   $$('.rv', root).forEach(el => revealIO.observe(el));
-  $$('.wish', root).forEach(w => w.addEventListener('click', e => {
-    e.preventDefault(); e.stopPropagation();
-    toggleWish(w.closest('.prod').dataset.id);
-  }));
-  $$('[data-quick]', root).forEach(b => b.addEventListener('click', () => openSheet(b.closest('.prod').dataset.id)));
   if (fine) $$('.prod-media', root).forEach(m => {
     m.addEventListener('pointermove', e => {
       const r = m.getBoundingClientRect();
@@ -93,23 +97,41 @@ const wireCards = root => {
     }, { passive:true });
   });
 };
-if (grid) wireCards(grid);
+/* delegation یک‌بار برای کل grid — به‌جای bind مجدد هزاران listener در هر sync */
+if (grid) {
+  wireCards(grid);
+  grid.addEventListener('click', e => {
+    const w = e.target.closest('.wish');
+    if (w && grid.contains(w)) { e.preventDefault(); e.stopPropagation(); toggleWish(w.closest('.prod').dataset.id); return; }
+    const q = e.target.closest('[data-quick]');
+    if (q && grid.contains(q)) openSheet(q.closest('.prod').dataset.id);
+  });
+}
 
-/* لایهٔ مدیریت روی ویترین نشست — شبکه و شمارنده‌ها باید دوباره ساخته شوند */
+/* لایهٔ مدیریت روی ویترین نشست — شبکه، شمارنده‌ها، بج علاقه‌مندی و recent باید تازه شوند */
 addEventListener('ae:catalog-sync', () => {
   renderGrid();
   if (grid) wireCards(grid);
   window.AE_UI.renderFamChips && window.AE_UI.renderFamChips();
   apply();
+  renderRecent();
+  window.dispatchEvent(new CustomEvent('ae:render-wish'));   /* paintWish + drawer در cart.js */
 });
 
 /* ═══ Apply filters ═══ */
+let RANK = null;                        /* نگاشت O(1) شناسه→رتبهٔ ORDER — comparator بدون indexOf */
+const rankOf = id => {
+  if (!RANK) RANK = new Map(ORDER.map((id, i) => [id, i]));
+  return RANK.has(id) ? RANK.get(id) : 1e9;
+};
 function apply() {
   if (!grid) return;
+  RANK = null;                          /* ORDER ممکن است با sync عوض شده باشد */
   const cards = $$('.prod', grid), q = state.q.trim().toLowerCase();
+  const wishSet = state.fam === 'wish' ? new Set(state.wish) : null;   /* includes روی آرایه → O(1) روی Set */
   cards.forEach(el => {
     const p = CATALOG[el.dataset.id]; if (!p) return;
-    const famOK = state.fam === 'all' ? true : state.fam === 'wish' ? state.wish.includes(p.id) : p.family === state.fam;
+    const famOK = state.fam === 'all' ? true : wishSet ? wishSet.has(p.id) : p.family === state.fam;
     const qOK = !q || (p.name + ' ' + p.sub + ' ' + p.cat).toLowerCase().includes(q);
     const priceOK = p.price <= state.priceMax;
     el.hidden = !(famOK && qOK && priceOK);
@@ -123,9 +145,9 @@ function apply() {
     if (state.sort === 'rating') return pb.rating - pa.rating || pb.reviews - pa.reviews;
     if (state.sort === 'heel')   return pa.heel - pb.heel;
     if (state.sort === 'smart')  return smartScore(pb) - smartScore(pa);
-    return ORDER.indexOf(pa.id) - ORDER.indexOf(pb.id);
+    return rankOf(pa.id) - rankOf(pb.id);
   });
-  vis.forEach(el => grid.appendChild(el));
+  grid.replaceChildren(...vis);         /* یک جابه‌جایی بچی به‌جای appendChild تک‌تک (reflow one-pass) */
   const vc = $('#vCount'); if (vc) vc.textContent = `${faNum(vis.length)} فرم`;
   renderPills();
 }
@@ -757,7 +779,7 @@ addEventListener('keydown', e => {
   }
   if (e.key === 'Escape') {
     if (body.classList.contains('mnav-on')) setMnav(false);
-    const themeMenu = $('#themeMenu'); themeMenu.classList.remove('on');
+    $('#themeMenu')?.classList.remove('on');   /* null-safe: کرش Escape handler نشود */
     const cmpD = $('#cmpDialog');
     if (cmpD && cmpD.classList.contains('on')) { cmpClose(); return; }
     const fitWiz = $('#fitWiz');

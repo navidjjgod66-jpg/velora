@@ -404,10 +404,11 @@ function ae_otp_issue(string $mobile): array
                 'message' => 'تعداد درخواست‌ها بیش از حد مجاز است — بعداً دوباره تلاش کنید.'];
     }
 
-    /* حالت آزمایشی (dev_otp + کلید TEST): بدون تماس با سرویس پولی،
-       پس گارد هزینه لازم نیست. */
-    if (!(ae_config()['dev_otp'] ?? false) || trim((string) (ae_config()['otp']['service_key'] ?? '')) === 'TEST') {
-        /* گارد هزینه‌ای: سقف IP + سقف روزانهٔ سراسری — قبل از هر خرج واقعی */
+    /* گارد هزینه‌ای: فقط وقتی تماس واقعاً پولی است (dev_otp=false یا کلید غیر TEST).
+       در حالت dev_otp+TEST هیچ خرجی رخ نمی‌دهد و شمارنده نباید بالا برود. */
+    $devTest = !empty(ae_config()['dev_otp'])
+               && trim((string) (ae_config()['otp']['service_key'] ?? '')) === 'TEST';
+    if (!$devTest) {
         $cap = ae_sms_cap();
         if ($cap !== null) { ae_unlock($fp); return $cap; }
     }
