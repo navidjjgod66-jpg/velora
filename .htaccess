@@ -1,0 +1,20 @@
+# MAISON AURELLE — ریشهٔ هاست
+Options -Indexes
+AddDefaultCharset UTF-8
+
+<IfModule mod_mime.c>
+  AddType application/manifest+json .webmanifest
+</IfModule>
+
+# PHP: خطاها روی هاست اشتراکی در لاگ بمانند نه در صفحه
+<IfModule mod_php.c>
+  php_flag  display_errors off
+  php_value log_errors on
+</IfModule>
+
+# کش کوتاه برای فایل‌های استاتیک
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/css "access plus 7 days"
+  ExpiresByType application/javascript "access plus 7 days"
+</IfModule>
