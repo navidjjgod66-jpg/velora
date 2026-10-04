@@ -5,21 +5,39 @@
 (() => {
 'use strict';
 const {
-  $, $$, html, body, clamp, reduced, fine, RAF, TIMERS, LS, K,
-  faNum, faPad, moneyT, esc, toast, haptic, dlStop, dlStart, backdropClose
+  $, $$, body, reduced, LS, K, fdate,
+  faNum, faPad, moneyT, esc, toast, haptic, dlStop, wireDialog
 } = window.AE;
-const { CATALOG, SIZES, CONV } = window.AE_DATA;
+const { CATALOG, SIZES, CONV, MAX_ORDERS } = window.AE_DATA;
 const {
   state, persBag, persWish, capFor,
   itemsSum, discount, cartSum
 } = window.AE_STATE;
+
+/* ═══ Order record + checkout completion (single source of truth) ═══ */
+function recordOrder(rec) {
+  const orders = Array.isArray(LS.get(K.orders, [])) ? LS.get(K.orders, []) : [];
+  if (!orders.some(o => o.ref === rec.ref)) {
+    orders.unshift(rec);
+    LS.set(K.orders, orders.slice(0, MAX_ORDERS));
+  }
+}
+/* ترتیب ثابت و ایمن: خالی‌کردن state → persist → رندر → آپدیت بج.
+   هر دو مسیر موفق checkout (محلی و بازگشت از درگاه) از همین‌جا عبور می‌کنند. */
+function completeCheckout() {
+  state.cart = [];
+  persBag();
+  renderBag();
+  paintInBag();
+  window.dispatchEvent(new CustomEvent('ae:apply'));
+}
 
 /* ═══ Bag ═══ */
 const bag = $('#bag'), bagItems = $('#bagItems'), bagEmpty = $('#bagEmpty');
 const bagN = $('#cartN'), dockN = $('#dockN'), bagCountD = $('#bagCountD'), bagLive = $('#bagLive');
 const subTotal = $('#subTotal'), vatLine = $('#vatLine');
 const etaLine = $('#etaLine');
-if (etaLine) etaLine.textContent = `تحویل تقریبی ${window.AE.eta()} · اکسپرس رایگان`;
+if (etaLine) etaLine.textContent = `تحویل تقریبی ${fdate(Date.now() + 3 * 864e5)} · اکسپرس رایگان`;
 
 function renderBag() {
   if (!bag) return;
@@ -131,19 +149,13 @@ bagItems && bagItems.addEventListener('click', e => {
   }
 });
 
-let bagFocus = null;
 function openBag() {
-  bagFocus = document.activeElement;
+  bag._opener = document.activeElement;
   renderBag();
   bag.showModal();
   dlStop();
 }
-$('#bagClose') && $('#bagClose').addEventListener('click', () => bag.close());
-$('#emptyShop') && $('#emptyShop').addEventListener('click', () => bag.close());
-bag && bag.addEventListener('close', () => {
-  bagFocus && bagFocus.focus && bagFocus.focus({ preventScroll:true });
-  bagFocus = null; dlStart();
-});
+wireDialog(bag);
 
 /* ═══ Wishlist ═══ */
 const wishN = $('#wishN'), wishd = $('#wishd'), wishItems = $('#wishItems'), wishEmpty = $('#wishEmpty');
@@ -232,10 +244,13 @@ function openWish() {
 }
 $('#wishClose') && $('#wishClose').addEventListener('click', () => wishd.close());
 $('#wishEmptyShop') && $('#wishEmptyShop').addEventListener('click', () => wishd.close());
-wishd && wishd.addEventListener('close', () => {
-  wishFocus && wishFocus.focus && wishFocus.focus({ preventScroll:true });
-  wishFocus = null; dlStart();
-});
+if (wishd) {
+  wireDialog(wishd);
+  wishd.addEventListener('close', () => {
+    wishFocus && wishFocus.focus && wishFocus.focus({ preventScroll:true });
+    wishFocus = null;
+  });
+}
 
 /* ═══ Fly to cart ═══ */
 function flyToCart(srcImg) {
@@ -326,11 +341,7 @@ sheetSizes && sheetSizes.addEventListener('mouseover', e => {
   sheetConv.textContent = b ? CONV[b.dataset.s] || '' : '';
 });
 $('#sheetX') && $('#sheetX').addEventListener('click', () => sheet.close());
-backdropClose(sheet);
-sheet && sheet.addEventListener('close', () => {
-  sheet._opener && sheet._opener.focus && sheet._opener.focus({ preventScroll:true });
-  sheet._opener = null; dlStart();
-});
+wireDialog(sheet);
 
 /* ═══ Initial render ═══ */
 renderBag();
@@ -342,7 +353,8 @@ paintInBag();
 window.AE_CART = {
   renderBag, addToCart, paintInBag,
   openBag, openWish, toggleWish, paintWish, renderWishDrawer,
-  openSheet, showConfirmPill, flyToCart
+  openSheet, showConfirmPill, flyToCart,
+  recordOrder, completeCheckout
 };
 
 /* Listen for updates from other modules */

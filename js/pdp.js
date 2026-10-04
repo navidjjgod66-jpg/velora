@@ -5,14 +5,13 @@
 (() => {
 'use strict';
 const {
-  $, $$, html, body, clamp, reduced, fine, RAF, TIMERS, LS, K,
-  faNum, faPad, moneyT, esc, PHI, PHI2, memoize, wait, toast, haptic,
+  $, $$, html, clamp, reduced, fine, RAF, LS, K,
+  faNum, faPad, moneyT, esc, memoize, toast, haptic,
   dlStop, dlStart, starsHTML, backdropClose
 } = window.AE;
 const { CATALOG, PRODUCTS, SIZES, CONV, ARTISANS, CARE } = window.AE_DATA;
-const { state, getCustom, persBag } = window.AE_STATE;
+const { state, getCustom } = window.AE_STATE;
 const { wireImg } = window.AE_UI;
-const { renderBag, paintInBag } = window.AE_CART;
 
 /* ═══ Element refs ═══ */
 const pdp = $('#pdp'), pdpImg = $('#pdpImg'), pdpStage = $('#pdpStage'), pdpSticky = $('#pdpSticky'), psPrice = $('#psPrice');

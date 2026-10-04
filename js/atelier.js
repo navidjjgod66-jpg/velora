@@ -6,13 +6,12 @@
 (() => {
 'use strict';
 const {
-  $, $$, html, body, reduced, RAF, TIMERS, clamp, faNum, faPad, moneyT, esc
+  $, $$, body, reduced, RAF, TIMERS, clamp, faNum, faPad, moneyT, esc
 } = window.AE;
 const {
   PRODUCTS, CATALOG, AT_ORDERS, AT_STATUS, AT_CLASS, AT_FEED, AT_PEOPLE,
   RECS
 } = window.AE_DATA;
-const { state } = window.AE_STATE;
 const { shoeSVG } = window.AE_CONC;
 
 /* ═══ Atelier feed ═══ */

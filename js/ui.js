@@ -6,14 +6,14 @@
 (() => {
 'use strict';
 const {
-  $, $$, html, body, clamp, reduced, fine, coarse, RAF, TIMERS, LS, K,
-  faNum, faPad, moneyT, esc, debounce,
-  toast, haptic, dlStop, dlStart, scrollToEl, backdropClose, overlayShow, overlayHide, trapFocus
+  $, $$, html, body, clamp, reduced, RAF, TIMERS, LS, K,
+  faNum, faPad,
+  toast, dlStop, dlStart, scrollToEl
 } = window.AE;
 const {
   PRODUCTS, FAM, IDX_CATS, TICKER_ITEMS
 } = window.AE_DATA;
-const { state, saveP, getCustom, smartScore } = window.AE_STATE;
+const { state } = window.AE_STATE;
 
 /* ═══ Preloader ═══ */
 const pl = $('#pl'), plNum = $('#plNum'), plBar = $('#plBar');
