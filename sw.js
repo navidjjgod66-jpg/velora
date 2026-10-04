@@ -302,6 +302,10 @@ self.addEventListener('fetch', event => {
   /* ── ۲. فونت CSS گوگل ────────────────────────────────────────
      خروجی وابسته به User-Agent است → سپردن به HTTP cache مرورگر */
   if (isFontCSS) {
+    /* خروجی وابسته به User-Agent است → سپردن به HTTP cache مرورگر.
+       فقط درخواست‌های no-cors را رد کن؛ درخواست‌های CORS-دار (براههٔ preload)
+       باید از مسیر SW عبور کنند تا با هدرهای درست پاسخ داده شوند. */
+    if (req.mode === 'no-cors') return;
     event.respondWith(
       fetch(req).catch(() => caches.match(req).then(r => r || new Response('', { status: 504 })))
     );
