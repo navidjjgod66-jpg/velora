@@ -155,8 +155,6 @@ function openBag() {
   bag.showModal();
   dlStop();
 }
-$('#bagClose') && $('#bagClose').addEventListener('click', () => bag.close());
-$('#emptyShop') && $('#emptyShop').addEventListener('click', () => bag.close());
 wireDialog(bag);
 
 /* ═══ Wishlist ═══ */
