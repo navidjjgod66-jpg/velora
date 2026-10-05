@@ -1392,4 +1392,190 @@ $$('[data-act="mode"]').forEach(b => b.classList.toggle('on', b.dataset.mode ===
    synchronously during parse, which meant a network request competing with
    first paint; sync-aurelle.js already runs on `load` and on idle. */
 if (window.AE_SYNC) window.AE_SYNC.run(false);
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SENSORY LAYER — ویژگی‌های ۵/۶/۸/۱۰ + Sparkline
+   همه روی سلکتورهای موجود در index.php سوار می‌شوند؛ هیچ ساختار سروری
+   بازنویسی نمی‌شود (append فقط در ناحیهٔ JS-ساخته یا region خالی).
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ─── Market Ticker (ویژگی ۵) ─────────────────────────────────────────────
+   شبیه‌سازیِ زندهٔ XAU/BTC/ETH: نوسان ±۰.۲٪ هر ۵ ثانیه، رنگ تغییر بر اساس
+   جهت. فقط ≥1200px و نه perf-low و نه حالت atelier. hover = pause+zoom(CSS).
+   توقف کامل در تب مخفی. هیچ درخواست شبکه‌ای ندارد (دیتای واقعی نیاز به
+   بکاند دارد؛ اینجا صادقانه «شبیه‌سازی» برچسب خورده است). */
+(() => {
+  const bar = $('#mkBar');
+  if (!bar || lowTier()) return;
+  const mqWide = matchMedia('(min-width: 1200px)');
+  let paused = false;
+  const base = { XAU: 2650, BTC: 67500, ETH: 3250 };
+  const st = {}; Object.keys(base).forEach(k => st[k] = { v: base[k], p: base[k] });
+
+  /* نمایش: فقط دسکتاپ عریض و نه در آتلیه. reduced-motion تیکر را متوقف
+     نمی‌کند (عدد است نه حرکت) ولی نوسان با CSS transition نرم است. */
+  const paint = () => { bar.hidden = !(mqWide.matches && html.getAttribute('data-mode') !== 'atelier'); };
+  mqWide.addEventListener('change', paint);
+  addEventListener('ae:mode-change', paint);
+  bar.addEventListener('pointerenter', () => paused = true);
+  bar.addEventListener('pointerleave', () => paused = false);
+
+  setInterval(() => {
+    if (paused || document.hidden || bar.hidden) return;
+    bar.querySelectorAll('.mk-item').forEach(el => {
+      const s = st[el.dataset.sym]; if (!s) return;
+      s.v = s.v * (1 + (Math.random() - .5) * .004);
+      const d = (s.v - s.p) / s.p * 100;
+      el.querySelector('.mk-v').textContent = '$' + Math.round(s.v).toLocaleString('en-US');
+      const de = el.querySelector('.mk-d');
+      de.textContent = (d >= 0 ? '▲' : '▼') + Math.abs(d).toFixed(2) + '%';
+      de.className = 'mk-d ' + (d >= 0 ? 'up' : 'down');
+      if (Math.abs(d) >= .5) s.p = s.v;
+    });
+  }, 5000);
+  paint();
+})();
+
+/* ─── Cinema Mode (ویژگی ۶) ───────────────────────────────────────────────
+   از رویداد ae:cinema-open (lbxaurelle.js) لیست را می‌گیرد؛ letterbox و
+   کنترل‌ها markup ثابت‌اند. autoplay ۶ ثانیه‌ای فقط وقتی reduced-motion
+   نباشد؛ در غیر این صورت فریم ساکن + پیمایش دستی. ESC/backdrop با
+   wireDialog بسته می‌شود. */
+(() => {
+  const dlg = $('#cinema');
+  if (!dlg) return;
+  AE.wireDialog(dlg);
+  const img = $('#cinImg'), timeEl = $('#cinTime'), prog = $('#cinProg'),
+        progWrap = $('#cinProgWrap'), btnPause = $('#cinPause');
+  let list = [], at = 0, timer = null, tickT = null, startAt = 0, paused = false;
+
+  const fa2 = n => String(n).padStart(2, '0').replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
+  const show = i => {
+    at = ((i % list.length) + list.length) % list.length;
+    img.src = list[at];
+    img.alt = ''; /* تزئینی در سینما؛ نام محصول در تایمر نیست — SR با aria-label dialog هدایت می‌شود */
+    const pct = list.length > 1 ? Math.round((at / (list.length - 1)) * 100) : 100;
+    prog.style.width = pct + '%';
+    progWrap.setAttribute('aria-valuenow', String(pct));
+  };
+  const clock = () => {
+    if (paused) return;
+    const sec = Math.floor((Date.now() - startAt) / 1000);
+    timeEl.textContent = fa2(Math.floor(sec / 60)) + ':' + fa2(sec % 60);
+  };
+  const stopAll = () => { clearInterval(timer); clearTimeout(tickT); timer = tickT = null; };
+  const play = () => {
+    stopAll();
+    if (reduced || list.length < 2) return;   /* still-frame */
+    paused = false; btnPause.setAttribute('aria-pressed', 'false');
+    startAt = Date.now();
+    timer = setInterval(clock, 1000);
+    tickT = setInterval(() => show(at + 1), 6000);
+  };
+
+  addEventListener('ae:cinema-open', e => {
+    const d = e.detail || {};
+    list = Array.isArray(d.list) && d.list.length ? d.list.slice() : [];
+    if (!list.length) return;
+    if (dlg.open) dlg.close(); /* lbx باید کنار برود تا focus trap دوگانه نشود */
+    requestAnimationFrame(() => {
+      dlg._opener = document.activeElement;
+      dlg.showModal(); AE.dlStop();
+      show(Number(d.at) || 0);
+      timeEl.textContent = '۰۰:۰۰'; startAt = Date.now();
+      play();
+      $('#cinClose')?.focus({ preventScroll: true });
+    });
+  });
+
+  $('#cinPrev')?.addEventListener('click', () => { show(at - 1); startAt = Date.now(); });
+  $('#cinNext')?.addEventListener('click', () => { show(at + 1); startAt = Date.now(); });
+  $('#cinClose')?.addEventListener('click', () => dlg.close());
+  btnPause?.addEventListener('click', () => {
+    paused = !paused;
+    btnPause.setAttribute('aria-pressed', String(paused));
+    btnPause.setAttribute('aria-label', paused ? 'ادامهٔ نمایش' : 'توقف نمایش');
+    if (paused) { stopAll(); } else { play(); }
+  });
+  dlg.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight') { show(at + 1); }
+    if (e.key === 'ArrowLeft')  { show(at - 1); }
+  });
+  dlg.addEventListener('close', () => { stopAll(); paused = false; });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && dlg.open) { paused = true; stopAll();
+      btnPause?.setAttribute('aria-pressed', 'true'); }
+    else if (!document.hidden && dlg.open && !reduced) { play(); }
+  });
+})();
+
+/* ─── PWA Install Sheet (ویژگی ۸) ─────────────────────────────────────────
+   سه شرط: beforeinstallprompt رخ داده، ≥۲۵ ثانیه ماندگاری، ≥۳۵٪ اسکرول.
+   یک‌بار تصمیم (نصب یا رد) برای همیشه علامت می‌خورد. */
+(() => {
+  const sheet = $('#installSheet');
+  if (!sheet || LS.get('ae.installed.v1', false)) return;
+  let deferred = null;
+  addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferred = e; });
+  const depth = () => Math.min(100, scrollY / (document.body.scrollHeight - innerHeight || 1) * 100);
+  setTimeout(() => {
+    if (!deferred || depth() < 35 || sheet.open || dialogOpenAny()) return;
+    LS.set('ae.installed.v1', true); /* حتی اگر نادیده گرفته شد، تکرار نکند */
+    sheet._opener = document.activeElement;
+    sheet.showModal();
+    $('#installGo')?.addEventListener('click', async () => {
+      sheet.close();
+      try { deferred.prompt(); await deferred.userChoice; } catch (_) {}
+      deferred = null;
+    }, { once: true });
+    $('#installNo')?.addEventListener('click', () => sheet.close(), { once: true });
+  }, 25000);
+  function dialogOpenAny() {
+    return $$('dialog[open]').some(d => d.id !== 'installSheet');
+  }
+})();
+
+/* ─── Konami Code (ویژگی ۱۰) ──────────────────────────────────────────────
+   ↑↑↓↓←→←→ba → hue-rotate معکوس برای ۸ ثانیه. در input/textarea فعال
+   نیست تا تایپ کاربر هرگز گنج را منفجر نکند. */
+(() => {
+  const SEQ = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
+  let i = 0;
+  addEventListener('keydown', e => {
+    if (e.target.closest('input,textarea,select,[contenteditable]')) { i = 0; return; }
+    const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    i = (k === SEQ[i]) ? i + 1 : (k === SEQ[0] ? 1 : 0);
+    if (i === SEQ.length) {
+      i = 0;
+      html.classList.add('konami');
+      toast('🥚 گنجِ خانه: طیفِ وارونه — هشت ثانیه.', 'ok');
+      setTimeout(() => html.classList.remove('konami'), 8000);
+    }
+  });
+})();
+
+/* ─── Sparklines در hero-ledger (ویژگی ۱۰) ────────────────────────────────
+   SVG polyline قطعی (seeded) — همان خط‌ها برای همه؛ تزئینی و aria-hidden.
+   append داخل dd است ولی محتوای متنی dt/dd دست‌نخورده می‌ماند. */
+(() => {
+  if (lowTier()) return;
+  const items = $$('.hero-ledger__i dd');
+  items.forEach((dd, idx) => {
+    let x = 137 + idx * 89;
+    const pts = [];
+    for (let i = 0; i < 12; i++) {
+      x = (x * 9301 + 49297) % 233280;
+      pts.push(`${i * 5},${(24 - (6 + (x / 233280) * 14)).toFixed(1)}`);
+    }
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'spark'); svg.setAttribute('viewBox', '0 0 55 24');
+    svg.setAttribute('width', '55'); svg.setAttribute('height', '24');
+    svg.setAttribute('aria-hidden', 'true');
+    const pl = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+    pl.setAttribute('points', pts.join(' '));
+    pl.setAttribute('fill', 'none'); pl.setAttribute('stroke', 'var(--accent)');
+    pl.setAttribute('stroke-width', '1.2');
+    svg.append(pl); dd.append(svg);
+  });
+})();
 })();

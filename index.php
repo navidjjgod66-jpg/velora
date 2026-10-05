@@ -1064,6 +1064,21 @@ $precacheAssets = array_merge(
       </div>
     </section>
 
+    <?php /* Auric Seam — جداکنندهٔ فصل‌ها؛ گرادیان رفت‌وبرگشتی (ویژگی ۱۰).
+       decorative: aria-hidden، بدون معنای متنی. در reduced-motion با CSS
+       روی حالت ساکن می‌نشیند. */ ?>
+    <hr class="auric-seam" aria-hidden="true">
+
+    <!-- MARKET TICKER — طلا/BTC/ETH؛ فقط ≥1200px، perf-mid/high، نه در آتلیه.
+       منطق در main.js (marketTicker)؛ اینجا فقط اسکلت خالی است تا CLS صفر
+       بماند و JS سرور-رندر را بازنویسی نکند. -->
+    <div class="mk-bar" id="mkBar" role="region" aria-label="قیمت لحظهٔ بازار" hidden>
+      <span class="mk-item" data-sym="XAU"><b>طلا / اونس</b> <i class="mk-v">—</i><em class="mk-d"></em></span>
+      <span class="mk-item" data-sym="BTC"><b>BTC</b> <i class="mk-v">—</i><em class="mk-d"></em></span>
+      <span class="mk-item" data-sym="ETH"><b>ETH</b> <i class="mk-v">—</i><em class="mk-d"></em></span>
+      <span class="mk-note mono" aria-hidden="true">شبیه‌سازیِ زنده</span>
+    </div>
+
     <!-- TICKER BAR -->
     <div class="ticker-bar" aria-hidden="true">
       <div class="ticker__track" id="tickerTrack">
@@ -1408,6 +1423,8 @@ if ($catalogFeed) {
       </div>
     </section>
 
+    <hr class="auric-seam" aria-hidden="true">
+
     <!-- LOOKBOOK -->
     <section id="lookbook" aria-labelledby="lbTitle">
       <div class="container">
@@ -1420,6 +1437,8 @@ if ($catalogFeed) {
         <div class="lb-rail rv" id="lbRail" tabindex="0" aria-label="گالری نگارخانه"></div>
       </div>
     </section>
+
+    <hr class="auric-seam" aria-hidden="true">
 
     <!-- ARCHIVE -->
     <section id="archive" aria-labelledby="arcTitle">
@@ -1542,6 +1561,8 @@ if ($catalogFeed) {
         <a href="#top">حریم خصوصی</a>
         <a href="#top">شرایط</a>
       </div>
+      <?php /* Plaque — تختهٔ برنجیِ خانه؛ افکت فویل در components.css (ویژگی ۱۰) */ ?>
+      <span class="plaque mono" aria-label="نشانِ خانه">MAISON AURELLE · MMXXVI</span>
       <span class="mono">دست‌کشیده با دقت · پاریس / فلورانس / توکیو</span>
     </div>
   </div>
@@ -1770,6 +1791,51 @@ if ($catalogFeed) {
   <div class="nf__cta">
     <a class="btn btn--gold" href="#top" id="nfTop"><span>بازگشت به خانه</span></a>
     <a class="btn btn--ghost" href="#boutique"><span>ورود به فروشگاه</span></a>
+  </div>
+</dialog>
+
+<?php /* ── CINEMA MODE (ویژگی ۶) ───────────────────────────────────────────
+   تجربهٔ تمام‌صفحهٔ تصویر محصول/نگارخانه: letterbox سیاه بالا و پایین،
+   تایمر + نوار پیشرفت + توقف/بستن. با ESC یا کلیک روی backdrop بسته می‌شود
+   (wireDialog در main.js). در prefers-reduced-motion فقط فریم ساکن است —
+   منطق حرکت در lbxaurelle/main با فلگ reduced قفل می‌شود.
+   دکمهٔ ورود: lbxCinema در نوار lightbox (lbxaurelle.js آن را می‌سازد). */ ?>
+<dialog class="cinema" id="cinema" aria-label="حالت سینمایی" aria-modal="true">
+  <div class="cin-letterbox cin-letterbox--t" aria-hidden="true"></div>
+  <img class="cin-img" id="cinImg" src="" alt="" decoding="async">
+  <div class="cin-ui">
+    <span class="mono cin-time" id="cinTime" role="timer" aria-live="off">۰۰:۰۰</span>
+    <div class="cin-prog" role="progressbar" aria-label="پیشرفت گالری" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="cinProgWrap"><i id="cinProg"></i></div>
+    <button class="icon-btn" id="cinPrev" type="button" aria-label="تصویر پیشین">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+    </button>
+    <button class="icon-btn" id="cinPause" type="button" aria-label="توقف نمایش" aria-pressed="false">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg>
+    </button>
+    <button class="icon-btn" id="cinNext" type="button" aria-label="تصویر بعدی">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <button class="icon-btn" id="cinClose" type="button" aria-label="خروج از حالت سینمایی">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+  <div class="cin-letterbox cin-letterbox--b" aria-hidden="true"></div>
+</dialog>
+
+<?php /* ── PWA INSTALL SHEET (ویژگی ۸) ─────────────────────────────────────
+   پنل شیشه‌ای پیشنهاد نصب؛ فقط وقتی beforeinstallprompt رخ داده باشد و
+   کاربر ≥۲۵ ثانیه مانده و ≥۳۵٪ اسکرول کرده باشد توسط main.js باز می‌شود.
+   یک‌بار علامت می‌خورد (localStorage) و دیگر تکرار نمی‌شود. */ ?>
+<dialog class="install-sheet" id="installSheet" aria-labelledby="isTitle" aria-modal="true">
+  <div class="lux-grab" aria-hidden="true"></div>
+  <div class="is-body">
+    <span class="is-icon" aria-hidden="true"><img src="brand-icon-192.png" alt="" width="64" height="64"></span>
+    <h3 id="isTitle">ولورا را همراه داشته باشید</h3>
+    <p>نصب به‌عنوان اپلیکیشن — دسترسی آفلاین، اجرای تمام‌صفحه و بدون نوار مرورگر.</p>
+    <div class="is-cta">
+      <button class="btn btn--gold btn--sm" id="installGo" type="button"><span>نصب</span></button>
+      <button class="btn btn--ghost btn--sm" id="installNo" type="button"><span>بعداً</span></button>
+    </div>
   </div>
 </dialog>
 

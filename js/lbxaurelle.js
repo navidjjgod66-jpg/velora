@@ -162,4 +162,22 @@ dlg.addEventListener('close', () => {
 });
 
 window.AE_LBX = { open, close, step, isOpen: () => dlg.open };
+
+/* ═══ Cinema entry (ویژگی ۶) — یک دکمه در نوار lightbox، منطق در main.js ═══
+   این تنها چیزی است که lbx به سینما می‌دهد: لیست و موقعیت جاری را با یک
+   رویداد منتقل می‌کند. main.js #cinema را باز/بسته و autoplay می‌کند.
+   هیچ DOM سروری بازنویسی نمی‌شود؛ listener روی btnX/bar اضافه نمی‌شود. */
+(() => {
+  if (!bar) return;
+  const b = document.createElement('button');
+  b.className = 'icon-btn lbx__cinema'; b.id = 'lbxCinema'; b.type = 'button';
+  b.setAttribute('aria-label', 'حالت سینمایی');
+  b.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 6V4M17 6V4M3 10h18"/></svg>';
+  b.addEventListener('click', () => {
+    window.dispatchEvent(new CustomEvent('ae:cinema-open', {
+      detail: { list: (typeof list !== 'undefined' ? list.slice() : []), at: (typeof at !== 'undefined' ? at : 0), name: (typeof title !== 'undefined' ? title : '') }
+    }));
+  });
+  bar.append(b);
+})();
 })();
