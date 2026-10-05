@@ -1013,13 +1013,26 @@ $precacheAssets = array_merge(
                itself remains, which is the point of it. */
             ?>
             <div class="seal" aria-hidden="true">
-              <svg viewBox="0 0 160 160" class="seal__ring">
+              <?php /* The ring is pinned to dir="ltr" on purpose.
+
+                 This page is an RTL document, and an inline <svg> inherits
+                 `direction` from its host — which changes how a browser lays
+                 out the <text><textPath> inside it: bidi reordering flips the
+                 Latin run, the letter-spacing lands on the wrong side of each
+                 glyph, and the circular caption visibly breaks apart whenever
+                 the house language is Persian. It "worked" before only because
+                 the block happened to render in an LTR context.
+
+                 Forcing ltr on the svg element itself makes the vector render
+                 byte-for-byte the same in both languages, while the rotation
+                 stays exactly one compositor transform on the <svg>. */ ?>
+              <svg viewBox="0 0 160 160" class="seal__ring" dir="ltr" xml:lang="en" lang="en">
                 <defs>
                   <path id="veloraSealPath"
                         d="M80 80 m-62 0 a62 62 0 1 1 124 0 a62 62 0 1 1 -124 0"/>
                 </defs>
                 <circle class="seal__disc" cx="80" cy="80" r="40"/>
-                <text class="seal__type"><textPath href="#veloraSealPath" startOffset="0">VELORA · MAISON DE CHAUSSURES · DEPUIS 1962 · </textPath></text>
+                <text class="seal__type" direction="ltr" unicode-bidi="isolate"><textPath href="#veloraSealPath" startOffset="0" side="right">VELORA COLLECTION · MAISON DE CHAUSSURES · VELORA COLLECTION · </textPath></text>
                 <path class="seal__mark" d="M80 62 96 80 80 98 64 80Z"/>
               </svg>
             </div>
@@ -1162,11 +1175,21 @@ $cardServer = static function (array $p, int $i) use ($esc, $product_img, $hexFo
          . str_repeat('<span class=""><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></span>', 5)
          . '</span></span>'
          . '<span class="stock-pill' . ($p['stock'] <= 5 ? ' low' : '') . '"><span class="dot" aria-hidden="true"></span>'
-         . ($p['stock'] <= 5 ? 'فقط ' . $esc(fa_num($p['stock'])) . ' مانده' : 'در آتلیه') . '</span></div>'
+         . ($p['stock'] <= 5 ? 'فقط ' . $esc(fa_num($p['stock'])) . ' مانده' : 'موجود') . '</span></div>'
          . '<p class="p-sub">' . $esc($p['sub']) . '</p>'
          . '<div class="p-row"><div class="p-sw" aria-hidden="true">' . $sw . '</div>'
          . '<span class="mono" style="font-size:.56rem">' . $esc(implode(' تا ', SIZE_BAND)) . '</span></div>'
-         . '<button class="quick" type="button" data-quick data-cursor="سایز"><span class="quick-t">انتخاب سایز</span></button>'
+         /* Two actions per card, one job each:
+            · quick-buy opens the size & colour sheet — the whole purchase
+              path without leaving the grid (js: cart.js openQuickBuy);
+            · view is a real anchor to the product page — crawlable and
+              middle-clickable, exactly like the media tile above it. */
+         . '<div class="p-acts">'
+         . '<button class="quick qs" type="button" data-qs aria-label="' . $esc('خرید سریع — ' . $p['name']) . '">'
+         . '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M13 2 4.5 13.5H11L9.5 22 19 10h-6l1-8z"/></svg>'
+         . '<span class="quick-t">خرید سریع</span></button>'
+         . '<a class="quick view" href="?product=' . rawurlencode($p['id']) . '" data-open-pdp aria-label="' . $esc('مشاهدهٔ ' . $p['name']) . '">مشاهده</a>'
+         . '</div>'
          . '</div></article>';
 };
 if ($catalogFeed) {
@@ -1681,18 +1704,43 @@ if ($catalogFeed) {
   </div>
 </dialog>
 
-<!-- SHEET (size picker) -->
-<dialog class="sheet" id="sheet" aria-label="انتخاب سایز" aria-modal="true">
+<!-- SHEET (quick-buy: size + colour picker) -->
+<dialog class="sheet" id="sheet" aria-labelledby="sheetT" aria-modal="true">
   <div class="lux-grab" aria-hidden="true"></div>
   <div class="sheet__head">
-    <span class="sheet__title" id="sheetT">انتخاب سایز</span>
+    <span class="sheet__title" id="sheetT">خرید سریع</span>
     <button class="close-btn sheet__x" id="sheetX" type="button" aria-label="بستن">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 6l12 12M18 6L6 18"/></svg>
     </button>
   </div>
   <div class="sheet__body">
-    <div class="sizes" id="sheetSizes"></div>
+    <!-- Thumb + name + price, filled by openQuickBuy() in cart.js. The row is
+         static markup so the sheet never opens as an empty shell while the
+         catalogue is still resolving. -->
+    <div class="qs-prod" id="sheetProd" hidden>
+      <img id="sheetImg" src="" alt="" width="72" height="90" decoding="async">
+      <div class="qs-prod__meta">
+        <b id="sheetName"></b>
+        <span id="sheetSub" class="qs-sub"></span>
+        <span id="sheetPrice" class="qs-price mono"></span>
+      </div>
+    </div>
+    <div class="qs-group" id="sheetColorWrap" hidden>
+      <p class="qs-lbl">رنگ <span class="qs-lbl-v" id="sheetColorName" aria-live="polite"></span></p>
+      <div class="qs-colors" id="sheetColors" role="radiogroup" aria-label="انتخاب رنگ"></div>
+    </div>
+    <div class="qs-group">
+      <p class="qs-lbl">سایز <span class="qs-lbl-hint">(EU)</span></p>
+      <div class="sizes" id="sheetSizes" role="radiogroup" aria-label="انتخاب سایز"></div>
+    </div>
     <p class="mono sheet__conv" id="sheetConv"></p>
+    <div class="qs-foot">
+      <button class="btn btn--gold qs-add" id="sheetAdd" type="button" disabled>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M6 7h12l1.2 12H4.8L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+        <span id="sheetAddT">افزودن به سبد</span>
+      </button>
+      <a class="linklike qs-more" id="sheetMore" href="#">جزئیات کامل محصول ↗</a>
+    </div>
   </div>
 </dialog>
 

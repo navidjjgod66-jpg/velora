@@ -450,6 +450,38 @@ dialog.sheet:not([open]) { opacity: 0; transform: translateY(103%); }
 .sheet__body { padding: 1.2rem var(--sp-4) 2rem; }
 .sheet__conv { margin-top: 1rem; letter-spacing: 0.1em; color: var(--text-4); }
 
+/* ─── Quick-buy sheet internals ───
+   Product identity row, then the two choice rails (colour, size), then a
+   footer that pins the commit action. The footer is sticky on touch so the
+   add button never hides behind the keyboard or a scrolled rail. */
+.qs-prod { display: flex; align-items: center; gap: 0.9rem; margin-block-end: 1.2rem; }
+.qs-prod img { width: 72px; height: 90px; object-fit: cover; border-radius: var(--r-2); border: 1px solid var(--line-1); background: var(--surface-2); flex: none; }
+.qs-prod__meta { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
+.qs-prod__meta b { font-family: var(--serif-d); font-weight: 500; font-size: 1.02rem; line-height: 1.3; }
+.qs-sub { font-size: var(--t-xs); color: var(--text-3); }
+.qs-price { font-size: 0.86rem; color: var(--accent); }
+.qs-group { margin-block-end: 1.15rem; }
+.qs-lbl { display: flex; align-items: baseline; gap: 0.5rem; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.09em; color: var(--text-4); margin-block-end: 0.6rem; }
+.qs-lbl-v { font-weight: 500; letter-spacing: 0.02em; color: var(--text-2); text-transform: none; }
+.qs-lbl-hint { font-weight: 400; color: var(--text-4); }
+.qs-colors { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.qs-color { width: 30px; height: 30px; }
+.qs-foot { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-top: 1.4rem; padding-top: 1.1rem; border-top: 1px solid var(--line-1); }
+.qs-foot .qs-add { flex: 1 1 auto; min-width: 180px; }
+.qs-foot .qs-add[disabled] { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
+.qs-more { flex: none; font-size: 0.72rem; color: var(--text-3); text-decoration: underline dotted; text-underline-offset: 4px; transition: color var(--d-1) var(--ease-lux); }
+.qs-more:hover { color: var(--accent); }
+@media (pointer: coarse) {
+  /* Thumb-reachable commit: keep the action row visible while the rails scroll. */
+  .qs-foot { position: sticky; bottom: 0; background: var(--surface); padding-block: 0.9rem; margin-top: 0.6rem; }
+  .qs-foot .qs-add { min-height: 52px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* The open/close slide of dialog.sheet is already neutralised globally in
+     animations.css; nothing inside the quick-buy surface animates beyond it. */
+  .qs-more { transition: none; }
+}
+
 /* ─── Fit Wizard ─── */
 .fit-wiz {
   position: fixed; inset: 0; z-index: 210;
