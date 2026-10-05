@@ -174,20 +174,66 @@ function velora_catalog_path(): string {
  * my edit?" and "is the browser showing it?" — become answerable instead of
  * arguable.
  *
- * Cost: one hash_file() over a ~20 KB file, memoised per request. Called once
- * per page render and once per catalogue.php request.
+ * Cost: one stat() per call once the memo is warm, and one hash_file() over
+ * the ~20 KB document only when its identity actually changed. Previously the
+ * full-document hash ran on EVERY request — the per-request static only saved
+ * repeat calls within one render (index.php makes two). The ETag machinery in
+ * catalog.php is exactly the traffic this saves: repeat visitors hit the
+ * endpoint with conditional GETs constantly, and each one needs the
+ * fingerprint, not a re-read of every byte.
+ *
+ * The memo is keyed on inode + size + mtime, and the trade-off is taken
+ * knowingly:
+ *
+ *   · Every write path in this project replaces the file with rename(),
+ *     which installs a NEW inode at the path — so a committed catalogue edit
+ *     is always seen, even in the pathological case where the new document
+ *     has the exact size and mtime of the old one.
+ *   · A hand-edit that rewrote products.json IN PLACE while preserving both
+ *     its size and its mtime to the second could keep the old fingerprint
+ *     until the process restarts. That combination is effectively
+ *     unreachable (mtime advances on every write), and any real edit changes
+ *     either size or mtime. If it ever bites, restarting PHP-FPM resets the
+ *     memo.
+ *
+ * In-request staleness cannot happen: velora_catalog_forget() — called by
+ * every transaction commit — clears this memo alongside the parsed-document
+ * memo (through the 'forget-version' sentinel handled at the top of the
+ * function below), so a read after a write in the same request always agrees
+ * with the file, and the two caches always describe the same window of
+ * validity.
  */
-function velora_catalog_version(): string {
-    static $v = null;
-    if ($v !== null) return $v;
-    $file = velora_catalog_path();
-    $h = @hash_file('sha256', $file);
-    if ($h === false || $h === '') {
-        /* An unreadable file still needs a version that is stable within this
-           request, or every caller would disagree about what "now" means. */
-        return $v = 'missing';
+function velora_catalog_version(string $set = ''): string {
+    /* Called with the 'forget-version' sentinel, this drops the memo instead
+       of reading it. That is how velora_catalog_forget() reaches this static:
+       PHP gives no other way in, and the existing velora_catalog_cache()
+       holder forwards the sentinel here. Without invalidation, the stat-keyed
+       memo could keep serving a pre-write fingerprint inside one request on a
+       filesystem where an in-place rewrite preserves size AND mtime — exactly
+       the guarantee the old unconditional hash_file() gave. */
+    if ($set === 'forget-version') {
+        $memo = [null, null];
+        return '';
     }
-    return $v = substr($h, 0, 16);
+
+    /* [$statIdentity, $fingerprint]. Both null = nothing published yet. An
+       unreadable file deliberately does NOT populate the memo: the original
+       behaviour returned 'missing' without caching it, so a transiently
+       unreadable file must be re-checked on the next call rather than pin the
+       version to 'missing' for the life of the worker. */
+    static $memo = [null, null];
+
+    $file = velora_catalog_path();
+    $st   = @stat($file);
+    if ($st === false) return 'missing';
+
+    $identity = $st[1] . ':' . $st[7] . ':' . $st[9]; // inode:size:mtime
+    if ($memo[1] !== null && $identity === $memo[0]) return $memo[1];
+
+    $h = @hash_file('sha256', $file);
+    if ($h === false || $h === '') return 'missing';
+    $memo = [$identity, substr($h, 0, 16)];
+    return $memo[1];
 }
 
 /**
@@ -204,7 +250,15 @@ function velora_catalog_version(): string {
  */
 function velora_catalog_cache(mixed $set = null): mixed {
     static $cache = null;
-    if (func_num_args() > 0) $cache = $set;
+    if (func_num_args() > 0) {
+        /* The one value that is not a cache payload: forward it to the
+           version memo so a write path can drop BOTH request-lifetime caches
+           in one call. Without this, the stat-keyed version memo could keep
+           serving a pre-write fingerprint inside a single request on a
+           filesystem where an in-place rewrite preserves size and mtime. */
+        if ($set === 'forget-version') { velora_catalog_version('forget-version'); return null; }
+        $cache = $set;
+    }
     return $cache;
 }
 
@@ -278,6 +332,7 @@ function velora_catalog_read(): array {
  */
 function velora_catalog_forget(): void {
     velora_catalog_cache(null);
+    velora_catalog_cache('forget-version');
 }
 
     function velora_catalog_products(): array {
