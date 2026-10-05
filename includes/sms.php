@@ -5,26 +5,11 @@ declare(strict_types=1);
  *
  * Extracted verbatim from config.php during the monolith split — same code,
  * same behaviour, one home per concern. Covers meli_send_otp(), the panel-generated OTP sender.
- */
-
-if (!defined('VELORA_CONFIG_LOADED')) {
+ */if (!defined('VELORA_CONFIG_LOADED')) {
     http_response_code(500);
     exit('includes/sms.php requires config.php to be loaded first.');
 }
 
-/**
- * VELORA · SMS gateway · MeliPayamak
- *
- * Extracted verbatim from config.php during the monolith split — same code,
- * same behaviour, one home per concern. Covers meli_send_otp(), the panel-generated OTP sender.
- */
-
-if (!defined('VELORA_CONFIG_LOADED')) {
-    http_response_code(500);
-    exit('includes/sms.php requires config.php to be loaded first.');
-}
-
-SMS · MELIPAYAMAK
 
 MeliPayamak's /api/send/otp/{token} endpoint GENERATES the OTP itself and
 returns it in the response `code` field. We POST only the phone number — no

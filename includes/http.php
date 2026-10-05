@@ -5,27 +5,11 @@ declare(strict_types=1);
  *
  * Extracted verbatim from config.php during the monolith split — same code,
  * same behaviour, one home per concern. Covers jresp(), the CSP/security-header emitter, HTTPS detection, the same-origin local path used by the catalogue probe, canonical URI building, the esc() helper and the 404/410/503 error pages.
- */
-
-if (!defined('VELORA_CONFIG_LOADED')) {
+ */if (!defined('VELORA_CONFIG_LOADED')) {
     http_response_code(500);
     exit('includes/http.php requires config.php to be loaded first.');
 }
 
-/**
- * VELORA · HTTP & response helpers
- *
- * Extracted verbatim from config.php during the monolith split — same code,
- * same behaviour, one home per concern. Covers jresp(), the CSP/security-header emitter, HTTPS detection, the same-origin local path used by the catalogue probe, canonical URI building, and the 404/410/503 error pages.
- */
-
-if (!defined('VELORA_CONFIG_LOADED')) {
-    http_response_code(500);
-    exit('includes/http.php requires config.php to be loaded first.');
-}
-
-RESPONSE HELPERS
-═══════════════════════════════════════════════════════════════════════════ */
 function jresp(array $data, int $code = 200, bool $cache = false): void {
     http_response_code($code);
     header('Content-Type: application/json; charset=utf-8');

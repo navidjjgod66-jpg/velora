@@ -5,27 +5,11 @@ declare(strict_types=1);
  *
  * Extracted verbatim from config.php during the monolith split — same code,
  * same behaviour, one home per concern. Covers velora_mac_key(), otp_digest() and otp_matches() — the keyed-digest storage for one-time codes.
- */
-
-if (!defined('VELORA_CONFIG_LOADED')) {
+ */if (!defined('VELORA_CONFIG_LOADED')) {
     http_response_code(500);
     exit('includes/otp.php requires config.php to be loaded first.');
 }
 
-/**
- * VELORA · OTP code storage
- *
- * Extracted verbatim from config.php during the monolith split — same code,
- * same behaviour, one home per concern. Covers velora_mac_key(), otp_digest() and otp_matches() — the keyed-digest storage for one-time codes.
- */
-
-if (!defined('VELORA_CONFIG_LOADED')) {
-    http_response_code(500);
-    exit('includes/otp.php requires config.php to be loaded first.');
-}
-
-OTP CODE STORAGE — keyed digest
-═══════════════════════════════════════════════════════════════════════════ */
 function velora_mac_key(string $purpose): string {
     $secret = env('VELORA_APP_KEY', '');
     if ($secret === null || $secret === '') {

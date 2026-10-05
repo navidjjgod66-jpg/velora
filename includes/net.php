@@ -5,32 +5,16 @@ declare(strict_types=1);
  *
  * Extracted verbatim from config.php during the monolith split — same code,
  * same behaviour, one home per concern. Covers rate_limit() and its sweep, admin_ip_allowed(), get_client_ip() behind trusted proxies, and the log_safe()/log_line()/log_action() trio.
- */
-
-if (!defined('VELORA_CONFIG_LOADED')) {
+ */if (!defined('VELORA_CONFIG_LOADED')) {
     http_response_code(500);
     exit('includes/net.php requires config.php to be loaded first.');
 }
 
-/**
- * VELORA · Client IP & rate limiting & logging
- *
- * Extracted verbatim from config.php during the monolith split — same code,
- * same behaviour, one home per concern. Covers rate_limit() and its sweep, admin_ip_allowed(), get_client_ip() behind trusted proxies, and the log_safe()/log_line()/log_action() trio.
- */
-
-if (!defined('VELORA_CONFIG_LOADED')) {
-    http_response_code(500);
-    exit('includes/net.php requires config.php to be loaded first.');
-}
-
-RATE LIMIT & CLIENT IP & LOGGING
-═══════════════════════════════════════════════════════════════════════════ */
 function rate_limit(string $action, int $max = 5, int $window = 60, ?string $scope = null): bool {
     $safeAction = preg_replace('/[^A-Za-z0-9_-]+/', '_', $action) ?: 'rl';
     $bucketId   = ($scope !== null && $scope !== '') ? $scope : get_client_ip();
     $key        = $safeAction . ':' . hash('xxh3', $bucketId);
-    $dir = __DIR__ . '/storage/cache/rl';
+    $dir = dirname(__DIR__) . '/storage/cache/rl';
     /* The directory is created once, at boot, by the block that also creates
        storage/cache and storage/logs. This called @mkdir() on every single
        rate-limited request — a stat plus a syscall per call, on a path that

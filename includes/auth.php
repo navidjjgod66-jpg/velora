@@ -5,27 +5,11 @@ declare(strict_types=1);
  *
  * Extracted verbatim from config.php during the monolith split — same code,
  * same behaviour, one home per concern. Covers is_admin(), is_user(), current_user_id() and current_user_phone().
- */
-
-if (!defined('VELORA_CONFIG_LOADED')) {
+ */if (!defined('VELORA_CONFIG_LOADED')) {
     http_response_code(500);
     exit('includes/auth.php requires config.php to be loaded first.');
 }
 
-/**
- * VELORA · Session-auth helpers
- *
- * Extracted verbatim from config.php during the monolith split — same code,
- * same behaviour, one home per concern. Covers is_admin(), is_user(), current_user_id() and current_user_phone().
- */
-
-if (!defined('VELORA_CONFIG_LOADED')) {
-    http_response_code(500);
-    exit('includes/auth.php requires config.php to be loaded first.');
-}
-
-AUTH
-═══════════════════════════════════════════════════════════════════════════ */
 function is_admin(): bool {
     return !empty($_SESSION['admin']) && $_SESSION['admin'] === true && !empty($_SESSION['admin_login_at']) && (time() - (int) $_SESSION['admin_login_at']) < ADMIN_SESSION_TTL;
 }

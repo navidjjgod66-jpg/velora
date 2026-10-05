@@ -5,27 +5,11 @@ declare(strict_types=1);
  *
  * Extracted verbatim from config.php during the monolith split — same code,
  * same behaviour, one home per concern. Covers base32 codec, AES-GCM secret envelope, code generation/verification and the provisioning URI.
- */
-
-if (!defined('VELORA_CONFIG_LOADED')) {
+ */if (!defined('VELORA_CONFIG_LOADED')) {
     http_response_code(500);
     exit('includes/totp.php requires config.php to be loaded first.');
 }
 
-/**
- * VELORA · Admin TOTP second factor — RFC 6238
- *
- * Extracted verbatim from config.php during the monolith split — same code,
- * same behaviour, one home per concern. Covers base32 codec, AES-GCM secret envelope, code generation/verification and the provisioning URI.
- */
-
-if (!defined('VELORA_CONFIG_LOADED')) {
-    http_response_code(500);
-    exit('includes/totp.php requires config.php to be loaded first.');
-}
-
-ADMIN TOTP SECOND FACTOR — RFC 6238
-═══════════════════════════════════════════════════════════════════════════ */
 defined('VELORA_TOTP_PERIOD') or define('VELORA_TOTP_PERIOD', 30);
 defined('VELORA_TOTP_DIGITS') or define('VELORA_TOTP_DIGITS', 6);
 defined('VELORA_TOTP_WINDOW') or define('VELORA_TOTP_WINDOW', 1);
