@@ -1,0 +1,185 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# VELORA · .htaccess
+# Apache 2.4 (LiteSpeed/cPanel compatible) · shared hosting · no root needed
+#
+# Three jobs, in order of importance:
+#   1. SECURITY  — deny dotfiles, storage internals, SQL/schema, lock files
+#   2. COST      — compression + long-lived immutable caching on static assets
+#   3. SEO       — /sitemap.xml alias, canonical trailing-slash handling
+#
+# Everything here degrades safely: if a directive is unsupported (Nginx, or
+# AllowOverride None), the site still works. Nothing in the application
+# depends on a rule below being in force.
+# ═══════════════════════════════════════════════════════════════════════════
+
+# ─── 0. Baseline ──────────────────────────────────────────────────────────
+Options -Indexes -MultiViews
+DirectoryIndex index.php index.html
+AddDefaultCharset UTF-8
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  # Rewrite the Authorization header so it survives CGI/FastCGI. Required for
+  # any future Basic/Bearer protected path; harmless today.
+  RewriteCond %{HTTP:Authorization} .
+  RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+  # Canonical host + trailing slash on directory requests only.
+  # A real file (/products.json) and a path with an extension are left alone,
+  # so this cannot rewrite ?product=… into something else.
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # /sitemap.php → /sitemap.xml (declared in robots.txt)
+  RewriteRule ^sitemap\.xml$ sitemap.php [L]
+</IfModule>
+
+# ─── 1. Security: files that must never be served ─────────────────────────
+# 1a. Dotfiles. .env holds the DB password, the admin password hash, the
+#     gateway merchant id and VELORA_APP_KEY. One request to /.env would
+#     disclose all of them, so this is the single most important rule here.
+<FilesMatch "(^\.|\.(env|ini|log|lock|sql|bak|old|orig|save|swp|swo|tmp|dist|map|md|sh|py|jsonl)$)">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
+
+# 1b. Storage. Only uploads/products/ is public — that is the one path the
+#     admin image pipeline writes to and the one img-src 'self' may read.
+#     storage/logs and storage/cache hold IPs, session ids and rate-limit
+#     counters; storage/cache/rl holds nothing a visitor needs.
+<IfModule mod_rewrite.c>
+  RewriteRule ^storage/(?!uploads/products/).* - [F,L]
+</IfModule>
+
+# Belt-and-braces for servers where the rewrite above is unavailable.
+RedirectMatch 404 ^/storage/(logs|cache)/
+RedirectMatch 404 ^/storage/[^/]+/?$
+<DirectoryMatch "/(storage/logs|storage/cache|storage/cache/rl)">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+</DirectoryMatch>
+
+# 1c. Schema and lock files at the document root.
+<FilesMatch "\.(sql|lock)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+</FilesMatch>
+
+# products.json is deliberately PUBLIC: catalog.php is its freshness endpoint
+# and the storefront reads it directly. It carries no credential and no
+# per-session field. Do not add it to the blocklist above.
+
+# 1d. Never hand out the PHP source of the endpoints that take input. mod_php
+#     executes .php before this could ever apply; under PHP-FPM the request
+#     never reaches the file. This is here for CGI/FastCGI misconfiguration.
+<IfModule mod_php.c>
+  php_flag display_errors off
+  php_flag log_errors on
+  php_flag expose_php off
+</IfModule>
+<IfModule mod_headers.c>
+  Header always unset X-Powered-By
+  Header always unset X-AspNet-Version
+</IfModule>
+
+# ─── 2. Compression ────────────────────────────────────────────────────────
+# 204 KB of CSS + 257 KB of JS are shipped uncompressed without this. On a
+# 3G phone that is the difference between a 3.5 s and a 1.4 s LCP.
+# text/css, application/javascript and image/svg+xml are all compressible;
+# JPEG/PNG/WebP are not, which is why they are absent.
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/css text/xml
+  AddOutputFilterByType DEFLATE application/javascript application/x-javascript
+  AddOutputFilterByType DEFLATE application/json application/xml
+  AddOutputFilterByType DEFLATE image/svg+xml application/manifest+json
+  AddOutputFilterByType DEFLATE font/ttf font/otf
+</IfModule>
+
+# ─── 3. Caching ────────────────────────────────────────────────────────────
+# The application's own headers win where they exist (index.php sends
+# no-store on the shell, catalog.php sends no-cache + ETag). These rules only
+# govern the static tree, which PHP never touches.
+#
+# css/ js/ and the brand icons are cache-busted by filemtime in index.php, so
+# a changed file gets a new URL and the cached copy is never consulted again.
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresDefault                          "access plus 1 month"
+  ExpiresByType text/html                 "access plus 0 seconds"
+  ExpiresByType text/css                  "access plus 1 year"
+  ExpiresByType application/javascript    "access plus 1 year"
+  ExpiresByType text/javascript           "access plus 1 year"
+  ExpiresByType image/png                 "access plus 1 year"
+  ExpiresByType image/webp                "access plus 1 year"
+  ExpiresByType image/avif                "access plus 1 year"
+  ExpiresByType image/x-icon              "access plus 1 year"
+  ExpiresByType image/svg+xml             "access plus 1 year"
+  ExpiresByType font/woff2                "access plus 1 year"
+  ExpiresByType font/woff                 "access plus 1 year"
+  ExpiresByType application/manifest+json "access plus 1 week"
+</IfModule>
+
+<IfModule mod_headers.c>
+  # `immutable` matters more than the max-age here: every asset URL carries
+  # ?v=<filemtime>, so the URL changes the moment the bytes do and a
+  # revalidation request on reload is pure waste.
+  <FilesMatch "\.(css|js|mjs|woff2?|png|webp|avif|svg|ico)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  # The worker itself must never be cached, or a fixed deployment is what
+  # every visitor keeps running.
+  <FilesMatch "^sw\.js$">
+    Header set Cache-Control "no-cache, max-age=0, must-revalidate"
+  </FilesMatch>
+  # The catalogue: revalidate every time. Its ETag is a content hash, so an
+  # unchanged file costs a 304 of a few dozen bytes instead of 9 KB.
+  <FilesMatch "^products\.json$">
+    Header set Cache-Control "public, no-cache, must-revalidate"
+  </FilesMatch>
+  # Uploaded product photography is content-addressed by the random suffix in
+  # velora's uploader and is never rewritten under the same name.
+  <FilesMatch "^storage/uploads/products/.*\.webp$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# ─── 4. Security headers PHP does not set (static assets, 404s, /storage) ──
+<IfModule mod_headers.c>
+  Header always set Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=(self \"https://gateway.zibal.ir\" \"https://payment.zarinpal.com\")"
+  Header always set Cross-Origin-Resource-Policy "same-site"
+  Header always set X-Frame-Options "SAMEORIGIN"
+</IfModule>
+
+# ─── 5. Hardening ──────────────────────────────────────────────────────────
+<IfModule mod_headers.c>
+  # 5 MB is comfortably above ADMIN_UPLOAD_MAX_BYTES (10 MB is NOT: PHP would
+  # discard the body before our code runs, which is the NO_FILE bug
+  # config.php documents). Kept generous so a 10 MB admin upload is never
+  # truncated by the web server in front of PHP.
+  LimitRequestBody 12582912
+</IfModule>
+
+ServerSignature Off
+ServerTokens Prod
+
+<IfModule mod_php.c>
+  php_value upload_max_filesize 10M
+  php_value post_max_size 11M
+  php_value max_execution_time 60
+  php_value memory_limit 128M
+</IfModule>
+
+# ─── 6. Error documents ───────────────────────────────────────────────────
+ErrorDocument 404 /index.php
+ErrorDocument 403 /index.php

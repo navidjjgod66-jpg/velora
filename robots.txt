@@ -1,0 +1,50 @@
+# VELORA · Maison de Chaussures
+# https://kafshevelora.ir/
+# v7.0 Golden
+
+User-agent: *
+Allow: /
+
+# ── Backend & sensitive paths ──────────────────────────────
+Disallow: /admin.php
+Disallow: /api.php
+Disallow: /config.php
+Disallow: /payment.php
+Disallow: /zarinpal.php
+Disallow: /sitemap.php
+Disallow: /includes/
+
+# ── storage/ — uploads PUBLIC, logs/cache/backups PRIVATE ──
+Disallow: /storage/logs/
+Disallow: /storage/cache/
+Disallow: /storage/backups/
+Allow: /storage/uploads/products/
+
+# ── Transient / parameter-heavy URLs ──────────────────────
+Disallow: /*?*view=compare
+Disallow: /*?*view=orders
+Disallow: /*?*view=cart
+Disallow: /*?*view=checkout
+Disallow: /*?*payment=
+Disallow: /*?*order=
+Disallow: /*?*ref=
+Disallow: /*?*utm_
+Disallow: /*?*fbclid=
+Disallow: /*?*gclid=
+Disallow: /*?*&max=
+Disallow: /*?*&stock=
+
+# ── Explicitly allowed assets ─────────────────────────────
+Allow: /*?view=shop
+Allow: /*?product=
+Allow: /style.css
+Allow: /app.js
+Allow: /sw.js
+Allow: /manifest.json
+
+# ── Sitemap ────────────────────────────────────────────────
+# sitemap.php is served at /sitemap.xml via .htaccess.
+Sitemap: https://kafshevelora.ir/sitemap.xml
+
+# ── Removed: Host: directive (Yandex deprecated it in 2018).
+# Canonical <link> in index.php is the authoritative signal.

@@ -1,0 +1,530 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   MAISON AURELLE — base.css
+   Reset · Typography · Layout primitives · Accessibility
+   ═══════════════════════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-padding-top: calc(var(--nav-h) + 24px);
+  scrollbar-gutter: stable;
+  text-rendering: optimizeLegibility;
+  font-optical-sizing: auto;
+  scroll-behavior: auto;
+}
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-stopped { overflow: hidden; }
+html.lock { overflow: hidden; }
+html:has(dialog[open]) { overflow: hidden; }
+html, body { max-width: 100%; overflow-x: clip; }
+
+body {
+  min-height: 100dvh;
+  font-family: var(--sans);
+  font-size: var(--t-base);
+  line-height: 1.72;
+  color: var(--text);
+  background: var(--bg);
+  overflow-wrap: break-word;
+  text-wrap: pretty;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior-y: none;
+  font-feature-settings: "ss01", "kern", "liga", "calt", "cv11";
+  font-synthesis-weight: none;
+  transition: background var(--d-3) var(--ease), color var(--d-3) var(--ease);
+}
+
+img, svg, canvas, video { display: block; max-width: 100%; height: auto; }
+a { color: inherit; text-decoration: none; }
+button, input, select, textarea { font: inherit; color: inherit; background: none; border: 0; }
+button { cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+ul, ol { list-style: none; }
+fieldset { border: 0; min-inline-size: 0; }
+table { border-collapse: collapse; }
+
+dialog {
+  padding: 0; background: transparent; color: inherit;
+  border: 0; max-width: none; max-height: none; overflow: visible;
+}
+dialog:focus { outline: none; }
+/* ─── Dialog backdrop ──────────────────────────────────────────────────────
+   There are 11 live <dialog>s. Every showModal() composites a FULL-VIEWPORT
+   backdrop, and this one ran three filter operators over it — a 16px Gaussian,
+   a saturate and a brightness — on every open, at ~1Mpx (dpr 2) to ~3.3Mpx
+   (dpr 3). Three passes over the whole screen per dialog, on the interaction
+   where a frame drop is most visible.
+
+   The scrim alone already carries the depth: 72% of near-black over the page.
+   `brightness(0.8)` on top of that is redundant darkening, and `saturate(1.3)`
+   on an already-near-monochrome page is invisible. So the resting backdrop is
+   now a single flat colour with a slightly deeper alpha — visually the same
+   separation, three operators cheaper.
+
+   The blur is kept, once, for devices that can afford it, because it is a real
+   part of the maison's depth language on a desktop. `.perf-low` and `.coarse`
+   are both set before first paint by index.php's pre-paint block. */
+dialog::backdrop {
+  background: oklch(0.05 0.01 268 / 0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.perf-low dialog::backdrop, .coarse dialog::backdrop {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+::selection {
+  background: color-mix(in oklch, var(--accent) 46%, transparent);
+  color: var(--text);
+}
+
+* { scrollbar-width: thin; scrollbar-color: var(--accent-3) var(--bg-2); }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--bg-2); }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--accent-3), var(--accent), var(--accent-3));
+  border-radius: 100px; border: 2px solid var(--bg-2); background-clip: padding-box;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: var(--r-1);
+  box-shadow: 0 0 0 4px var(--gold-ghost), var(--ring);
+}
+
+[hidden] { display: none !important; }
+[inert]  { pointer-events: none; }
+input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; }
+
+@media (max-width: 768px) {
+  body, button, input, select, textarea { cursor: auto; }
+  input, select, textarea { font-size: 16px !important; }
+}
+
+/* ─── Typography ─── */
+h1, h2, h3, h4, h5 {
+  font-family: var(--serif);
+  font-weight: 600;
+  line-height: 1.16;
+  letter-spacing: -0.018em;
+  text-wrap: balance;
+}
+h1 { font-family: var(--serif-d); font-weight: 500; font-size: var(--t-5xl); letter-spacing: -0.032em; line-height: 1.06; font-variation-settings: "wght" 320, "opsz" 72; }
+h2 { font-size: var(--t-4xl); }
+h3 { font-size: var(--t-2xl); }
+:is(h1, h2, h3, h4):is(:lang(fa), :lang(ar)) { line-height: 1.34; }
+:is(h1, h2, h3, h4, .eyebrow, .btn, .chip, .nav-links a, .mode-switch button, .mono):is(:lang(fa), :lang(ar)) { letter-spacing: normal; }
+
+p { max-width: var(--measure); }
+em { font-style: normal; color: var(--accent); }
+b, strong { font-weight: 700; }
+address { font-style: normal; }
+.serif-accent { font-family: var(--serif-d); font-weight: 400; }
+
+.mono {
+  font-family: var(--mono);
+  font-size: 11px; font-weight: 600;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.025em;
+}
+.lat {
+  font-family: var(--mono);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-size: 10.5px;
+  color: var(--text-3);
+  direction: ltr;
+  display: inline-block;
+  unicode-bidi: isolate;
+}
+.ltr { direction: ltr; unicode-bidi: isolate; }
+.fa-num { font-feature-settings: "ss01"; font-variant-numeric: tabular-nums; }
+.accent-txt { color: var(--accent); }
+.free-txt   { color: var(--verd); }
+.lede { font-size: var(--t-lg); color: var(--text-2); line-height: 2.05; max-width: 62ch; }
+
+/* Gold foil — بدون انیمیشن دائمی */
+.gold-foil {
+  background: var(--grad-foil);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: var(--gold-2);
+  display: inline-block;
+  position: relative;
+}
+.plat-foil {
+  background: var(--grad-plat, var(--grad-foil));
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+}
+
+/* ─── Layout ─── */
+.container {
+  width: 100%;
+  max-width: calc(var(--w) + var(--pad) * 2);
+  margin-inline: auto;
+  padding-inline: var(--pad);
+  position: relative;
+  z-index: 3;
+}
+.container-narrow { max-width: calc(var(--w-narrow) + var(--pad) * 2); }
+
+section, .ledger, .trust, .press, .idx, .ticker-bar, .zone { position: relative; }
+section {
+  padding-block: clamp(4.6rem, 11vw, 10.5rem);
+  scroll-margin-top: calc(var(--nav-h) + 20px);
+  z-index: 2;
+}
+
+/* ─── Skip link ───────────────────────────────────────────────────────────
+   It used to animate `top` (-120px -> 24px) on a `position: fixed` element.
+   `top` is a layout property, so every Tab press invalidated layout for the
+   whole viewport for 240ms — on the exact interaction a keyboard user needs to
+   feel instant. Moved to `transform: translateY()`, which is compositor-only,
+   with `top` held constant.
+
+   The `[dir="rtl"]` override that used to sit here is deleted, and it was a bug
+   rather than a duplicate. index.php hard-codes <html dir="rtl"> and nothing
+   ever toggles it, so `inset-inline-start: 50%` always resolves to `right: 50%`
+   — and `translateX(-50%)` is already the correct centring for that. The RTL
+   override shifted it a further half of its own width to the right, hanging it
+   off the right edge of the screen. */
+.skip-link {
+  position: fixed; top: 24px;
+  inset-inline-start: 50%; transform: translate(-50%, -140%);
+  background: var(--grad-gold); color: var(--invert);
+  padding: 0.95rem 1.9rem; border-radius: var(--r-3);
+  font-size: 0.82rem; font-weight: 700;
+  z-index: 99999;
+  transition: transform var(--d-2) var(--ease);
+  box-shadow: var(--sh-md);
+  will-change: transform;
+}
+.skip-link:focus { transform: translate(-50%, 0); box-shadow: var(--sh-lg), var(--sh-glow); }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+.view { position: relative; z-index: var(--z-content); }
+.view[hidden] { display: none !important; }
+
+/* ─── Reveal ─── */
+.rv {
+  opacity: 0;
+  transform: translateY(42px);
+  transition: opacity var(--d-cine) var(--ease-editorial),
+              transform var(--d-cine) var(--ease-editorial);
+}
+.rv.is-in, .rv.in { opacity: 1; transform: none; }
+.rv.rv-d1 { transition-delay: 0.12s; }
+.rv.rv-d2 { transition-delay: 0.24s; }
+.rv.rv-d3 { transition-delay: 0.36s; }
+.rv.rv-d4 { transition-delay: 0.48s; }
+html:not(.js) .rv { opacity: 1; transform: none; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   PERFORMANCE TIERS
+
+   index.php's inline pre-paint block reads navigator.deviceMemory,
+   navigator.hardwareConcurrency and navigator.connection.saveData, and puts
+   exactly one of .perf-low / .perf-mid / .perf-high on <html> BEFORE the first
+   stylesheet is applied. That ordering is the whole point: the decision is made
+   in the first frame, so a weak phone never paints an effect it will have to
+   undo, and never pays a class-toggle on a later frame that would itself cause
+   a style recalculation across the whole document.
+
+   `.coarse` (any touch device) and `.rm` (prefers-reduced-motion) are set by the
+   same block, and are capability flags rather than power flags — they are
+   independent of how fast the device is.
+
+   Before this rule, exactly four decorative layers were switched off under
+   .perf-low. Twelve infinite animations were not: the hero breathe, the seal
+   turn, the ten shimmer sweeps on the product cards at first paint, both
+   marquees, the live-dot pulse, the announcement glyph, the concierge typing
+   dots, the drop line and all three preloader rings. On a phone that is a
+   permanent animation budget spent before the user has scrolled once, competing
+   with the scroll itself for the frame. All of them are now switched off by the
+   same single hook.
+   ────────────────────────────────────────────────────────────────────── */
+.perf-low .aurora,
+.perf-low #dust,
+.perf-low .grain,
+.perf-low .motes,
+.perf-low .skl,
+.perf-low .skl::after,
+.perf-low .hero::after,
+.perf-low .hero-plate__shoe,
+.perf-low .hero-plate::after,
+.perf-low .seal,
+.perf-low .seal__ring,
+.perf-low .hands i,
+.perf-low .live-dot,
+.perf-low .live-dot::after,
+.perf-low .tk,
+.perf-low .ticker__track,
+.perf-low .chat-fab__pulse,
+.perf-low .annonce-glyph,
+.perf-low .sh-line::after,
+.perf-low .pl-seal,
+.perf-low .pl-seal::before,
+.perf-low .pl-seal .core {
+  animation: none !important;
+}
+/* Pure ornament that costs a composited layer each and can be withdrawn with no
+   visual loss worth defending: the edge dissolve, the vignette, the marble
+   grain inside the hero plate. */
+.perf-low .vig,
+.perf-low .bend,
+.perf-low .hero-plate__grain { display: none; }
+
+/* Coarse pointers get the same treatment as low power. Every phone is coarse,
+   and on a phone there is no cursor, no hover, and no fine gradient — so the
+   ornament that the desktop look is built from has nothing to do there. The one
+   thing a phone does need is *less* work per frame, not a cheaper version of
+   the same work. */
+.coarse .aurora i { animation: none !important; }
+.coarse .motes { display: none; }
+.coarse .hero-ghost { display: none; }
+.coarse #dust { display: none; }
+
+/* ─── Below-the-fold rendering ────────────────────────────────────────────
+   The document is six sections plus a footer, and only the hero is above the
+   fold on a 844px-tall phone. Without this the browser lays out, styles and
+   paints all of it during the first frame: ten product cards each carrying a
+   filter layer, a skeleton shimmer and a radial spotlight, four sections of
+   editorial, a lookbook rail, an archive, an appointment form and a footer with
+   a 34-line gradient/box-shadow/-webkit-text-stroke paint tree.
+
+   `content-visibility: auto` skips layout, style and paint for anything
+   offscreen and does the work when it scrolls into range. `contain-intrinsic-
+   size: auto <h>` supplies a placeholder height so the scrollbar is stable, and
+   the `auto` keyword makes the browser remember the real size once it has been
+   measured, so the second visit is exact.
+
+   This is the single largest initial-render win available without changing the
+   design, and it is why the page reaches interactive sooner on a weak device.
+
+   Not applied to anything that scrolls horizontally or is sticky: on those,
+   skipping subtree layout breaks scroll-snap and `position: sticky`. The
+   override at the end of the block is the safety net for anything added later. */
+#boutique,
+#craft,
+#lookbook,
+#archive,
+#appoint,
+#mainFooter {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 900px;
+}
+.lb-rail,
+.selrail,
+.idx,
+.ledger,
+.pdp__grid,
+.pdp__thumbs,
+.mz__fig,
+.acc,
+.faq {
+  content-visibility: visible;
+}
+
+/* ─── Utilities ─── */
+.zone {
+  display: flex; align-items: center; gap: 1.6rem;
+  max-width: calc(var(--w) + var(--pad) * 2);
+  margin-inline: auto;
+  padding: 2rem var(--gutter);
+}
+.zone span { flex: 1; height: 1px; background: linear-gradient(90deg, transparent, var(--line-2)); }
+.zone span:last-child { background: linear-gradient(90deg, var(--line-2), transparent); }
+.zone i { width: 7px; height: 7px; border: 1px solid var(--gold-line); transform: rotate(45deg); }
+
+.ghost {
+  position: absolute; z-index: 0; pointer-events: none; user-select: none;
+  font-family: var(--serif-d); font-weight: 700; line-height: 0.78;
+  color: transparent; -webkit-text-stroke: 1px var(--line-2);
+  opacity: 0.5;
+  font-size: clamp(6.5rem, 4.5rem + 10vw, 15rem);
+  inset-inline-end: clamp(0px, 2vw, 24px); top: -0.5rem;
+}
+.ghost--center { inset-inline-start: 50%; translate: -50% 0; top: -1rem; opacity: 0.32; }
+
+.split-line { display: inline-block; overflow: hidden; vertical-align: top; }
+.split-line-inner { display: inline-block; }
+
+.f-phi {
+  margin-top: 2rem; font-family: var(--mono);
+  font-size: 0.58rem; color: var(--text-4);
+  direction: ltr; text-align: start;
+}
+.phi-perf {
+  display: block; margin-top: .35rem;
+  font-family: var(--mono); font-size: .62rem; color: var(--text-4);
+}
+/* ═══════════════════════════════════════════════════════════════════════
+   THE BENT PAGE
+   ───────────────────────────────────────────────────────────────────────
+   The maison's silhouette. The document does not reach the sides of the
+   viewport: each long edge curves inward and dissolves, so the page reads as
+   a sheet being held rather than as a rectangle of background colour.
+
+   ── Why one element with two pseudo-elements, and not a wrapper ────────
+   Wrapping the page in a container and giving it a border-radius looks the
+   same for one frame and then costs everything after that. A wrapper around
+   the whole document takes `position: sticky` with it (the header stops
+   sticking), changes the containing block for every fixed overlay, and — worst
+   — cannot clip, so the page would have to scroll its own overflow. An
+   overlay that only ever draws on the empty margins has none of those costs:
+   `position: fixed`, `pointer-events: none`, and nothing about the document's
+   own layout changes.
+
+   ── Why it does not repaint ────────────────────────────────────────────
+   `position: fixed` + no property that can change + no ancestor with a
+   transform, filter or backdrop-filter gives the compositor a layer it can
+   promote once and keep. There is no scroll listener anywhere in this feature,
+   no ResizeObserver, and no JS at all: the SVG hairline is expressed as a
+   non-scaling stroke, so a window resize reflows a gradient and nothing else.
+
+   ── The bow ───────────────────────────────────────────────────────────
+   `--edge-bow` is the number that decides whether this reads as a curved
+   sheet or as a border with a shadow. It is deliberately generous. A shallow
+   bow is invisible at 1280px and obvious at 2560px, which is exactly
+   inverted from where a designer looks and where a customer looks.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.bend {
+  position: fixed;
+  inset: 0;
+  z-index: 8;                 /* over the document, under every overlay */
+  pointer-events: none;
+  display: none;
+  /* layout + paint + style, deliberately NOT `size`. Size containment would
+     tell the engine to ignore this element's contents for sizing — correct in
+     principle, but `contain: strict` also implies `contain: size`, and a
+     fixed, inset-positioned box with no children gains nothing from it while
+     losing the guarantee that `inset: 0` resolves against the viewport. */
+  contain: layout style paint;
+}
+
+/* Below the threshold the treatment is switched off rather than squeezed.
+   A 6px fade on a phone is a smudge that costs a composited layer and reads
+   as a rendering fault. The page is edge-to-edge there, which is correct. */
+@media (min-width: 860px) {
+  .bend { display: block; }
+}
+
+.bend::before,
+.bend::after {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  width: var(--edge-w);
+  /* The curve. An SVG path rather than a border-radius because a radius would
+     have to be applied to a box we do not own, and an inset box-shadow of that
+     shape costs a blur over the full viewport height on every theme change. */
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+
+/* ── Leading edge (the side the writing starts from) ── */
+.bend::before {
+  inset-inline-start: 0;
+  background-image:
+    /* 1 · the dissolve. Opaque edge-ink at the very border, gone by 62% of
+           the band, so the fade lives in the outer two thirds and the inner
+           third of the gutter is untouched — the text column never sits under
+           the darkest part. */
+    linear-gradient(
+      to var(--edge-dir, right),
+      var(--edge-ink) 0%,
+      color-mix(in oklch, var(--edge-ink) 72%, transparent) 16%,
+      color-mix(in oklch, var(--edge-ink) 34%, transparent) 38%,
+      transparent 64%
+    ),
+    /* 2 · the bowed hairline. Bowed toward the page centre at mid-height and
+           back to the border at the top and bottom, which is what makes the
+           silhouette read as a sheet rather than as a rule. */
+    url("data:image/svg+xml;charset=utf-8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 78 1000' preserveAspectRatio='none'><path d='M0.5 0 C 1 250, 1 750, 0.5 1000' fill='none' stroke='%23c9a45e' stroke-opacity='0.20' stroke-width='1' vector-effect='non-scaling-stroke'/></svg>");
+}
+
+/* ── Trailing edge ── */
+.bend::after {
+  inset-inline-end: 0;
+  background-image:
+    linear-gradient(
+      to var(--edge-dir-rev, left),
+      var(--edge-ink) 0%,
+      color-mix(in oklch, var(--edge-ink) 72%, transparent) 16%,
+      color-mix(in oklch, var(--edge-ink) 34%, transparent) 38%,
+      transparent 64%
+    ),
+    url("data:image/svg+xml;charset=utf-8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 78 1000' preserveAspectRatio='none'><path d='M77.5 0 C 77 250, 77 750, 77.5 1000' fill='none' stroke='%23c9a45e' stroke-opacity='0.20' stroke-width='1' vector-effect='non-scaling-stroke'/></svg>");
+}
+
+/* ── Direction ──────────────────────────────────────────────────────────
+   The gradients above are written for an LTR document. The page is RTL, so
+   the two directions swap: `to right` must become `to left` for the leading
+   edge. Overriding two custom properties rather than rewriting both gradient
+   stacks is what keeps the two halves of this feature from drifting apart —
+   they are the same gradient mirrored, and one variable is enough to prove it. */
+[dir="rtl"] .bend { --edge-dir: left; --edge-dir-rev: right; }
+
+/* ── Where the bow is deepest ───────────────────────────────────────────
+   The curve is at its shallowest exactly where the eye enters the page and
+   deepest through the middle, and it eases at both ends. A linear fade plus a
+   linear-bowed line reads as a lens; this reads as a page. */
+.bend::before,
+.bend::after {
+  /* A second, very soft interior wash that fades the page toward the edge
+     ink without the hard stop a single linear gradient leaves at 64%. */
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 8%, #000 92%, transparent);
+          mask-image: linear-gradient(to bottom, transparent, #000 8%, #000 92%, transparent);
+}
+
+/* ── Reduced motion & forced colours ────────────────────────────────────
+   Nothing here animates, so prefers-reduced-motion needs no branch. Forced
+   colours is the one case that does: the system replaces the gradient with a
+   flat colour and the whole illusion becomes a hard rectangle, so the layer is
+   withdrawn and the page returns to edge-to-edge. */
+@media (forced-colors: active) {
+  .bend { display: none; }
+}
+
+/* ── Print ──────────────────────────────────────────────────────────────
+   The edges are a viewport illusion. On paper the page already has margins,
+   and drawing a dissolve into them would print as a grey smear down both
+   sides of every sheet. */
+@media print {
+  .bend { display: none; }
+}
+
+/* ─── Edge-anchored chrome pulls inboard ──────────────────────────────────
+   MOVED. This block is preserved verbatim, but it now lives at the END of
+   components.css, and that relocation is the fix.
+
+   It was here, and it never applied. All three of its targets are re-declared
+   with equal specificity in components.css — `.chat-fab` at components.css:1086,
+   `#toTop` at :1067 and `.conc` at :1157 all set the same
+   `clamp(1.2rem, 3vw, 2.4rem)` insets. A media query adds no specificity, so
+   base.css loses by document order no matter how narrow the query is, and the
+   pull-inboard fix described below has been dead since it was written.
+
+   The consequence was real and visible: on every screen at or above 860px, the
+   concierge FAB, the back-to-top button and the concierge panel all sat at
+   ~38px from the viewport edge, inside a bend band that reaches 78px — i.e.
+   inside the darkest part of the dissolve, reading as if they were sinking into
+   the page. Putting the block after components.css is what makes the comment
+   below true.

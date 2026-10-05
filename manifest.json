@@ -1,0 +1,50 @@
+{
+  "name": "VELORA · Maison de Chaussures",
+  "short_name": "VELORA",
+  "description": "مزون کفش دست‌ساز — چرم ایتالیایی، دوخت فلورانسی، دویست جفت در فصل.",
+  "lang": "fa-IR",
+  "dir": "rtl",
+  "start_url": "/",
+  "scope": "/",
+  "id": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
+  "background_color": "#0a0b12",
+  "theme_color": "#0a0b12",
+  "categories": ["shopping", "lifestyle"],
+  "icons": [
+    {
+      "src": "/brand-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/brand-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/brand-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "مجموعه",
+      "short_name": "مجموعه",
+      "url": "/#boutique",
+      "icons": [{ "src": "/brand-icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "سبد خرید",
+      "short_name": "سبد",
+      "url": "/#/bag",
+      "icons": [{ "src": "/brand-icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}
