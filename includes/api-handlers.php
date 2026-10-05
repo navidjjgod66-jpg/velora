@@ -16,6 +16,18 @@ if (!defined('VELORA_CONFIG_LOADED')) {
     exit('includes/api-handlers.php requires config.php to be loaded first.');
 }
 
+/* api.php's former 2.6k-line switch was split into includes/api/<domain>.php
+   during the monolith decomposition, but the dispatcher at the bottom of
+   api.php never required this loader — it only called velora_api_handler().
+   The function existed on disk and nothing pulled it in, so every request
+   reached the dispatcher, hit "call to undefined function", fell into the
+   Throwable arm, and answered a valid action with a bodyless HTTP_500.
+   Requiring the loader here, from the file that defines it, means the
+   dependency travels with the code that needs it rather than living in the
+   memory of whoever edits api.php. */
+require __DIR__ . '/checkout.php';
+require __DIR__ . '/addresses.php';
+
 /**
  * Resolve an action name to its handler file.
  *

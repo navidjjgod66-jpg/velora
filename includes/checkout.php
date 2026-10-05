@@ -18,6 +18,16 @@ if (!defined('VELORA_CONFIG_LOADED')) {
 /* ═══════════════════════════════════════════════════════════════════════════
    IMAGE KEY SANITIZING
    ═══════════════════════════════════════════════════════════════════════════ */
+/**
+ * The one home for image-key validation.
+ *
+ * This body used to exist twice — once here, once inline at the top of
+ * api.php — byte-for-byte identical copies of the same rule ("a key is either
+ * an https-safe URL or a <name>.webp upload"). The api.php copy was removed;
+ * every caller now reaches this one through api.php's require of this file.
+ * If the two copies had drifted, admin uploads would have validated by one
+ * rule and checkout snapshots by the other.
+ */
 function sanitize_image_key(string $input): string {
     $input = trim($input);
     if ($input === '' || strlen($input) > 512) return '';

@@ -12,6 +12,15 @@ if (!defined('VELORA_CONFIG_LOADED')) {
     exit('includes/addresses.php requires config.php to be loaded first.');
 }
 
+/* The validators below check a province/city pair against the geo list and
+   compose a display line with velora_postal_format(), both of which live in
+   includes/geo.php. Requiring it here makes this file self-sufficient: api.php
+   already loads geo.php before dispatching, so this is a no-op in the running
+   request — but a test or CLI probe that boots only config.php plus this file
+   gets the same function table as the live site instead of a missing-symbol
+   error. require_once keeps it safe if a future entry point loads both. */
+require_once __DIR__ . '/geo.php';
+
 /* ── Address book helpers ──────────────────────────────────────────────────── */
 
 /**
