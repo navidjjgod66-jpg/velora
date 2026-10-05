@@ -1568,7 +1568,10 @@ if (window.AE_SYNC) window.AE_SYNC.run(false);
       pts.push(`${i * 5},${(24 - (6 + (x / 233280) * 14)).toFixed(1)}`);
     }
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('class', 'spark'); svg.setAttribute('viewBox', '0 0 55 24');
+    /* spark-svg نه spark: کلاس .spark در components.css مال ذرات ثابتِ
+       کلیک است (position:fixed) — هم‌نامی باعث می‌شد خط‌چین‌ها روی
+       صفحه شناور شوند. */
+    svg.setAttribute('class', 'spark-svg'); svg.setAttribute('viewBox', '0 0 55 24');
     svg.setAttribute('width', '55'); svg.setAttribute('height', '24');
     svg.setAttribute('aria-hidden', 'true');
     const pl = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');

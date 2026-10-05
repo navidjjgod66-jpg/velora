@@ -913,3 +913,99 @@ body.loaded .hero-visual .frame { clip-path: inset(0 0 0 0); }
   color: var(--accent);
   margin-inline-start: 0.35em;
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   SENSOUS UPGRADES — shader hero · greeting · market ticker · auric seam
+   (ویژگی‌های ۱، ۳، ۵، ۱۰) — همه reduced-motion-aware و tier-aware
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── ویژگی ۱ — WebGL Shader Background ──────────────────────────────
+   canvas توسط shader-hero.js قبل از .hero-grid-bg درج می‌شود؛ z-index:0
+   هم‌سطح اورنمنت‌ها، زیر محتوا. pointer-events:none تا INP صفر بماند.
+   فقط perf-high اجرا می‌شود (JS)، ولی اینجا هم قفل می‌کنیم تا اگر
+   ماژول اشتباه لود شد، چیزی روی کارت‌ها نیفتد. */
+.hero-shader {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.92;
+}
+.perf-mid .hero-shader, .perf-low .hero-shader { display: none; }
+
+/* Fallback گرادیانی — shader-hero.js کلاس .hero-shader-fallback را روی
+   .hero می‌گذارد اگر WebGL2 نبود یا شیدر کامپایل نشد. */
+.hero.hero-shader-fallback::before {
+  content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 55% at 28% 22%, color-mix(in oklch, var(--accent) 16%, transparent), transparent 62%),
+    radial-gradient(ellipse 60% 50% at 74% 78%, color-mix(in oklch, var(--accent-2) 13%, transparent), transparent 60%);
+}
+
+/* ── ویژگی ۳ — Greeting شخصی‌سازی‌شده ───────────────────────────────
+   متن PHP ثابت fallback است؛ aurelle-intel.js با textContent جایگزین
+   می‌کند (ساختار DOM دست‌نخورده). role=status آن را زنده اعلام می‌کند. */
+.hero-greet {
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  color: var(--text-4);
+  margin-block-end: 1.1rem;
+}
+
+/* ── ویژگی ۵ — Market Ticker ─────────────────────────────────────────
+   فقط ≥1200px؛ در atelier JS با hidden پنهانش می‌کند (قاعدهٔ [hidden]
+   پایین اولویت آخر را می‌دهد). ارتفاع ثابت = CLS صفر هنگام paint. */
+.mk-bar {
+  display: flex;
+  align-items: center; justify-content: center;
+  gap: 2.5rem;
+  height: 34px;
+  padding-inline: 1.5rem;
+  border-block-end: 1px solid var(--gold-line);
+  background: var(--bg-2);
+  font-family: var(--mono);
+  font-size: 0.68rem; font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-4);
+}
+.mk-bar[hidden] { display: none !important; }
+@media (max-width: 1199.98px) { .mk-bar { display: none !important; } }
+[data-mode="atelier"] .mk-bar { display: none !important; }
+
+.mk-item {
+  display: inline-flex; align-items: baseline; gap: 0.5rem;
+  transition: transform var(--d-2) var(--ease-lux);
+}
+.mk-item b { color: var(--text-3); font-weight: 500; }
+.mk-v { font-style: normal; color: var(--text); }
+.mk-d { font-style: normal; min-width: 5.2em; text-align: start; }
+.mk-d.up   { color: #3fae7a; }
+.mk-d.down { color: #c96a5e; }
+/* hover = pause (JS) + بزرگ‌نمایی (CSS) */
+.mk-bar:hover .mk-item:hover { transform: scale(1.18); }
+.mk-note { font-size: 0.52rem; opacity: 0.55; letter-spacing: 0.12em; }
+
+/* ── ویژگی ۱۰ — Auric Seam ───────────────────────────────────────────
+   جداکنندهٔ فصل‌ها؛ رفت‌وبرگشت گرادیانی. data-transparency و
+   reduced-motion انیمیشن را خاموش می‌کنند (خط ساکن می‌ماند). */
+.auric-seam {
+  height: 1px; border: 0; margin-block: clamp(3rem, 7vh, 5.5rem);
+  background: linear-gradient(90deg, transparent, var(--accent), var(--accent-2), transparent);
+  background-size: 220% 100%;
+  animation: seamDrift 9s var(--ease-silk) infinite alternate;
+  opacity: 0.7;
+}
+@keyframes seamDrift { from { background-position: 0% 0; } to { background-position: 100% 0; } }
+@media (prefers-reduced-motion: reduce) { .auric-seam { animation: none; } }
+
+/* ── ویژگی ۱۰ — Sparkline در hero-ledger ─────────────────────────────
+   .spark در components.css برای ذرات کلیک استفاده می‌شد؛ این نسخهٔ
+   SVG ایستای خطی است — تزئینی، aria-hidden، بدون انیمیشن. */
+.spark-svg { vertical-align: middle; opacity: 0.65; margin-inline-start: 0.5rem; }
+
+/* ── ویژگی ۱۰ — Konami easter egg ────────────────────────────────────
+   hue-rotate معکوس برای ۸ ثانیه؛ فیلتر روی html تا همهٔ تم‌ها یکسان
+   بچرخند. reduced-motion: فقط fade سریع، بدون چرخهٔ طولانی (JS خودش
+   در reduced کلاس نمی‌گذارد — این فقط لنگرِ فیلتر است). */
+html.konami { filter: hue-rotate(180deg); transition: filter 0.8s var(--ease-silk); }

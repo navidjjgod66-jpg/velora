@@ -1178,7 +1178,11 @@ $cardServer = static function (array $p, int $i) use ($esc, $product_img, $hexFo
     foreach ($p['colors'] as $c) {
         $sw .= '<span class="sw" style="--c:' . $esc($hexForColor((string) $c['key'])) . '"></span>';
     }
-    return '<article class="prod rv' . ($i % 3 === 1 ? ' rv-d1' : ($i % 3 === 2 ? ' rv-d2' : '')) . '"'
+    /* ویژگی ۱۰ — Holo Ring: نخستین کارت در چیدمان پیش‌فرض «ویژهٔ خانه»
+       حلقهٔ conic می‌گیرد. فقط class اضافه می‌شود؛ هیچ ساختاری عوض
+       نمی‌شود و JS سرور-رندر را بازنویسی نمی‌کند (قاعدهٔ ۷). */
+    $feat = ($i === 0 && ($qf['sort'] ?? 'featured') === 'featured');
+    return '<article class="prod rv' . ($i % 3 === 1 ? ' rv-d1' : ($i % 3 === 2 ? ' rv-d2' : '')) . ($feat ? ' is-feat' : '') . '"'
          . ' data-id="' . $esc($p['id']) . '" role="listitem">'
          . '<a class="prod-media skl" href="?product=' . rawurlencode($p['id']) . '"'
          . ' data-open-pdp aria-label="' . $esc('مشاهدهٔ جزئیات — ' . $p['name']) . '">'

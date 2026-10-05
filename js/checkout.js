@@ -549,6 +549,8 @@ ckoNext && ckoNext.addEventListener('click', async () => {
     $('.cko__nav', cko).style.display = 'none';
     ckoDone.hidden = false;
     completeCheckout();
+    /* ویژگی ۷ — سفارش ثبت شد: پیش‌نویس دیگر معنایی ندارد */
+    LS.del(DRAFT_KEY);
     $('#ckoDoneX').focus();
     window.dispatchEvent(new CustomEvent('ae:log-atelier', { detail:{ text:`سفارش جدید ${ref} به صف تولید پیوست` } }));
     toast('ثبت نشد — سرور در دسترس نیست. سفارش شما نگه داشته شد.', 'err');
@@ -632,6 +634,7 @@ function ckoHandlePaymentReturn() {
     recordOrder({ ref, total: ret.amount || 0, count: 0, items: [],
                   date: new Date().toISOString(), phone: '', paid: true });
     completeCheckout();
+    LS.del(DRAFT_KEY); /* ویژگی ۷ — بازگشت موفق از درگاه: پیش‌نویس پاک شود */
     if (openDlg || ref) {
       $('#ckoRef').textContent = ref || '—';
       $('#ckoForm').style.display = 'none';
@@ -703,6 +706,7 @@ function watchPaymentOutcome(orderId) {
       recordOrder({ ref: ref || orderId, total: 0, count: 0, items: [],
                     date: new Date().toISOString(), phone: '', paid: true });
       completeCheckout();
+      LS.del(DRAFT_KEY); /* ویژگی ۷ — پرداخت موفق: پیش‌نویس پاک شود */
       toast('پرداخت تأیید شد — سفارش ' + (ref || orderId) + ' ثبت شد.', '', null, 7000);
     } else {
       toast('پرداخت ناموفق بود. سبد شما حفظ شده است.', 'err');
