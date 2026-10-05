@@ -7,10 +7,10 @@ declare(strict_types=1);
  * behaviour, one home per concern.
  */
 
-if (!defined('VELORA_CONFIG_LOADED')) {{
+if (!defined('VELORA_CONFIG_LOADED')) {
     http_response_code(500);
     exit('includes/addresses.php requires config.php to be loaded first.');
-}}
+}
 
 /* ── Address book helpers ──────────────────────────────────────────────────── */
 
