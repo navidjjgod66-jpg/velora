@@ -145,6 +145,158 @@ if (function_exists('velora_catalog_active') && function_exists('velora_catalog_
         $catalogFeed = [];
     }
 }
+/* Keep the untouched feed beside the filtered one: the boot payload hands it
+   to the client engine so a facet change filters all the pieces, not only the
+   ones this request's URL already narrowed. */
+$catalogFeedAll = $catalogFeed;
+
+/* ─── The shop's filter state, read from the query string ────────────────
+   The collection's filter bar is a plain GET form, so it works with no
+   JavaScript at all: every facet below has a server-side twin here, and the
+   grid is rendered already filtered. main.js then takes the same controls
+   over for instant client-side filtering — one markup, two engines, and the
+   no-JS engine is not a stub.
+
+   Every value is validated against the live catalogue, never trusted as
+   received: an unknown category slug or an out-of-band size simply does not
+   match anything rather than reaching the SQL-shaped world of the feed. A
+   facet that cannot be honoured must not be able to distort the page. */
+$qf = [
+    'q'        => trim((string) ($_GET['f_q'] ?? '')),
+    'sort'     => (string) ($_GET['f_sort'] ?? 'featured'),
+    'cats'     => [],
+    'sizes'    => [],
+    'colors'   => [],
+    'heel_min' => null,
+    'heel_max' => null,
+    'price_max'=> null,
+    'instock'  => !empty($_GET['f_instock']),
+    'deals'    => !empty($_GET['f_deals']),
+    'new'      => !empty($_GET['f_new']),
+];
+if (!in_array($qf['sort'], ['featured','new','asc','desc','name','stock'], true)) {
+    $qf['sort'] = 'featured';
+}
+$rawCats = (array) ($_GET['f_cat'] ?? []);
+foreach ($rawCats as $c) {
+    $c = (string) $c;
+    if ($c !== '' && strlen($c) <= 32 && preg_match('/^[a-z]+$/', $c)) $qf['cats'][] = $c;
+}
+$rawSizes = (array) ($_GET['f_size'] ?? []);
+foreach ($rawSizes as $s) {
+    $s = (int) $s;
+    if ($s >= SIZE_MIN && $s <= SIZE_MAX && !in_array((string) $s, $qf['sizes'], true)) {
+        $qf['sizes'][] = (string) $s;
+    }
+}
+$rawColors = (array) ($_GET['f_color'] ?? []);
+foreach ($rawColors as $k) {
+    $k = (string) $k;
+    if ($k !== '' && strlen($k) <= 32 && preg_match('/^[a-z]+$/', $k) && !in_array($k, $qf['colors'], true)) {
+        $qf['colors'][] = $k;
+    }
+}
+if (isset($_GET['f_heel_min']) && is_numeric($_GET['f_heel_min'])) $qf['heel_min'] = max(0, (int) $_GET['f_heel_min']);
+if (isset($_GET['f_heel_max']) && is_numeric($_GET['f_heel_max'])) $qf['heel_max'] = max(0, (int) $_GET['f_heel_max']);
+if (isset($_GET['f_price'])    && is_numeric($_GET['f_price']))    $qf['price_max'] = max(0, (int) $_GET['f_price']);
+
+/* Facets derived from the catalogue itself — the vocabulary of the shop has
+   exactly one source. Counts are computed BEFORE filtering, so a chip always
+   says how many pieces the maison carries in that facet, and a selection
+   never makes its own option vanish from the bar. */
+$facetCounts = ['cat' => [], 'color' => []];
+$facetSizesSeen = [];
+$heelLo = null; $heelHi = null; $priceLo = null; $priceHi = null;
+foreach ($catalogFeed as $p) {
+    $slug = (string) ($p['cat'] ?? '');
+    if ($slug !== '') $facetCounts['cat'][$slug] = ($facetCounts['cat'][$slug] ?? 0) + 1;
+    foreach ((array) ($p['colors'] ?? []) as $c) {
+        $k = (string) ($c['key'] ?? '');
+        if ($k !== '') { $facetCounts['color'][$k] = ($facetCounts['color'][$k] ?? 0) + 1; }
+    }
+    foreach ((array) ($p['sizes'] ?? []) as $s) {
+        if (((int) ($s['stock'] ?? 0)) > 0) $facetSizesSeen[(int) ($s['eu'] ?? 0)] = true;
+    }
+    $h = (int) ($p['heel'] ?? 0);
+    if ($h > 0) { $heelLo = $heelLo === null ? $h : min($heelLo, $h); $heelHi = $heelHi === null ? $h : max($heelHi, $h); }
+    $pr = (int) ($p['price'] ?? 0);
+    if ($pr > 0) { $priceLo = $priceLo === null ? $pr : min($priceLo, $pr); $priceHi = $priceHi === null ? $pr : max($priceHi, $pr); }
+}
+ksort($facetSizesSeen);
+$facetSizes = array_keys($facetSizesSeen);
+
+/* Order the colour chips by first appearance in CATEGORY-independent catalogue
+   order, showing each key's Persian name from the product records themselves. */
+$facetColors = [];
+foreach ($catalogFeed as $p) {
+    foreach ((array) ($p['colors'] ?? []) as $c) {
+        $k = (string) ($c['key'] ?? '');
+        $n = (string) ($c['name'] ?? '');
+        if ($k !== '' && $n !== '' && !isset($facetColors[$k])) $facetColors[$k] = $n;
+    }
+}
+$facetCats = [];
+foreach ($facetCounts['cat'] as $slug => $_n) {
+    $facetCats[$slug] = function_exists('velora_category_label') ? velora_category_label($slug) : $slug;
+}
+
+$heelBounds  = $heelLo  !== null ? [max(0, (int) floor($heelLo / 5) * 5), (int) ceil($heelHi / 5) * 5] : null;
+$priceBounds = $priceLo !== null ? [(int) floor($priceLo / 100000) * 100000, (int) ceil($priceHi / 100000) * 100000] : null;
+
+/* Slider positions default to the full band, so an unfiltered request renders
+   handles at the ends and a filtered one round-trips its own bounds. */
+if ($qf['heel_min'] === null || $qf['heel_max'] === null) {
+    $qf['heel_min'] = $heelBounds[0] ?? 0;
+    $qf['heel_max'] = $heelBounds[1] ?? 0;
+}
+if ($qf['heel_min'] > $qf['heel_max']) { $t = $qf['heel_min']; $qf['heel_min'] = $qf['heel_max']; $qf['heel_max'] = $t; }
+if ($qf['price_max'] === null) $qf['price_max'] = $priceBounds[1] ?? 0;
+
+$filtersActive = $qf['q'] !== '' || $qf['cats'] || $qf['sizes'] || $qf['colors']
+              || $qf['instock'] || $qf['deals'] || $qf['new']
+              || ($heelBounds && ($qf['heel_min'] > $heelBounds[0] || $qf['heel_max'] < $heelBounds[1]))
+              || ($priceBounds && $qf['price_max'] < $priceBounds[1])
+              || $qf['sort'] !== 'featured';
+
+/* The server-side pass of the same predicate main.js's apply() runs. Kept
+   beside each other in meaning: category OR within a facet, AND across
+   facets; a size matches only when that size actually has stock. */
+if ($filtersActive && $catalogFeed) {
+    $catalogFeed = array_values(array_filter($catalogFeed, static function (array $p) use ($qf): bool {
+        if ($qf['q'] !== ''
+            && mb_stripos(($p['name'] ?? '') . ' ' . ($p['sub'] ?? '') . ' ' . ($p['desc'] ?? ''), $qf['q']) === false) {
+            return false;
+        }
+        if ($qf['cats'] && !in_array((string) ($p['cat'] ?? ''), $qf['cats'], true)) return false;
+        if ($qf['colors']) {
+            $have = array_map(static fn($c): string => (string) ($c['key'] ?? ''), (array) ($p['colors'] ?? []));
+            if (!array_intersect($qf['colors'], $have)) return false;
+        }
+        if ($qf['sizes']) {
+            $ok = false;
+            foreach ((array) ($p['sizes'] ?? []) as $s) {
+                if (((int) ($s['stock'] ?? 0)) > 0 && in_array((string) (int) ($s['eu'] ?? 0), $qf['sizes'], true)) { $ok = true; break; }
+            }
+            if (!$ok) return false;
+        }
+        $h = (int) ($p['heel'] ?? 0);
+        if ($h < (int) $qf['heel_min'] || $h > (int) $qf['heel_max']) return false;
+        if ($qf['price_max'] > 0 && (int) ($p['price'] ?? 0) > (int) $qf['price_max']) return false;
+        if ($qf['instock'] && (int) ($p['stock'] ?? 0) <= 0) return false;
+        if ($qf['deals'] && (int) ($p['old'] ?? 0) <= (int) ($p['price'] ?? 0)) return false;
+        if ($qf['new'] && empty($p['isNew'])) return false;
+        return true;
+    }));
+
+    switch ($qf['sort']) {
+        case 'asc':  usort($catalogFeed, static fn(array $a, array $b): int => (int) $a['price'] <=> (int) $b['price']); break;
+        case 'desc': usort($catalogFeed, static fn(array $a, array $b): int => (int) $b['price'] <=> (int) $a['price']); break;
+        case 'name': usort($catalogFeed, static fn(array $a, array $b): int => strcmp((string) $a['name'], (string) $b['name'])); break;
+        case 'new':  usort($catalogFeed, static fn(array $a, array $b): int => ((int) !empty($b['isNew'])) <=> ((int) !empty($a['isNew']))
+                                                                    ?: strcmp((string) $b['drop'], (string) $a['drop'])); break;
+        case 'stock':usort($catalogFeed, static fn(array $a, array $b): int => (int) $b['stock'] <=> (int) $a['stock']); break;
+    }
+}
 
 /* ─── SEO ─────────────────────────────────────────────────────────────────
    includes/seo.php is now the single source of truth for meta, OpenGraph,
@@ -1050,6 +1202,132 @@ if ($catalogFeed) {
     echo '<p class="p-lede" style="grid-column:1/-1">ویترین موقتاً در دسترس نیست. لطفاً کمی بعد سر بزنید.</p>';
 }
 ?>
+        <?php /* ─── THE FILTER BAR ────────────────────────────────────────────
+          Server-rendered facets, derived from the very records the grid above
+          is drawn from — never a hand-written option list. This is the same
+          rule CATEGORY_SLUGS follows in config.php: the vocabulary of the shop
+          has exactly one source, and it is the catalogue itself. A facet built
+          from a literal array is a facet that silently offers colours and
+          sizes the maison stopped carrying.
+
+          The bar is progressively enhanced by main.js (js/filters-aurelle.js):
+          with no JavaScript every control degrades to a plain GET submission
+          (?f_cat / ?f_size …) and index.php filters $catalogFeed with it
+          server-side before the cards are echoed — so the storefront's
+          filtering works for a crawler and for a customer who never runs any
+          of the scripts. With JavaScript the same controls re-draw the grid
+          instantly, and the <noscript>-free submit button hides itself. */ ?>
+        <div class="vault__tools" id="vTools" role="search" aria-label="فیلترهای مجموعه">
+          <form class="vf" id="vForm" method="get" action="<?= $esc(APP_URL . '/' === substr(APP_URL, -1) ? APP_URL : APP_URL . '/') ?>">
+            <div class="vf-row vf-row--main">
+              <label class="vf-field">
+                <span class="vf-lbl">مرتب‌سازی</span>
+                <select class="vf-select" id="vSort" name="f_sort">
+                  <option value="featured" <?= ($qf['sort'] ?? '') === 'featured' || !isset($qf['sort']) ? 'selected' : '' ?>>ویژهٔ خانه</option>
+                  <option value="new"      <?= ($qf['sort'] ?? '') === 'new' ? 'selected' : '' ?>>جدیدترین</option>
+                  <option value="asc"      <?= ($qf['sort'] ?? '') === 'asc' ? 'selected' : '' ?>>ارزان‌ترین</option>
+                  <option value="desc"     <?= ($qf['sort'] ?? '') === 'desc' ? 'selected' : '' ?>>گران‌ترین</option>
+                  <option value="name"     <?= ($qf['sort'] ?? '') === 'name' ? 'selected' : '' ?>>نام (الفبا)</option>
+                  <option value="stock"    <?= ($qf['sort'] ?? '') === 'stock' ? 'selected' : '' ?>>آمادهٔ ارسال</option>
+                </select>
+              </label>
+              <label class="vf-field">
+                <span class="vf-lbl">جست‌وجو در مجموعه</span>
+                <input class="vf-input" id="vSearch" name="f_q" type="search" inputmode="search" autocomplete="off"
+                       placeholder="نام، فرم یا جنس…" value="<?= $esc($qf['q'] ?? '') ?>">
+              </label>
+              <button class="btn btn--gold btn--sm vf-apply" type="submit">اعمال</button>
+              <a class="vf-reset linklike" id="vReset" href="<?= $esc((string) parse_url(APP_URL, PHP_URL_PATH) ?: '/') ?>" <?= $filtersActive ? '' : 'hidden' ?>>پاک کردن فیلترها</a>
+            </div>
+
+            <?php if ($facetCats): ?>
+            <fieldset class="vf-group">
+              <legend class="vf-lbl">فرم</legend>
+              <div class="vf-chips" id="vCats" role="group" aria-label="دسته‌بندی">
+                <?php foreach ($facetCats as $slug => $label): ?>
+                <label class="chip chip--check<?= in_array($slug, $qf['cats'] ?? [], true) ? ' on' : '' ?>"
+                       data-cat="<?= $esc($slug) ?>">
+                  <input type="checkbox" name="f_cat[]" value="<?= $esc($slug) ?>"
+                         <?= in_array($slug, $qf['cats'] ?? [], true) ? 'checked' : '' ?>>
+                  <span><?= $esc($label) ?></span><small data-count><?= fa_num($facetCounts['cat'][$slug] ?? 0) ?></small>
+                </label>
+                <?php endforeach; ?>
+              </div>
+            </fieldset>
+            <?php endif; ?>
+
+            <?php if ($facetSizes): ?>
+            <fieldset class="vf-group">
+              <legend class="vf-lbl">سایز (موجود)</legend>
+              <div class="vf-chips" id="vSizes" role="group" aria-label="سایز">
+                <?php foreach ($facetSizes as $sz): ?>
+                <label class="chip chip--check<?= in_array((string) $sz, $qf['sizes'] ?? [], true) ? ' on' : '' ?>"
+                       data-size="<?= (int) $sz ?>">
+                  <input type="checkbox" name="f_size[]" value="<?= (int) $sz ?>"
+                         <?= in_array((string) $sz, $qf['sizes'] ?? [], true) ? 'checked' : '' ?>>
+                  <span><?= fa_num($sz) ?></span>
+                </label>
+                <?php endforeach; ?>
+              </div>
+            </fieldset>
+            <?php endif; ?>
+
+            <?php if ($facetColors): ?>
+            <fieldset class="vf-group">
+              <legend class="vf-lbl">رنگ</legend>
+              <div class="vf-chips" id="vColors" role="group" aria-label="رنگ">
+                <?php foreach ($facetColors as $key => $cname): ?>
+                <label class="chip chip--color<?= in_array($key, $qf['colors'] ?? [], true) ? ' on sel' : '' ?>"
+                       data-color="<?= $esc($key) ?>" title="<?= $esc($cname) ?>">
+                  <input type="checkbox" name="f_color[]" value="<?= $esc($key) ?>"
+                         <?= in_array($key, $qf['colors'] ?? [], true) ? 'checked' : '' ?>>
+                  <span class="sw" style="--c:<?= $esc($hexForColor($key)) ?>" aria-hidden="true"></span>
+                  <span><?= $esc($cname) ?></span>
+                </label>
+                <?php endforeach; ?>
+              </div>
+            </fieldset>
+            <?php endif; ?>
+
+            <div class="vf-row vf-row--range">
+              <?php if ($heelBounds !== null): ?>
+              <label class="vf-field">
+                <span class="vf-lbl">ارتفاع پاشنه <em class="mono" id="vHeelOut"><?= fa_num((int) $qf['heel_min']) ?>–<?= fa_num((int) $qf['heel_max']) ?> میلی‌متر</em></span>
+                <span class="vf-range">
+                  <input class="vf-slider" id="vHeelMin" name="f_heel_min" type="range"
+                         min="<?= (int) $heelBounds[0] ?>" max="<?= (int) $heelBounds[1] ?>" step="5"
+                         value="<?= (int) $qf['heel_min'] ?>" aria-label="حداقل ارتفاع پاشنه">
+                  <input class="vf-slider" id="vHeelMax" name="f_heel_max" type="range"
+                         min="<?= (int) $heelBounds[0] ?>" max="<?= (int) $heelBounds[1] ?>" step="5"
+                         value="<?= (int) $qf['heel_max'] ?>" aria-label="حداکثر ارتفاع پاشنه">
+                </span>
+              </label>
+              <?php endif; ?>
+              <?php if ($priceBounds !== null): ?>
+              <label class="vf-field">
+                <span class="vf-lbl">سقف قیمت <em class="mono" id="vPriceOut"><?= fa_num((int) round($qf['price_max'] / 1000000)) ?> میلیون تومان</em></span>
+                <input class="vf-slider vf-slider--wide" id="vPrice" name="f_price" type="range"
+                       min="<?= (int) $priceBounds[0] ?>" max="<?= (int) $priceBounds[1] ?>" step="100000"
+                       value="<?= (int) $qf['price_max'] ?>" aria-label="حداکثر قیمت">
+              </label>
+              <?php endif; ?>
+              <span class="vf-switches">
+                <label class="chip chip--check<?= !empty($qf['instock']) ? ' on' : '' ?>">
+                  <input type="checkbox" name="f_instock" value="1" <?= !empty($qf['instock']) ? 'checked' : '' ?>>
+                  <span>فقط موجود</span>
+                </label>
+                <label class="chip chip--check<?= !empty($qf['deals']) ? ' on' : '' ?>">
+                  <input type="checkbox" name="f_deals" value="1" <?= !empty($qf['deals']) ? 'checked' : '' ?>>
+                  <span>تخفیف‌دار</span>
+                </label>
+                <label class="chip chip--check<?= !empty($qf['new']) ? ' on' : '' ?>">
+                  <input type="checkbox" name="f_new" value="1" <?= !empty($qf['new']) ? 'checked' : '' ?>>
+                  <span>جدید این فصل</span>
+                </label>
+              </span>
+            </div>
+            <div class="vf-pills" id="activePills" aria-live="polite"></div>
+          </form>
         </div>
       </div>
     </section>
@@ -1558,6 +1836,29 @@ window.VELORA_SIZE_BAND   = <?= $encodeLd(array_values(SIZE_BAND)) ?>;
    that said `sandal` while its card said «صندل» would be the same slug rendered
    two ways on two surfaces of one product. */
 window.VELORA_CATEGORIES  = <?= $encodeLd(CATEGORY_LABELS) ?>;
+/* The filter bar's server truth: the facets it actually rendered (derived from
+   the live catalogue above, never a literal list), the validated query state,
+   and the full unfiltered feed. filters-aurelle.js re-derives chip counts and
+   bounds against the *live* catalogue after an idle sync — so when an operator
+   retires a colour or a size while a customer has the shop open, the bar sheds
+   that option itself instead of offering a facet that matches nothing. The
+   boot-time HTML is generated from exactly these structures; the two engines
+   cannot drift because they start from the same bytes. */
+window.VELORA_FILTER_BOOT = <?= $encodeLd([
+    'cats'          => $facetCats,
+    'colors'        => $facetColors,
+    'sizes'         => $facetSizes,
+    'heelBounds'    => $heelBounds,
+    'priceBounds'   => $priceBounds,
+    'active'        => $filtersActive,
+    'q'             => $qf,
+    /* The FULL feed, before this request's filters were applied — the client
+       engine filters all eleven pieces in memory rather than only the ones
+       the URL already narrowed. Without this, changing one facet on a
+       filtered page would filter the already-filtered grid: a one-way door,
+       the exact failure the header-search bug taught this house about. */
+    'full'          => array_values($catalogFeedAll ?? []),
+]) ?>;
 /* The precache manifest: every versioned stylesheet and script this document
    loads, as the exact URLs the <link>/<script> tags use.
 
