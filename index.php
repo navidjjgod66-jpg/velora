@@ -678,6 +678,9 @@ $VELORA_JS = [
    here because manifest.json and the notification handler reference it rather
    than this document's markup, and an offline-capable install that cannot draw
    its own icon is a half-offline install. */
+/* js/vendor/three.module.js + three.core.js are deliberately NOT precached:
+   ~2 MB that only PDP 3D (perf-high/mid) ever requests, lazily via import().
+   The SW fetch handler still caches them cache-aside on first use. */
 $precacheAssets = array_merge(
     array_map($assetV, $VELORA_CSS),
     array_map($assetV, $VELORA_JS),

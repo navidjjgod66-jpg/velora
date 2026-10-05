@@ -13,7 +13,7 @@
    Push payload keys (frozen): title · body · url
    ─────────────────────────────────────────────────────────────────────────── */
 
-const CACHE_VERSION = 'velora-v9-2';
+const CACHE_VERSION = 'velora-v9-3';
 const STATIC_CACHE  = CACHE_VERSION + '-static';
 const RUNTIME_CACHE = CACHE_VERSION + '-runtime';
 const OFFLINE_CACHE = CACHE_VERSION + '-offline';
