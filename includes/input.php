@@ -5,27 +5,11 @@ declare(strict_types=1);
  *
  * Extracted verbatim from config.php during the monolith split — same code,
  * same behaviour, one home per concern. Covers the JSON-body reader and the req()/req_int()/req_str()/req_json()/req_bool() accessors every API handler reads through.
- */
-
-if (!defined('VELORA_CONFIG_LOADED')) {
+ */if (!defined('VELORA_CONFIG_LOADED')) {
     http_response_code(500);
     exit('includes/input.php requires config.php to be loaded first.');
 }
 
-/**
- * VELORA · Request input helpers
- *
- * Extracted verbatim from config.php during the monolith split — same code,
- * same behaviour, one home per concern. Covers the JSON-body reader and the req()/req_int()/req_str()/req_json()/req_bool() accessors every API handler reads through.
- */
-
-if (!defined('VELORA_CONFIG_LOADED')) {
-    http_response_code(500);
-    exit('includes/input.php requires config.php to be loaded first.');
-}
-
-REQUEST INPUT (JSON body → POST → GET)
-═══════════════════════════════════════════════════════════════════════════ */
 function req_parse_json(): array {
     static $json = null;
     if ($json === null) {

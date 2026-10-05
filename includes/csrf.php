@@ -5,27 +5,11 @@ declare(strict_types=1);
  *
  * Extracted verbatim from config.php during the monolith split — same code,
  * same behaviour, one home per concern. Covers csrf_token(), the allowed-host list, the loopback probe and csrf_check().
- */
-
-if (!defined('VELORA_CONFIG_LOADED')) {
+ */if (!defined('VELORA_CONFIG_LOADED')) {
     http_response_code(500);
     exit('includes/csrf.php requires config.php to be loaded first.');
 }
 
-/**
- * VELORA · CSRF protection
- *
- * Extracted verbatim from config.php during the monolith split — same code,
- * same behaviour, one home per concern. Covers csrf_token(), the allowed-host list, the loopback probe and csrf_check().
- */
-
-if (!defined('VELORA_CONFIG_LOADED')) {
-    http_response_code(500);
-    exit('includes/csrf.php requires config.php to be loaded first.');
-}
-
-CSRF
-═══════════════════════════════════════════════════════════════════════════ */
 function csrf_token(): string {
     if (empty($_SESSION['csrf']) || (int) ($_SESSION['csrf_at'] ?? 0) < time() - 3600) {
         $_SESSION['csrf']    = bin2hex(random_bytes(32));

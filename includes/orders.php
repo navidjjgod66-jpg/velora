@@ -5,27 +5,11 @@ declare(strict_types=1);
  *
  * Extracted verbatim from config.php during the monolith split — same code,
  * same behaviour, one home per concern. Covers the voucher map shared with the browser, validate_voucher(), secure_token() and generate_order_id().
- */
-
-if (!defined('VELORA_CONFIG_LOADED')) {
+ */if (!defined('VELORA_CONFIG_LOADED')) {
     http_response_code(500);
     exit('includes/orders.php requires config.php to be loaded first.');
 }
 
-/**
- * VELORA · Voucher & order-number helpers
- *
- * Extracted verbatim from config.php during the monolith split — same code,
- * same behaviour, one home per concern. Covers the voucher map shared with the browser, validate_voucher(), secure_token() and generate_order_id().
- */
-
-if (!defined('VELORA_CONFIG_LOADED')) {
-    http_response_code(500);
-    exit('includes/orders.php requires config.php to be loaded first.');
-}
-
-VOUCHER VALIDATION & HELPERS
-═══════════════════════════════════════════════════════════════════════════ */
 /**
  * The voucher table — the single source of truth for both validation and the
  * browser.
