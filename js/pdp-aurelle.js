@@ -501,12 +501,24 @@ function renderSticky(p, dlg, sig) {
   if (!host) return;
   host.innerHTML = `
     <span class="ps-price">${moneyT(p.price)}</span>
+    <button class="btn btn--ghost btn--sm" type="button" id="pdpStickyShare" aria-label="اشتراک‌گذاری پیوند این محصول">اشتراک</button>
     <button class="btn btn--gold btn--sm" type="button" id="pdpStickyAdd">افزودن به سبد</button>`;
   const mq = matchMedia('(max-width: 979px)');
   const apply = () => host.classList.toggle('is-on', mq.matches);
   apply();
   mq.addEventListener('change', apply, sig ? { signal: sig.signal } : undefined);
   $('#pdpStickyAdd', dlg)?.addEventListener('click', () => $('#pdpAdd', dlg)?.click(), sig);
+  /* Share (ویژگی ۸): Web Share API؛ fallback → clipboard. لینک به
+     روت #/pdp/<id> که handleRoute همان را باز می‌کند. */
+  $('#pdpStickyShare', dlg)?.addEventListener('click', async () => {
+    const url = location.origin + location.pathname + '#/pdp/' + p.id;
+    if (navigator.share) {
+      try { await navigator.share({ title: p.name, text: p.name + ' — ولورا اورِل', url }); } catch (_) {}
+    } else {
+      try { await navigator.clipboard.writeText(url); toast('پیوند محصول کپی شد.', 'ok'); haptic('success'); }
+      catch (_) { toast('کپی نشد — پیوند را دستی بردارید: ' + url, 'warn'); }
+    }
+  }, sig);
 }
 
 /* ─── Crumbs ─── */
@@ -590,6 +602,9 @@ function hydrate(pRaw, dlg) {
   renderInfo(p, host);
   renderSticky(p, host, sig);
   mount(host, p, sig);
+  /* نسل سه‌بعدی: pdp-3d-stage.js این رویداد را گوش می‌دهد و در صورت نبودِ
+     three یا tier پایین بی‌صدا skip می‌کند. */
+  window.dispatchEvent(new CustomEvent('ae:pdp-open', { detail: { product: p } }));
 }
 
 /* ─── Open ─── */

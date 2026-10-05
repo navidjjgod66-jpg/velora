@@ -1475,3 +1475,69 @@ body.mnav-on .menu-btn i:last-child { transform: translateY(-3.5px) rotate(-45de
   }
   .hdr { background: var(--bg); }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   SENSOUS UPGRADES — holo ring · plaque foil · φ rail · voice button
+   (ویژگی‌های ۴ و ۱۰)
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── ویژگی ۱۰ — Holo Ring روی کارت شاخص مجموعه ───────────────────────
+   .prod.is-feat را PHP برای نخستین کارتِ چیدمان «ویژهٔ خانه» می‌گذارد.
+   حلقه بیرون از flow است (outline + animation) پس هیچ reflow/CLS ندارد.
+   @property در browsers بدون پشتیبانی simply animate نمی‌شود — حلقه
+   ثابت می‌ماند: degradation امن. */
+@property --holo { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+.prod.is-feat { position: relative; }
+.prod.is-feat::before {
+  content: ""; position: absolute; inset: -3px; z-index: -1; pointer-events: none;
+  border-radius: calc(var(--r-2, 14px) + 3px);
+  background: conic-gradient(from var(--holo, 0deg),
+    var(--accent), transparent 25%, var(--accent-2) 50%, transparent 75%, var(--accent));
+  opacity: 0.55;
+  animation: holoSpin 6s linear infinite;
+}
+@keyframes holoSpin { to { --holo: 360deg; } }
+@media (prefers-reduced-motion: reduce) { .prod.is-feat::before { animation: none; } }
+
+/* ── ویژگی ۱۰ — Plaque Foil Shine در فوتر ────────────────────────────
+   لیوا (foil) از روی نشان خانه عبور می‌کند؛ overflow:hidden روی خود
+   badge. انیمیشن نامحدود ولی با مکث بلند (۷s cycle، ۲s shine). */
+.plaque { position: relative; overflow: hidden; }
+.plaque::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,.28) 50%, transparent 60%);
+  transform: translateX(-130%);
+  animation: plaqueFoil 7s var(--ease-silk) 2s infinite;
+}
+@keyframes plaqueFoil { 0%, 72% { transform: translateX(-130%); } 88%, 100% { transform: translateX(130%); } }
+@media (prefers-reduced-motion: reduce) { .plaque::after { animation: none; opacity: 0; } }
+
+/* ── ویژگی ۱۰ — φ Index Rail ──────────────────────────────────────────
+   آیتم فعال ریل با نسبت طلایی بزرگ می‌شود. transform فقط — بدون layout.
+   origin نزدیک لبهٔ ریل تا tooltip (::after) جابه‌جا نشود. */
+.rail a[aria-current="true"] {
+  scale: 1.618;
+  transform-origin: center;
+  transition: scale var(--d-3) var(--ease-lux);
+}
+@media (prefers-reduced-motion: reduce) { .rail a[aria-current="true"] { scale: 1.25; } }
+
+/* ── ویژگی ۴ — دکمهٔ صدا (کنار #themeT) ──────────────────────────────
+   click = ambient toggle، hold/Enter = voice listening. حالت‌ها فقط
+   رنگ/سایه‌ی box-shadow (بدون layout). */
+#voiceBtn { position: relative; }
+#voiceBtn.is-amb { color: var(--accent); }
+#voiceBtn.is-listen { color: var(--accent); animation: voicePulse 1.2s ease-in-out infinite; }
+@keyframes voicePulse {
+  50% { box-shadow: 0 0 0 6px color-mix(in oklch, var(--accent) 22%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) { #voiceBtn.is-listen { animation: none; box-shadow: 0 0 0 2px var(--accent); } }
+
+/* ── ویژگی ۷ — Charcount زندهٔ نشانی ───────────────────────────────── */
+.charcount {
+  display: block;
+  font-family: var(--mono); font-size: 0.62rem; font-weight: 500;
+  color: var(--text-4);
+  margin-block-start: 0.3rem;
+}
+.charcount.is-warn { color: #c96a5e; }

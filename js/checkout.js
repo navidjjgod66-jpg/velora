@@ -549,6 +549,8 @@ ckoNext && ckoNext.addEventListener('click', async () => {
     $('.cko__nav', cko).style.display = 'none';
     ckoDone.hidden = false;
     completeCheckout();
+    /* ویژگی ۷ — سفارش ثبت شد: پیش‌نویس دیگر معنایی ندارد */
+    LS.del(DRAFT_KEY);
     $('#ckoDoneX').focus();
     window.dispatchEvent(new CustomEvent('ae:log-atelier', { detail:{ text:`سفارش جدید ${ref} به صف تولید پیوست` } }));
     toast('ثبت نشد — سرور در دسترس نیست. سفارش شما نگه داشته شد.', 'err');
@@ -632,6 +634,7 @@ function ckoHandlePaymentReturn() {
     recordOrder({ ref, total: ret.amount || 0, count: 0, items: [],
                   date: new Date().toISOString(), phone: '', paid: true });
     completeCheckout();
+    LS.del(DRAFT_KEY); /* ویژگی ۷ — بازگشت موفق از درگاه: پیش‌نویس پاک شود */
     if (openDlg || ref) {
       $('#ckoRef').textContent = ref || '—';
       $('#ckoForm').style.display = 'none';
@@ -703,6 +706,7 @@ function watchPaymentOutcome(orderId) {
       recordOrder({ ref: ref || orderId, total: 0, count: 0, items: [],
                     date: new Date().toISOString(), phone: '', paid: true });
       completeCheckout();
+      LS.del(DRAFT_KEY); /* ویژگی ۷ — پرداخت موفق: پیش‌نویس پاک شود */
       toast('پرداخت تأیید شد — سفارش ' + (ref || orderId) + ' ثبت شد.', '', null, 7000);
     } else {
       toast('پرداخت ناموفق بود. سبد شما حفظ شده است.', 'err');
@@ -746,6 +750,84 @@ addEventListener('hashchange', () => { setTimeout(ckoHandlePaymentReturn, 60); }
 
 $('#ckoDoneX') && $('#ckoDoneX').addEventListener('click', () => cko.close());
 
+/* ═══ Draft-Persisting Forms (ویژگی ۷) — ae.draft.v1 ═══════════════════
+   هر keystroke در فیلدهای مرحلهٔ ۱/۲ نشانیِ چک‌اوت، debounce ۴۰۰ms روی
+   localStorage می‌نشیند. بازگشت کاربر (refesh/بستن dialog/رفتن و برگشتن)
+   پیش‌نویس را با یک toast دوشاخه برمی‌گرداند: «بازیابی» مقدارها را می‌گذارد،
+   «دور ریختن» کلید را پاک می‌کند. سفارش موفق → پاک‌شدن قطعی.
+
+   textarea نشانی شمارندهٔ کاراکتر زنده هم می‌گیرد؛ بالای ۱۰۰۰ کاراکتر
+   هشدار رنگی (مطابق سقف سرور در includes/addresses.php). */
+const DRAFT_KEY = 'ae.draft.v1';
+const DRAFT_IDS = ['ckName', 'ckPhone', 'ckMail', 'ckProvince', 'ckCity',
+                   'ckDistrict', 'ckAddr', 'ckPlaque', 'ckUnit', 'ckZip'];
+let draftTimer = null, draftOffered = false;
+
+function draftSave() {
+  clearTimeout(draftTimer);
+  draftTimer = setTimeout(() => {
+    const d = {};
+    DRAFT_IDS.forEach(id => { const el = $('#' + id); if (el && el.value) d[id] = el.value; });
+    LS.set(DRAFT_KEY, d);
+  }, 400);
+}
+
+function charCountPaint(ta) {
+  let cc = $('#ckAddrCC');
+  if (!cc) {
+    cc = document.createElement('span');
+    cc.id = 'ckAddrCC'; cc.className = 'charcount'; cc.setAttribute('aria-live', 'polite');
+    ta.insertAdjacentElement('afterend', cc);
+  }
+  const n = [...ta.value].length; /* code-point نه UTF-16 */
+  cc.textContent = faNum(n) + ' / ۱۰۰۰';
+  cc.classList.toggle('is-warn', n > 1000);
+}
+
+function draftTryRestore() {
+  if (draftOffered) return;
+  const d = LS.get(DRAFT_KEY, null);
+  if (!d || !Object.keys(d).length) return;
+  draftOffered = true;
+  toast('پیش‌نویس نشانی از بازدید پیشین یافت شد.', 'ok', {
+    label: 'بازیابی',
+    fn: () => {
+      DRAFT_IDS.forEach(id => {
+        const el = $('#' + id);
+        if (el && d[id] != null) {
+          el.value = d[id];
+          /* selectهای وابسته (شهر بعد از استان) باید cascade شوند:
+             تغییر برنامه‌ای change را خودکار نمی‌زند؛ dispatch می‌کنیم
+             تا هندلر موجودِ province→city اجرا شود. */
+          el.dispatchEvent(new Event('input',  { bubbles: true }));
+          el.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      });
+      const addr = $('#ckAddr'); if (addr) charCountPaint(addr);
+      toast('پیش‌نویس بازیابی شد.', 'ok');
+    }
+  }, 12000);
+  /* اگر دکمه فشرده نشود، toast منقضی می‌شود و پیش‌نویس دست‌نخورده می‌ماند؛
+     دفعهٔ بعد دوباره پیشنهاد می‌شود چون offer فقط با بازیابی واقعی done است. */
+  setTimeout(() => { if ($('#' + 'ckName')?.value === '') draftOffered = false; }, 13000);
+}
+
+cko.addEventListener('input', e => {
+  if (!e.target.closest('#ckoForm')) return;
+  if (e.target.matches('input,select,textarea')) {
+    draftSave();
+    if (e.target.id === 'ckAddr') charCountPaint(e.target);
+  }
+});
+/* پیشنهاد در همان لحظهٔ باز شدن فرم — بعد از paint تا focus ندزدد.
+   openCko یک function declaration است و hoist می‌شود؛ wrapper همین‌جا
+   تعریف می‌شود و تنها export پایین، نسخهٔ بسته‌بندی‌شده را می‌برد. */
+const _openCko = openCko;
+function openCkoWithDraft() {
+  _openCko();
+  if (cko.open) requestAnimationFrame(draftTryRestore);
+}
+
 /* ═══ Exports ═══ */
-window.AE_CKO = { openCko };
+window.AE_CKO = { openCko: openCkoWithDraft };
 })();
