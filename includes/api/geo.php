@@ -1,9 +1,46 @@
 <?php
 declare(strict_types=1);
-/** VELORA · API handlers — geo domain. Extracted verbatim from api.php’s
- * action switch; runs in the request’s global scope via includes/api-handlers.php.
- * jresp() ends the request, so a handler that answers simply returns. */
+/**
+ * VELORA · API handlers — geo
+ *
+ * Actions handled here: geo_regions, postal_lookup
+ *
+ * Procedural code extracted verbatim from api.php's action switch.
+ * It runs in the request's global scope via velora_api_handler()
+ * (includes/api-handlers.php), so $pdo, $_SESSION, req_*(), jresp()
+ * and log_action() behave exactly as they did inside the switch.
+ * Each case-terminating `break;` became `return;`; jresp() exits on
+ * its own, so the return only matters where the original break was.
+ */
 
+/* ---- geo_regions ---- */
+if ($action === 'geo_regions') {
+/* Public and cacheable: the list is identical for everyone and
+   changes about once a decade, so it is the one thing in this file
+   worth a shared cache. app.js draws its province/city picker from
+   exactly this payload, which is why the client and the validator
+   cannot disagree about which city belongs to which province. */
+if (!rate_limit('geo_regions', 120, 60)) {
+    jresp(['ok' => false, 'error' => 'RATE_LIMIT'], 429);
+}
+jresp([
+    'ok'    => true,
+    'map'   => json_decode(velora_geo_json(), true),
+    'codes' => [
+        'postal' => 'mod11',
+        /* Whether the client should offer the lookup at all. This is
+           the only place the flag is published, and it is a boolean
+           on purpose: the client needs to know whether to show the
+           step, and it has no business knowing the URL or whether a
+           token exists. */
+        'lookup' => POSTAL_ENABLED,
+    ],
+], 200, true);
+    return;
+}
+
+/* ---- postal_lookup ---- */
+if ($action === 'postal_lookup') {
 /* Deliberately not behind is_user(). The address form is reachable
    from the cart sheet before anyone signs in, and a customer
    checking a code is not asking for anything private — a postal code
@@ -82,4 +119,6 @@ jresp([
     'unit'           => (string) ($result['unit'] ?? ''),
     'address'        => (string) ($result['address'] ?? ''),
 ]);
-break;
+    return;
+}
+
