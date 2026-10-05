@@ -281,6 +281,15 @@ function applyServerCatalog(rows) {
   ORDER.push(...order);
 
   window.VELORA_CATALOG_SYNCED = true;
+  /* Re-publish the precache list to the SW: index.php's copy is stale after a
+     catalog sync (new/renamed images), and the worker merges lists additively. */
+  try {
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+      const urls = Array.isArray(window.VELORA_PRECACHE) ? window.VELORA_PRECACHE.slice() : [];
+      PRODUCTS.forEach(p => { if (p.img && /^[\w./-]+\.(png|jpe?g|webp|avif)$/i.test(p.img)) urls.push(p.img); });
+      if (urls.length) navigator.serviceWorker.controller.postMessage({ type: 'SET_PRECACHE', assets: urls });
+    }
+  } catch (_) { /* non-fatal — cache-aside still covers new assets on first use */ }
   window.dispatchEvent(new CustomEvent('ae:catalog-sync'));
   window.dispatchEvent(new CustomEvent('ae:render-recent'));
   return true;

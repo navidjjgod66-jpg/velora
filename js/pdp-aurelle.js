@@ -602,9 +602,13 @@ function hydrate(pRaw, dlg) {
   renderInfo(p, host);
   renderSticky(p, host, sig);
   mount(host, p, sig);
+  const pdpDlg = $('#pdp');
   /* نسل سه‌بعدی: pdp-3d-stage.js این رویداد را گوش می‌دهد و در صورت نبودِ
      three یا tier پایین بی‌صدا skip می‌کند. */
   window.dispatchEvent(new CustomEvent('ae:pdp-open', { detail: { product: p } }));
+  /* Reading Progress (ویژگی ۱۰) — هندلر close/hydrated پایین همین فایل
+     این رویداد را روی خود dialog می‌شنود. */
+  if (pdpDlg) pdpDlg.dispatchEvent(new CustomEvent('ae:pdp-hydrated'));
 }
 
 /* ─── Open ─── */
@@ -744,6 +748,39 @@ function renderCustomPanel() {
     dlg._opener?.focus?.({ preventScroll: true });
     dlg._opener = null;
     if (/^#\/pdp\//.test(location.hash)) history.replaceState(null, '', '#/');
+    /* ویژگی ۲ — teardown صحنهٔ سه‌بعدی هنگام بسته‌شدن (pdp-3d-stage.js).
+       این فایل زودتر از pdp-3d-stage لود می‌شود، پس window.AE_STAGE3D را
+       در زمان رویداد می‌خوانیم نه زمان تعریف هندلر. */
+    try { window.AE_STAGE3D?.destroyStage?.(); } catch (_) {}
+    /* ویژگی ۱۰ — Reading Progress: نوار sticky با اسکرول دیالوگ پر می‌شود.
+       هندلر روی خود dialog است و با هر بار close پاک می‌شود تا listenerها
+       روی هم انباشته نشوند (AbortController سبکِ محلی). */
+    if (dlg._readProgAc) { dlg._readProgAc.abort(); dlg._readProgAc = null; }
+    dlg.querySelector('.read-prog')?.remove();
+  });
+
+  /* ─── Reading Progress (ویژگی ۱۰) ─────────────────────────────────────
+     #pdp خودش scroll container است (overflow-y:auto در dialogs.css)، پس
+     progress نسبت scrollTop به کل مسافت قابل‌اسکرول است. با first open
+     ساخته می‌شود؛ روی close پاک و دوباره ساخته می‌شود. aria-hidden چون
+     اطلاعات تکراریِ scroll bar برای screen reader است. */
+  dlg.addEventListener('ae:pdp-hydrated', () => {
+    if (dlg._readProgAc) return;
+    let bar = dlg.querySelector('.read-prog');
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.className = 'read-prog';
+      bar.setAttribute('aria-hidden', 'true');
+      dlg.prepend(bar);
+    }
+    const ac = new AbortController();
+    dlg._readProgAc = ac;
+    const paint = () => {
+      const max = dlg.scrollHeight - dlg.clientHeight;
+      bar.style.width = (max > 4 ? Math.min(100, dlg.scrollTop / max * 100) : 0).toFixed(1) + '%';
+    };
+    dlg.addEventListener('scroll', paint, { passive: true, signal: ac.signal });
+    requestAnimationFrame(paint);
   });
 
   /* No hashchange listener, and no boot deep-link.
