@@ -653,6 +653,8 @@ $VELORA_CSS = [
 ];
 $VELORA_JS = [
     'js/core.js',
+    'js/quality-gov.js',          // حاکم کیفیت — باید زودتر از همهٔ renderableها باشد
+    'js/aurelle-intel.js',        // هوش شخصیسازی — فقط به AE وابسته است
     'js/data.js',
     'js/velora-bridge.js',
     'js/renderers-aurelle.js',
@@ -660,12 +662,15 @@ $VELORA_JS = [
     'js/ui.js',
     'js/cart.js',
     'js/pdp-aurelle.js',
+    'js/pdp-3d-stage.js',         // سه‌بعدی PDP — lazy-import داخل خود ماژول
     'js/lbxaurelle.js',
     'js/checkout.js',
     'js/auth.js',
     'js/concierge-aurelle.js',
     'js/atelier-aurelle.js',
     'js/sync-aurelle.js',
+    'js/shader-hero.js',          // WebGL هیرو — بعد از همه (به AE_QUALITY و ae:theme-change وابسته است)
+    'js/ambient-voice.js',        // صدای محیط + فرمان صوتی — بعد از همه
     'js/main.js',
 ];
 
@@ -869,6 +874,14 @@ $precacheAssets = array_merge(
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>
         </button>
 
+        <?php /* Voice — کلیک: روشن/خاموش کردن صدای محیط؛ نگه‌داشتن (یا Enter):
+           فرمان صوتی. منطق در ambient-voice.js؛ هیچ inline handler نیست. */ ?>
+        <button class="icon-btn" id="voiceBtn" type="button"
+                aria-label="کنترل صوتی — برای گوش دادن نگه دارید، برای صدای محیط یک‌بار بزنید"
+                aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+        </button>
+
         <button class="icon-btn" id="wishBtn" data-act="wish-open" type="button" aria-label="علاقه‌مندی‌ها">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 21s-7-4.5-9.5-9C.5 8 3 4 6.5 4c2 0 3.5 1 5.5 3 2-2 3.5-3 5.5-3 3.5 0 6 4 4 8-2.5 4.5-9.5 9-9.5 9Z"/></svg>
           <span class="badge none" id="wishN"></span>
@@ -933,6 +946,11 @@ $precacheAssets = array_merge(
       <div class="container">
         <div class="hero-grid">
           <div class="hero-copy">
+            <?php /* Greeting — متن پیش‌فرض سرور رندر می‌شود (SEO/no-JS درست)؛
+               aurelle-intel.js آن را با احوالپرسی ساعتِ تهران + تاریخچهٔ بازدید
+               فقط از راه textContent جایگزین می‌کند. role=status تا تغییرش
+               برای صفحه‌خوان اعلام شود. */ ?>
+            <p class="hero-greet" id="greeting" role="status">خوش آمدید به ولورا اورِل.</p>
             <div class="hero-ey">
               <span class="num">مجموعهٔ ۰۱</span>
               <span class="line" aria-hidden="true"></span>

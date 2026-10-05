@@ -6,7 +6,7 @@
 (() => {
 'use strict';
 const {
-  $, $$, html, body, clamp, reduced, RAF, TIMERS, LS, K,
+  $, $$, html, body, clamp, reduced, lowTier, RAF, TIMERS, LS, K,
   faNum, faPad,
   toast, dlStop, dlStart, scrollToEl
 } = window.AE;
@@ -104,7 +104,10 @@ function onScroll() {
     else if (y < lastY - 10 || y <= 240) body.classList.remove('hdr-hide');
   }
   toTop && toTop.classList.toggle('show', y > 700);
-  if (dock) dock.classList.toggle('is-hidden', (y > lastY + 6 && y > 240) || dialogOpen());
+  /* focus-within استثنا: تا وقتی کاربر داخل دک‌هاست (کیبورد/صفحه‌کلید)،
+     هرگز پنهان نشود — حتی در حال اسکرول نزولی. */
+  if (dock) dock.classList.toggle('is-hidden',
+    ((y > lastY + 6 && y > 240) || dialogOpen()) && !dock.matches(':focus-within'));
   if (moved) {
     lastMoveTs = now;
     if (!html.classList.contains('scrolling')) html.classList.add('scrolling');
@@ -217,18 +220,44 @@ function initSplitReveal() {
   }
 }
 let heroParallaxBuilt = false;
+/* ─── Hero parallax — vanilla rewrite ──────────────────────────────────────
+   Two bugs in one line: this function targeted #heroVisual, an id that has
+   never existed in index.php (the hero image is .hero-plate), and it gated on
+   window.gsap/ScrollTrigger, which were removed from the page (see the note
+   near the script block in index.php). The result: the whole function was
+   dead code — no element matched AND no library loaded.
+
+   Rewritten without GSAP. The old `scrub` values are reproduced as per-frame
+   lerp factors (a scrub of n seconds ≈ smoothing over n*60 frames at 60fps),
+   with the same displacement targets: plate slides up / shrinks / fades,
+   ghost falls faster, seal turns half a revolution across the hero's exit.
+   Transforms only (compositor-owned), stops when hidden, respects reduced
+   motion and perf-low, and writes nothing the CSS does not already allow. */
 function initHeroParallax() {
-  if (heroParallaxBuilt || reduced) return;
-  if (!window.gsap || !window.ScrollTrigger) return;
-  const heroVisual = $('#heroVisual'), heroGhost = $('#heroGhost'), seal = $('.hero .seal');
-  if (!heroVisual && !heroGhost && !seal) return;
+  if (heroParallaxBuilt || reduced || lowTier()) return;
+  const hero = $('.hero');
+  const plate = $('.hero-plate'), ghost = $('#heroGhost'), seal = $('.hero .seal');
+  if (!hero || (!plate && !ghost && !seal)) return;
   heroParallaxBuilt = true;
-  gsap.registerPlugin(ScrollTrigger);
-  const st = { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: 1.2 };
-  if (heroVisual) gsap.to(heroVisual, { y:-72, scale:.97, ease:'none', scrollTrigger: { ...st } });
-  if (heroGhost)  gsap.to(heroGhost,  { y:190, ease:'none', scrollTrigger: { ...st, scrub:1.5 } });
-  if (seal)       gsap.to(seal,       { rotation:180, ease:'none', scrollTrigger: { ...st, scrub:2 } });
-  ScrollTrigger.refresh();
+
+  let cur = 0, target = 0, rafId = null;
+  const frame = () => {
+    /* lerp → رفتار scrub؛ آستانهٔ ۰.۳ پیکسل از لرزش sub-pixel جلوگیری می‌کند */
+    cur += (target - cur) * 0.12;
+    if (Math.abs(target - cur) < 0.3) cur = target;
+    const p = Math.max(0, Math.min(1, -cur / (hero.offsetHeight || 1))); // 0..1 در حین خروج هیرو
+    if (plate) {
+      plate.style.transform = `translate3d(0,${(-60 * p).toFixed(2)}px,0) scale(${(1 - 0.06 * p).toFixed(4)})`;
+      plate.style.opacity = String(1 - 0.25 * p);
+    }
+    if (ghost) ghost.style.transform = `translate3d(0,${(190 * p).toFixed(2)}px,0)`;
+    if (seal)  seal.style.transform  = `rotate(${(180 * p).toFixed(2)}deg)`;
+    rafId = (cur !== target && !document.hidden) ? requestAnimationFrame(frame) : null;
+  };
+  const kick = () => { if (!rafId && !document.hidden) rafId = requestAnimationFrame(frame); };
+  addEventListener('scroll', () => { target = -window.scrollY; kick(); }, { passive: true });
+  document.addEventListener('visibilitychange', kick);
+  kick();
 }
 function initSectionReveals() {
   if (!window.gsap || reduced) return;
@@ -276,6 +305,9 @@ function setTheme(t) {
   if (t === html.getAttribute('data-theme')) return;
   html.setAttribute('data-theme', t);
   LS.set(K.theme, t);
+  /* shader-hero.js رنگ‌های CSS را در شیدر کش کرده است؛ با هر تغییر پوسته
+     باید دوباره خوانده شوند. رویداد جدید، بدون تغییر رفتار بقیهٔ مصرف‌کننده‌ها. */
+  window.dispatchEvent(new CustomEvent('ae:theme-change', { detail: { theme: t } }));
   $$('[data-theme-set]').forEach(b => b.classList.toggle('on', b.dataset.themeSet === t));
   document.querySelector('meta[name=theme-color]')?.setAttribute('content', t === 'ivoire' ? '#F6F2E8' : '#08090F');
   /* The settle is a property animation on the document element, published by
