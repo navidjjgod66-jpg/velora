@@ -42,7 +42,28 @@ const state = {
      short-circuits the comparison entirely, so there is no longer a number here
      that can disagree with the catalogue. If a real price filter is ever built,
      it sets this from a control and the test below already does the right thing. */
+  /* The shop's filter state. One owner (main.js's toolbar), one consumer
+     (apply()), and every field defaults to "no constraint" so a control that
+     is never touched can hide nothing — the lesson of priceMax above: a
+     filter default that excludes anything is a bug the interface cannot see.
+
+       · cats    Set of category slugs ('heel','boot',…). Empty = all.
+                 Multi-select, ANDed with the other facets.
+       · heelMin/heelMax  Millimetre band, null = open end. Derived from the
+                 live catalogue in main.js, never hard-coded.
+       · colors  Set of colour keys. Empty = all.
+       · sizes   Set of EU size strings. Empty = all. A product passes only if
+                 it has stock in at least one selected size — the same rule
+                 api.php enforces at order time, so a card that survives the
+                 filter can always be bought in that size.
+       · priceMax  null = no ceiling; otherwise keep price <= priceMax.
+       · instock Only pieces ready in the atelier right now (stock > 0).
+       · deals   Only marked-down pieces (a real oldPrice above price).
+       · isNew   Only this season's reveals. */
   fam:'all', sort:'featured', q:'', priceMax:null,
+  cats:new Set(), heelMin:null, heelMax:null,
+  colors:new Set(), sizes:new Set(),
+  instock:false, deals:false, isNew:false,
   size:null, color:null, colorHex:'', pdpId:null, lastFocus:null,
   promo:  PROMO.valid(savedPromo) ? savedPromo : null,
   cmp:    []
