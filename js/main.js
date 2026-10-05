@@ -117,10 +117,13 @@ ${p.stock <= 5 ? `<span class="pl-badge low">فقط ${faNum(p.stock)} مانده
 <div class="prod-info">
 <div class="p-top"><span class="p-cat">${esc(catLabel(p.cat))}</span><span class="p-price">${moneyT(p.price)}</span></div>
 <h3 class="p-name"><a href="?product=${encodeURIComponent(p.id)}" data-open-pdp>${esc(p.name)}</a></h3>
-<div class="p-meta"><span class="stock-pill${p.stock <= 5 ? ' low' : ''}"><span class="dot" aria-hidden="true"></span>${p.stock <= 5 ? `فقط ${faNum(p.stock)} مانده` : 'در آتلیه'}</span></div>
+<div class="p-meta"><span class="stock-pill${p.stock <= 5 ? ' low' : ''}"><span class="dot" aria-hidden="true"></span>${p.stock <= 5 ? `فقط ${faNum(p.stock)} مانده` : 'موجود'}</span></div>
 <p class="p-sub">${esc(p.sub)}</p>
 <div class="p-row"><div class="p-sw" aria-hidden="true">${(p.sw || []).map(s => `<span class="sw" style="--c:${esc(s.c)}"></span>`).join('')}</div><span class="mono" style="font-size:.56rem">${esc(SIZES_TXT)}</span></div>
-<button class="quick" type="button" data-quick data-cursor="سایز"><span class="quick-t">انتخاب سایز</span></button>
+<div class="p-acts">
+<button class="quick qs" type="button" data-qs aria-label="خرید سریع — ${esc(p.name)}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M13 2 4.5 13.5H11L9.5 22 19 10h-6l1-8z"/></svg><span class="quick-t">خرید سریع</span></button>
+<a class="quick view" href="?product=${encodeURIComponent(p.id)}" data-open-pdp aria-label="مشاهدهٔ ${esc(p.name)}">مشاهده</a>
+</div>
 </div></article>`;
 
 /* ─── Card wiring ─────────────────────────────────────────────────────────
@@ -160,7 +163,7 @@ if (grid) {
       toggleWish(w.closest('.prod').dataset.id);
       return;
     }
-    const q = e.target.closest('[data-quick]');
+    const q = e.target.closest('[data-qs]');
     if (q && grid.contains(q)) openSheet(q.closest('.prod').dataset.id);
   });
 

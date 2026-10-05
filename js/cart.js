@@ -433,42 +433,57 @@ function paintInBag() {
   $$('.prod').forEach(c => {
     const on = inBag.has(c.dataset.id);
     c.classList.toggle('inbag', on);
-    const t = $('.quick', c); if (t) t.textContent = on ? 'در سبد ✓' : 'انتخاب سایز';
+    /* The quick-buy button lives inside .p-acts beside "مشاهده". Its label is
+       written with textContent on the inner span only — never the whole
+       button — so the lightning icon survives every re-paint. */
+    const t = $('.quick.qs .quick-t', c);
+    if (t) t.textContent = on ? 'در سبد ✓' : 'خرید سریع';
+    /* The button itself carries the state class so CSS can gild it. */
+    const q = $('.quick.qs', c);
+    if (q) q.classList.toggle('in-bag', on);
   });
 }
 
-/* ═══ Quick-size sheet ═══
-   The fast path off a product card: pick a size, it is in the bag. Everything
-   here has to agree with the PDP, because this is the other way a customer can
-   reach add-to-cart and there is no second source of truth for a size list.
+/* ═══ Quick-buy sheet — size AND colour, one professional surface ═══
+   The fast path off a product card: pick a colour, pick a size, it is in the
+   bag. Everything here has to agree with the PDP, because this is the other
+   way a customer can reach add-to-cart and there is no second source of truth
+   for a size list or a colour list.
 
-   Four things were wrong and they compounded:
+   Four things were wrong once and they compounded; the fixes still hold:
 
-   1. It read `p.sw[0].n` unguarded, while the two sibling call sites at the
-      wishlist buttons read `(p.sw && p.sw[0]) || {n:'مشکی', c:'#161310'}`.
-      `sw` is empty for any product that arrives from the catalogue sync rather
-      than from adaptServerProduct(), so the quick-size sheet threw a TypeError
-      on the first size a customer tapped — the one control on the card that
-      works without opening the product at all.
+   1. It read `p.sw[0].n` unguarded. `sw` is empty for any product that
+      arrives from the catalogue sync rather than from adaptServerProduct(),
+      so the sheet threw a TypeError on the first size a customer tapped.
+      Every read below goes through a guarded default.
 
    2. It listed the whole house band and let every size be tapped, ignoring
-      stock. The PDP disables a size with nothing in it; the sheet did not. So
-      the same product offered an order that could be placed from the card and
-      could not be placed from its own product page — and api.php fails the
-      WHOLE order on one out-of-stock line, so the customer is not losing one
-      item, they are losing the basket.
+      stock. The PDP disables a size with nothing in it; the sheet must too —
+      api.php fails the WHOLE order on one out-of-stock line, so an offered
+      size the server refuses costs the customer the entire basket.
 
-   3. The foot-length hint appeared on `mouseover` only. A keyboard customer
-      tabbing the radiogroup got no guidance at all, and neither did anyone on
-      a touch screen, because a touch produces no mouseover until after a tap.
+   3. The foot-length hint appeared on `mouseover` only. Now `focusin` +
+      `pointerover`, so keyboard and touch get the guidance as well.
 
-   4. One listener per size button, rebuilt on every open.
+   4. One listener per size button, rebuilt on every open. Everything below
+      is delegated once, on the containers that now live permanently in the
+      sheet markup (index.php), and selection state lives in qsPick.
 
-   All four are the same underlying mistake: treating this as a small shortcut
-   rather than as a second implementation of the size rail. It is stock-aware,
-   focus-aware, and delegated, so it cannot drift from the PDP again. */
+   What is new: the colour rail. A quick-buy that silently added "the first
+   colour" was a shortcut that guessed — two swatches look identical in the
+   bag line until the order email says otherwise. The sheet now shows the
+   same swatches the PDP shows, requires an explicit choice alongside the
+   size, and the add button stays disabled until both are made. */
 const sheet = $('#sheet'), sheetSizes = $('#sheetSizes'), sheetConv = $('#sheetConv'), sheetT = $('#sheetT');
+const sheetProd = $('#sheetProd'), sheetImg = $('#sheetImg'), sheetName = $('#sheetName');
+const sheetSub = $('#sheetSub'), sheetPrice = $('#sheetPrice');
+const sheetColorWrap = $('#sheetColorWrap'), sheetColors = $('#sheetColors'), sheetColorName = $('#sheetColorName');
+const sheetAdd = $('#sheetAdd'), sheetAddT = $('#sheetAddT'), sheetMore = $('#sheetMore');
 let sheetId = null;
+/* The one piece of transient state the sheet owns: what has been picked.
+   Reset on every open so a stale size from another product can never ride
+   into the next add. */
+const qsPick = { size: null, color: -1 };
 
 /* Stock for one size, or null when the product publishes no per-size stock at
    all — which is different from zero, and the difference decides whether the
@@ -480,32 +495,95 @@ function stockOfSize(p, size) {
   return Math.max(0, Number(row.stock) || 0);
 }
 
+/* Swatch rows for the sheet, normalised from either shape the catalogue can
+   arrive in: demo PRODUCTS carry {n,c,img}; adaptServerProduct builds sw[]
+   from colors[]. Never indexed unguarded. */
+function swOf(p) {
+  const sw = Array.isArray(p && p.sw) ? p.sw : [];
+  return sw.filter(s => s && (s.n || s.c));
+}
+
+function qsSyncAddState() {
+  if (!sheetAdd) return;
+  const p = CATALOG[sheetId];
+  if (!p) return;
+  const sw = swOf(p);
+  const ready = qsPick.size !== null && (sw.length === 0 || qsPick.color >= 0);
+  sheetAdd.disabled = !ready;
+  if (sheetAddT) {
+    sheetAddT.textContent = ready
+      ? 'افزودن به سبد · سایز ' + faNum(qsPick.size)
+      : (qsPick.size === null ? 'ابتدا سایز را انتخاب کنید' : 'رنگ را انتخاب کنید');
+  }
+}
+
 function openSheet(id) {
   if (!sheet || !sheetSizes) return;
   const p = CATALOG[id];
   if (!p) return;
   sheetId = id;
-  const sw0 = (p.sw && p.sw[0]) || { n: 'مشکی', c: '#161310' };
+  qsPick.size = null;
+  qsPick.color = -1;
+
+  /* Header block: thumb, name, category line, price. textContent everywhere —
+     nothing from the catalogue reaches innerHTML. */
+  if (sheetProd && sheetImg && sheetName && sheetSub && sheetPrice) {
+    sheetProd.hidden = false;
+    sheetImg.src = p.img || '';
+    sheetImg.alt = p.name;
+    sheetName.textContent = p.name;
+    sheetSub.textContent = p.cat || p.sub || '';
+    sheetPrice.textContent = moneyT(p.price);
+  }
+  if (sheetMore) sheetMore.href = '?product=' + encodeURIComponent(id);
+
+  /* Colour rail — only when the product actually carries colours. */
+  const sw = swOf(p);
+  if (sheetColorWrap && sheetColors) {
+    if (sw.length > 0) {
+      sheetColorWrap.hidden = false;
+      sheetColors.innerHTML = sw.map((s, i) =>
+        '<button class="sw qs-color" type="button" role="radio" aria-checked="false"'
+        + ' style="--c:' + esc(String(s.c || '#c8a24a')) + '"'
+        + ' data-ci="' + i + '" title="' + esc(String(s.n || '')) + '"'
+        + ' aria-label="' + esc('رنگ ' + (s.n || '')) + '"></button>'
+      ).join('');
+      /* A single colour is pre-picked visibly — the customer still sees what
+         they are buying, but is not asked to choose between one option. */
+      if (sw.length === 1) {
+        qsPick.color = 0;
+        const b0 = sheetColors.firstElementChild;
+        if (b0) { b0.setAttribute('aria-checked', 'true'); b0.classList.add('sel'); }
+        if (sheetColorName) sheetColorName.textContent = '· ' + (sw[0].n || '');
+      } else if (sheetColorName) {
+        sheetColorName.textContent = '';
+      }
+    } else {
+      sheetColorWrap.hidden = true;
+      sheetColors.innerHTML = '';
+      qsPick.color = 0; /* nothing to choose — treat as chosen */
+    }
+  }
+
   const hasStockRows = Array.isArray(p.sizes) && p.sizes.length > 0;
   const inStockCount = hasStockRows
     ? SIZES.filter(s => (stockOfSize(p, s) || 0) > 0).length
     : SIZES.length;
 
-  sheetT.textContent = p.name + ' · انتخاب سایز';
+  sheetT.textContent = 'خرید سریع · ' + p.name;
 
   /* If nothing at all is available, say so instead of presenting a rail the
      customer can pick from and be refused. */
   if (hasStockRows && inStockCount === 0) {
-    sheetSizes.setAttribute('role', 'radiogroup');
     sheetSizes.innerHTML = '<p class="sheet-empty">در حال حاضر موجود نیست.</p>';
     sheetConv.textContent = '';
+    if (sheetAdd) sheetAdd.disabled = true;
     sheet._opener = document.activeElement;
     if (!sheet.open) sheet.showModal();
     dlStop();
     return;
   }
 
-  sheetSizes.setAttribute('role', 'radiogroup');
   sheetSizes.innerHTML = SIZES.map(s => {
     const st = stockOfSize(p, s);
     const soldOut = st !== null && st <= 0;
@@ -523,33 +601,57 @@ function openSheet(id) {
          + '</button>';
   }).join('');
   sheetConv.textContent = '';
+  qsSyncAddState();
 
   sheet._opener = document.activeElement;
   if (!sheet.open) sheet.showModal();
   dlStop();
-  /* Move focus to the first size that can actually be chosen, so the keyboard
-     path starts inside the group instead of on the dialog. */
-  const first = sheetSizes.querySelector('.size:not([disabled])');
+  /* Move focus to the first control that can actually be chosen — the colour
+     rail when there is more than one to choose, otherwise the first live
+     size — so the keyboard path starts inside the group instead of on the
+     dialog. */
+  const first = (sheetColors && !sheetColorWrap.hidden && qsPick.color < 0)
+    ? sheetColors.querySelector('.qs-color:not([disabled])')
+    : sheetSizes.querySelector('.size:not([disabled])');
   if (first) first.focus({ preventScroll: true });
 }
 
-/* One delegated listener for the whole rail, registered once. A rebuild of
-   sheetSizes can therefore never orphan a handler, and the size is read from
-   the event target at the moment of the click rather than captured. */
+/* Commit whatever is currently selected. Both rails write through here so a
+   tap on a size with the colour already settled (or vice-versa) completes the
+   purchase in the same single gesture the old rail took — while a product
+   with a real colour choice asks for it explicitly before anything lands in
+   the bag. */
+function qsCommit() {
+  const p = CATALOG[sheetId];
+  if (!p || !sheetAdd || sheetAdd.disabled) return;
+  const sw = swOf(p);
+  const col = sw.length > 0 ? sw[Math.max(0, qsPick.color)] : { n: 'مشکی', c: '#161310' };
+  const sel = '.prod[data-id="' + (window.CSS && CSS.escape ? CSS.escape(sheetId) : sheetId) + '"] .prod-media img';
+  const media = document.querySelector(sel);
+  const ok = addToCart(sheetId, qsPick.size, 'سایز ' + faNum(qsPick.size), col.n || 'مشکی', col.c || '#161310', 0, '', media || null);
+  sheet.close();
+  if (ok) {
+    haptic('add');
+    showConfirmPill(`به سبد اضافه شد · ${col.n ? col.n + ' · ' : ''}سایز ${faNum(qsPick.size)}`);
+    toast(`${p.name} · ${col.n ? col.n + ' · ' : ''}سایز ${faNum(qsPick.size)} — به سبد اضافه شد.`);
+  }
+}
+
+/* One set of delegated listeners for the whole sheet, registered once. A
+   rebuild of either rail can therefore never orphan a handler, and the
+   selection is read from the event target at the moment of the click rather
+   than captured. */
 if (sheetSizes) {
   sheetSizes.addEventListener('click', e => {
     const b = e.target.closest('.size');
     if (!b || b.disabled) return;
     const p = CATALOG[sheetId];
     if (!p) return;
-    const sw0 = (p.sw && p.sw[0]) || { n: 'مشکی', c: '#161310' };
-    const ok = addToCart(sheetId, b.dataset.s, 'سایز ' + faNum(b.dataset.s), sw0.n, sw0.c);
-    sheet.close();
-    if (ok) {
-      haptic('add');
-      showConfirmPill(`به سبد اضافه شد · سایز ${faNum(b.dataset.s)}`);
-      toast(`${p.name} · سایز ${faNum(b.dataset.s)} — به سبد اضافه شد.`);
-    }
+    qsPick.size = b.dataset.s;
+    $$('.size', sheetSizes).forEach(x => x.setAttribute('aria-checked', String(x === b)));
+    const sw = swOf(p);
+    if (sw.length === 0 || qsPick.color >= 0) qsCommit();
+    else qsSyncAddState();
   });
 
   /* The foot-length hint, on both the paths that can reach a size. `focusin`
@@ -567,6 +669,30 @@ if (sheetSizes) {
   sheetSizes.addEventListener('pointerover', showConv);
   sheetSizes.addEventListener('pointerleave', () => { sheetConv.textContent = ''; });
 }
+
+if (sheetColors) {
+  sheetColors.addEventListener('click', e => {
+    const b = e.target.closest('.qs-color');
+    if (!b) return;
+    const p = CATALOG[sheetId];
+    if (!p) return;
+    const sw = swOf(p);
+    const i = Number(b.dataset.ci);
+    if (!(i >= 0) || i >= sw.length) return;
+    qsPick.color = i;
+    $$('.qs-color', sheetColors).forEach(x => {
+      const on = x === b;
+      x.setAttribute('aria-checked', String(on));
+      x.classList.toggle('sel', on);
+    });
+    if (sheetColorName) sheetColorName.textContent = '· ' + (sw[i].n || '');
+    /* Colour picked and a size already chosen → commit, symmetric to above. */
+    if (qsPick.size !== null) qsCommit();
+    else qsSyncAddState();
+  });
+}
+
+if (sheetAdd) sheetAdd.addEventListener('click', qsCommit);
 $('#sheetX') && $('#sheetX').addEventListener('click', () => sheet && sheet.close());
 sheet && wireDialog(sheet);
 
