@@ -56,13 +56,26 @@ if (!defined('VELORA_CONFIG_LOADED')) {
     exit('includes/uploads.php requires config.php to be loaded first.');
 }
 
-/* The one place the upload storage layout is spelled. Relative to VELORA_ROOT
-   so a sub-directory install and a document-root install both work, and
-   derived from STORAGE_DIR rather than from __DIR__ so it cannot drift when
-   this file moves. Declared with velora_define(), not `defined() or define()`,
-   so a second definition carrying a different value is written to the error log
+/* The one place the upload storage layout is spelled — as TWO halves, because
+   the filesystem half and the URL half are anchored at different roots:
+
+     · VELORA_UPLOAD_SUBDIR  is relative to STORAGE_DIR (the filesystem), so
+       product_upload_dir() = STORAGE_DIR . '/' . VELORA_UPLOAD_SUBDIR.
+     · VELORA_UPLOAD_URL_PATH is relative to APP_URL (the web root), so
+       product_upload_url_base() = APP_URL . '/' . VELORA_UPLOAD_URL_PATH.
+
+   It used to be one constant ('storage/uploads/products') concatenated onto
+   *both* anchors, which was right for the URL and wrong twice for the disk:
+   product_upload_dir() created /storage/storage/uploads/products (a nested
+   duplicate that no web server ever serves), and every containment check
+   still passed because the escaped path sat under STORAGE_DIR anyway. The
+   uploads actually landed where nothing could read them back over HTTP.
+
+   Both are declared with velora_define(), not `defined() or define()`, so a
+   second definition carrying a different value is written to the error log
    instead of being silently ignored. */
-velora_define('VELORA_UPLOAD_SUBDIR', 'storage/uploads/products');
+velora_define('VELORA_UPLOAD_SUBDIR', 'uploads/products');
+velora_define('VELORA_UPLOAD_URL_PATH', 'storage/uploads/products');
 
 /* The single allowed extension. Lower-case, no leading dot, because it is
    both compared against and concatenated into a filename. */
@@ -144,7 +157,7 @@ function product_upload_dir(): string {
  * would be a same-origin violation on any host that is not APP_URL.
  */
 function product_upload_url_base(): string {
-    return APP_URL . '/' . VELORA_UPLOAD_SUBDIR;
+    return APP_URL . '/' . VELORA_UPLOAD_URL_PATH;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
