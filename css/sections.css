@@ -331,77 +331,65 @@ body.loaded .hero-visual .frame { clip-path: inset(0 0 0 0); }
 /* ─── The console shell ─────────────────────────────────────────────────── */
 .vault__tools {
   position: relative;
-  display: block;                       /* was a flex row; it is a panel now */
-  border: 1px solid var(--line-2);
-  border-radius: var(--r-5);
-  background:
-    linear-gradient(180deg,
-      color-mix(in oklch, var(--surface) 88%, transparent) 0%,
-      color-mix(in oklch, var(--bg)     92%, transparent) 100%);
-  padding: var(--sp-3) var(--sp-3) var(--sp-3);
-  margin-block: 0 var(--sp-4);
-  box-shadow: 0 1px 0 color-mix(in oklch, var(--accent) 7%, transparent) inset,
-              0 24px 60px -40px color-mix(in oklch, var(--accent) 30%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding-block-end: var(--sp-3);
+  margin-block-end: var(--sp-4);
+  border-block-end: 1px solid var(--line);
 }
 
-/* A single gold hairline along the top edge — the maison's foil rule, reduced
-   to one pixel. It reads as a seam rather than as a border because it fades at
-   both ends instead of stopping hard. */
-.vault__tools::before {
+/* A single gold hairline along the bottom edge — the maison's foil rule,
+   reduced to one pixel. It reads as a seam rather than as a border because it
+   fades at both ends instead of stopping hard.
+
+   The panel treatment it replaced — a rounded rectangle with a border and an
+   inset shadow — put the filter inside a card that was visually louder than
+   the products it filters. The reference sets the controls on the page's own
+   surface and separates them with a rule, which is why the products stay the
+   thing you look at rather than the filter. */
+.vault__tools::after {
   content: "";
   position: absolute;
-  inset-block-start: -1px;
+  inset-block-end: -1px;
   inset-inline: 12%;
   block-size: 1px;
   background: linear-gradient(90deg, transparent, var(--gold-line) 22%, var(--accent) 50%, var(--gold-line) 78%, transparent);
   opacity: 0.85;
 }
 
-/* ─── Console header: eyebrow · count · reset ───────────────────────────── */
-.vault__tools-head {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  flex-wrap: wrap;
-  padding-block-end: var(--sp-2);
-  margin-block-end: var(--sp-2);
-  border-block-end: 1px solid var(--line);
-}
-
-.vault__tools-mark {
-  display: grid;
-  place-items: center;
-  inline-size: 26px;
-  block-size: 26px;
-  border-radius: 50%;
-  color: var(--accent);
-  background: var(--gold-ghost);
-  border: 1px solid var(--gold-line);
-  flex: none;
-}
-
-.vault__tools-eyebrow {
+/* The count and the reset. Both were in a header row with a decorative mark and
+   an eyebrow; the mark and the eyebrow are gone, because a customer who came
+   to shop should meet a filter, not a title for one. The count stays — it is
+   the only element that can report how many pieces survived the selection — and
+   the reset stays hidden until something is actually set, so an untouched page
+   shows neither. */
+#gridCount {
+  order: 1;
+  margin: 0;
   font-size: var(--t-xs);
-  font-weight: 700;
-  letter-spacing: 0.22em;
-  color: var(--text-2);
+  letter-spacing: 0.12em;
+  color: var(--text-4);
+}
+.vf-reset {
+  order: 2;
+  margin-inline-start: auto;
   white-space: nowrap;
+  font-size: var(--t-xs);
+  min-block-size: 32px;
+  display: inline-flex;
+  align-items: center;
 }
 
-/* The rule between the eyebrow and the count: it is what makes the header read
-   as a masthead rather than as a toolbar with a stray label. */
-.vault__tools-rule {
-  flex: 1 1 40px;
-  min-inline-size: 24px;
-  block-size: 1px;
-  background: linear-gradient(90deg, var(--line-2), transparent);
-}
-
-/* ─── Row 1: search · sort · apply ──────────────────────────────────────── */
+/* ─── The form ──────────────────────────────────────────────────────────── */
 .vf { display: flex; flex-direction: column; gap: var(--sp-3); }
 
 .vf-row { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: flex-end; }
 .vf-row--main { align-items: flex-end; }
+/* Search and sort sit on the last row, sharing a line the way the reference
+   does. They grow to fill it, so the row is not two fixed-width controls with
+   dead space between them at 1440px. */
+.vf-row--main .vf-field--grow { flex: 1 1 320px; }
 
 .vf-field { display: flex; flex-direction: column; gap: 0.4rem; min-inline-size: 0; }
 .vf-field--grow { flex: 1 1 260px; }
@@ -489,38 +477,75 @@ body.loaded .hero-visual .frame { clip-path: inset(0 0 0 0); }
 .vf-apply { flex: none; }
 .vf-reset { margin-inline-start: auto; white-space: nowrap; }
 
-/* ─── Facet groups ──────────────────────────────────────────────────────── */
-/* The grid is what makes this read as a console rather than a stack of
-   legends: three columns of facets, then ranges across the full width beneath.
-   minmax(0, 1fr) rather than 1fr because a long Persian colour name would
-   otherwise blow the track out and push the whole row wide. */
-.vf-facets {
+/* ─── The chip run ──────────────────────────────────────────────────────── */
+/* The reference layout is a single continuous run of pills with no headings,
+   no borders and no fieldset chrome, and the wrappers below reproduce that
+   without dropping the grouping the markup used to get from <fieldset>.
+
+   What was removed and why it cost nothing:
+     · three <fieldset>s + three <legend>s  — the legend said "categories OR
+       within, AND across". That rule still has to be conveyed, so it moved to
+       each group's aria-label, which a screen reader announces and nobody sees.
+       The visible heading was always redundant: every pill is labelled.
+     · the bordered block per facet — a border around a set of pills that are
+       already pill-shaped reads as a card inside a card, and it drew three
+       rectangles around content the reference sets on one open plane.
+
+   The lead row wraps on its own; the secondary facets sit in one shared row.
+   Four chips to a line is what the reference shows, so `minmax` is set to
+   make that the natural count rather than hoping for it — at 1280px this
+   yields four, at 900px three, and never one very long line of six. */
+.vf-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.vf-chips--lead { gap: 0.55rem 0.5rem; }
+
+.vf-chips--sub {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
-  gap: var(--sp-3) var(--sp-3);
+  gap: var(--sp-2) var(--sp-3);
   align-items: start;
 }
-
-.vf-group {
-  border: 0;
-  padding: 0;
-  margin: 0;
+.vf-chipgroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
   min-inline-size: 0;
 }
-.vf-group > legend {
-  padding: 0;
-  margin-block-end: 0.6rem;
-  font-size: var(--t-xs);
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  color: var(--text-3);
-}
-/* A legend is not focusable, so its label cannot be announced when the group is
-   reached by keyboard; the marker is hidden and the spacing is restored by hand
-   to keep the visual rhythm identical. */
-.vf-group > legend::-webkit-details-marker { display: none; }
+/* Sizes are numerals and short, so they get a tighter gap than the text pills
+   in the lead row — otherwise the group reads as the same thing at a different
+   size rather than as a different kind of choice. */
+.vf-chipgroup--color { gap: 0.4rem; }
 
-.vf-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+/* The ALL pill. Radio, not checkbox: "no category filter" and "category = pumps"
+   are mutually exclusive answers to one question, and two checkboxes would let
+   both be ticked at once, which is a state the filter predicate cannot
+   represent. The count beside it is the size of the unfiltered collection, so
+   the lead of the run is a summary of what is on offer before anything is
+   narrowed. */
+.chip--all { padding-inline: 1.1rem; }
+.chip--all-t { letter-spacing: 0.04em; }
+.chip--all input[type="radio"] {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.chip--all:has(input:focus-visible) {
+  outline: 2px solid var(--gold-line);
+  outline-offset: 2px;
+}
+
+/* The count is the reason a chip is a filter rather than a link: it says how
+   many pieces are behind the choice, computed from the catalogue before any
+   filtering, so narrowing the view never makes an option disappear. */
+.chip small[data-count] {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.62;
+  font-size: 0.92em;
+  letter-spacing: 0.02em;
+}
+.chip.on small[data-count] { opacity: 0.75; }
 
 /* ─── Colour swatches ───────────────────────────────────────────────────── */
 /* The chip carries the name AND the dot. The dot is the reason the chip exists,
@@ -539,13 +564,11 @@ body.loaded .hero-visual .frame { clip-path: inset(0 0 0 0); }
 .chip--color.on .sw,
 .chip--color.sel .sw { box-shadow: 0 0 0 2px var(--invert), 0 0 0 3px var(--accent); }
 
-.chip small[data-count] { font-variant-numeric: tabular-nums; }
-
 /* The checkbox itself is visually replaced, never display:none — a hidden input
    is still focusable and still submits, which is exactly what keeps the no-JS
    path working, and the chip is its <label> so a click anywhere toggles it. */
 .vf-chips .chip--check input[type="checkbox"],
-.vf-switches .chip--check input[type="checkbox"] {
+.vf-chipgroup .chip--check input[type="checkbox"] {
   position: absolute;
   inline-size: 1px;
   block-size: 1px;
@@ -557,6 +580,29 @@ body.loaded .hero-visual .frame { clip-path: inset(0 0 0 0); }
   outline: 2px solid var(--gold-line);
   outline-offset: 2px;
 }
+
+/* The submit button, shown only where nothing can filter live.
+   main.js binds `input` on every control and re-draws the grid, so with
+   scripts the button would be a second, slower way to do something that already
+   happened. Without them it is the only way, so it is removed from the flow
+   rather than merely styled — and not with display:none, which would hide it
+   from the no-JS page as well. */
+.vf-noscript { display: none; }
+.no-js .vf-noscript,
+html:not(.js) .vf-noscript {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 44px;
+  padding: 0.5rem 1.2rem;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--gold-line);
+  background: transparent;
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 
 /* ─── Range row ─────────────────────────────────────────────────────────── */
 .vf-row--range {
@@ -624,7 +670,81 @@ body.loaded .hero-visual .frame { clip-path: inset(0 0 0 0); }
 .vf-slider:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px var(--gold-ghost), 0 2px 10px -2px color-mix(in oklch, var(--accent) 55%, transparent); }
 .vf-slider:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 4px var(--gold-ghost); }
 
-.vf-switches { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+/* ─── The dual-handle price band ────────────────────────────────────────── */
+/* The reference shows a band with a handle at each end and the chosen span
+   written out beside it. Two stacked <input type=range> over one painted
+   track is what produces that without a custom widget, and it keeps two
+   properties a hand-rolled pointer-events version cannot have:
+
+   · both handles are real form controls, so both submit a name and the
+     no-JavaScript GET path needs no special handling;
+   · both are focusable and respond to the arrow keys, Home and End, so the
+     floor of the band is adjustable by keyboard rather than by drag alone.
+
+   The painted fill is a sibling element rather than a gradient on the track,
+   because it has to be positioned from BOTH ends at once and its geometry must
+   not depend on either thumb's width — which differs between engines and
+   between a mouse and a touch drag.
+
+   The fill is driven by two custom properties, --lo and --hi, as percentages of
+   the track, written by main.js from the two input values. Both are clamped in
+   the script as well as here: an unclamped pair produces a negative width,
+   which resolves to `auto` and silently paints the whole track. */
+.vf-dual {
+  position: relative;
+  display: grid;
+  block-size: 22px;
+  align-items: center;
+}
+.vf-dual-track {
+  position: absolute;
+  inset-inline: 0;
+  block-size: 2px;
+  border-radius: 2px;
+  background: var(--border-3);
+  pointer-events: none;
+}
+.vf-dual-fill {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: var(--lo, 0%);
+  inline-size: calc(var(--hi, 100%) - var(--lo, 0%));
+  border-radius: 2px;
+  background: var(--grad-gold);
+}
+/* Both inputs occupy the same cell of the grid, so neither adds height and the
+   handles sit exactly on the painted track at every width. The upper one is the
+   floor: it needs the lower z-index, because at a fully-collapsed band the two
+   thumbs coincide and the customer must be able to grab either end. */
+.vf-dual .vf-slider {
+  grid-area: 1 / 1;
+  margin: 0;
+  pointer-events: none;   /* the TRACK is not grabbable; the thumb still is */
+}
+.vf-dual .vf-slider::-webkit-slider-thumb { pointer-events: auto; }
+.vf-dual .vf-slider::-moz-range-thumb       { pointer-events: auto; }
+.vf-dual .vf-slider--min { z-index: 1; }
+.vf-dual .vf-slider--max { z-index: 2; }
+
+/* pointer-events:none on the input is what makes a two-thumb range workable at
+   all: without it the upper input covers the lower one's track, and dragging
+   the left thumb to the right past the right thumb stops working. Engines
+   still route a pointerdown on the thumb even when the parent is transparent,
+   which is why this is safe on the thumb and only there. */
+.vf-field--price { display: grid; gap: 0.5rem; inline-size: 100%; }
+
+/* The written-out span. It is an <output>, so it is a live region in practice
+   and assistive technology reads the new value when the handle moves, rather
+   than the customer having to drag and then go and look. */
+.vf-rangeout {
+  font-size: var(--t-xs);
+  color: var(--text-3);
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 640px) {
+  .vf-rangeout { font-size: var(--t-2xs, 0.66rem); }
+}
 
 /* ─── Active-filter summary ─────────────────────────────────────────────── */
 /* Populated by main.js. It is empty in the server-rendered markup because the

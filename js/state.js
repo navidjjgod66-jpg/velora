@@ -56,11 +56,12 @@ const state = {
                  it has stock in at least one selected size — the same rule
                  api.php enforces at order time, so a card that survives the
                  filter can always be bought in that size.
+       · priceMin  null = no floor; otherwise keep price >= priceMin.
        · priceMax  null = no ceiling; otherwise keep price <= priceMax.
        · instock Only pieces ready in the atelier right now (stock > 0).
        · deals   Only marked-down pieces (a real oldPrice above price).
        · isNew   Only this season's reveals. */
-  fam:'all', sort:'featured', q:'', priceMax:null,
+  fam:'all', sort:'featured', q:'', priceMin:null, priceMax:null,
   cats:new Set(), heelMin:null, heelMax:null,
   colors:new Set(), sizes:new Set(),
   instock:false, deals:false, isNew:false,

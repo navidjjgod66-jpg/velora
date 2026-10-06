@@ -192,6 +192,7 @@ $qf = [
     'colors'   => [],
     'heel_min' => null,
     'heel_max' => null,
+    'price_min'=> null,
     'price_max'=> null,
     'instock'  => !empty($_GET['f_instock']),
     'deals'    => !empty($_GET['f_deals']),
@@ -221,7 +222,17 @@ foreach ($rawColors as $k) {
 }
 if (isset($_GET['f_heel_min']) && is_numeric($_GET['f_heel_min'])) $qf['heel_min'] = max(0, (int) $_GET['f_heel_min']);
 if (isset($_GET['f_heel_max']) && is_numeric($_GET['f_heel_max'])) $qf['heel_max'] = max(0, (int) $_GET['f_heel_max']);
-if (isset($_GET['f_price'])    && is_numeric($_GET['f_price']))    $qf['price_max'] = max(0, (int) $_GET['f_price']);
+/* f_price was the ceiling alone, and is still honoured as the ceiling: it is
+   what every bookmarked URL already carries, and silently reinterpreting it as
+   something else would make those links filter a different collection than
+   they always did.
+
+   f_price_min is new, for the second handle. It is read separately rather than
+   by giving f_price a value shape, because a dual-handle control that submits
+   one name cannot express "both ends are at the default" — which is the state
+   an unfiltered page is in, and the state a reset must be able to return to. */
+if (isset($_GET['f_price'])     && is_numeric($_GET['f_price']))     $qf['price_max'] = max(0, (int) $_GET['f_price']);
+if (isset($_GET['f_price_min']) && is_numeric($_GET['f_price_min'])) $qf['price_min'] = max(0, (int) $_GET['f_price_min']);
 
 /* Facets derived from the catalogue itself — the vocabulary of the shop has
    exactly one source. Counts are computed BEFORE filtering, so a chip always
@@ -273,17 +284,30 @@ if ($qf['heel_min'] === null || $qf['heel_max'] === null) {
     $qf['heel_max'] = $heelBounds[1] ?? 0;
 }
 if ($qf['heel_min'] > $qf['heel_max']) { $t = $qf['heel_min']; $qf['heel_min'] = $qf['heel_max']; $qf['heel_max'] = $t; }
+if ($qf['price_min'] === null) $qf['price_min'] = $priceBounds[0] ?? 0;
 if ($qf['price_max'] === null) $qf['price_max'] = $priceBounds[1] ?? 0;
+if ($qf['price_min'] > $qf['price_max']) { $t = $qf['price_min']; $qf['price_min'] = $qf['price_max']; $qf['price_max'] = $t; }
 
 $filtersActive = $qf['q'] !== '' || $qf['cats'] || $qf['sizes'] || $qf['colors']
               || $qf['instock'] || $qf['deals'] || $qf['new']
               || ($heelBounds && ($qf['heel_min'] > $heelBounds[0] || $qf['heel_max'] < $heelBounds[1]))
-              || ($priceBounds && $qf['price_max'] < $priceBounds[1])
+              || ($priceBounds && ($qf['price_min'] > $priceBounds[0] || $qf['price_max'] < $priceBounds[1]))
               || $qf['sort'] !== 'featured';
 
 /* The server-side pass of the same predicate main.js's apply() runs. Kept
    beside each other in meaning: category OR within a facet, AND across
    facets; a size matches only when that size actually has stock. */
+/* Captured BEFORE the pass below narrows it.
+
+   The ALL pill reports the size of the collection, not the size of the current
+   view — that is the entire point of having it: it is the number every other
+   chip's counts add up to, and the number a customer compares against to decide
+   whether narrowing is worth it. Read after the filter it would report the
+   result of the selection it is supposed to be the baseline for, so clicking
+   "PUMPS" would change the ALL count, and every count in the row would shift
+   under the customer's finger at the moment they are reading them. */
+$catalogTotal = count($catalogFeed);
+
 if ($filtersActive && $catalogFeed) {
     $catalogFeed = array_values(array_filter($catalogFeed, static function (array $p) use ($qf): bool {
         if ($qf['q'] !== ''
@@ -304,7 +328,13 @@ if ($filtersActive && $catalogFeed) {
         }
         $h = (int) ($p['heel'] ?? 0);
         if ($h < (int) $qf['heel_min'] || $h > (int) $qf['heel_max']) return false;
-        if ($qf['price_max'] > 0 && (int) ($p['price'] ?? 0) > (int) $qf['price_max']) return false;
+        /* Both price ends, because the control now has two handles. Checking
+           only the ceiling left the floor decorative — a handle the customer
+           could drag that silently did nothing, which is worse than having no
+           handle, because it looks like a control that works. */
+        $pr = (int) ($p['price'] ?? 0);
+        if ($qf['price_min'] > 0 && $pr < (int) $qf['price_min']) return false;
+        if ($qf['price_max'] > 0 && $pr > (int) $qf['price_max']) return false;
         if ($qf['instock'] && (int) ($p['stock'] ?? 0) <= 0) return false;
         if ($qf['deals'] && (int) ($p['old'] ?? 0) <= (int) ($p['price'] ?? 0)) return false;
         if ($qf['new'] && empty($p['isNew'])) return false;
@@ -1247,14 +1277,15 @@ $precacheAssets = array_merge(
           replaces the container wholesale on boot and the result is identical
           to what the server sent. */ ?>
         <div class="vault__tools" id="vTools" role="search" aria-label="فیلترهای مجموعه">
-          <div class="vault__tools-head">
-            <span class="vault__tools-mark" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.2">
-                <path d="M3 6h18M6 12h12M10 18h4" stroke-linecap="round"/>
-              </svg>
-            </span>
-            <span class="vault__tools-eyebrow">صیقل انتخاب</span>
-            <span class="vault__tools-rule" aria-hidden="true"></span>
+          <?php /* The decorative mark, the eyebrow and the rule are gone.
+
+             The reference opens straight into the pills, and that is not only a
+             preference: this block sat between the section heading and the
+             first control, so a customer who arrived to shop had to read a
+             title for a filter before seeing a filter. The count stays, because
+             it is not chrome — it is the number the chips are counting up to,
+             and #gridCount is the only element that can say how many of them
+             survived the current selection. */ ?>
             <p class="grid-count" id="gridCount" aria-live="polite"></p>
             <a class="vf-reset linklike-accent" id="vReset"
                href="<?= $esc((string) parse_url(APP_URL, PHP_URL_PATH) ?: '/') ?>"<?= $filtersActive ? '' : ' hidden' ?>>پاک کردن همه</a>
@@ -1403,6 +1434,157 @@ one. Both are filled in by main.js, which is the only thing that knows how
            knows how many cards are currently visible. */
         ?>
           <form class="vf" id="vForm" method="get" action="<?= $esc(APP_URL . '/' === substr(APP_URL, -1) ? APP_URL : APP_URL . '/') ?>">
+
+            <?php /* THE CHIP BLOCK LEADS.
+
+               Three separate questions decided this, and the reference layout
+               settled all of them at once.
+
+               1. Order. You choose, then you look. A category row after a
+                  search box reads as a refinement of the search; the same row
+                  above it reads as the first thing to touch. The reference
+                  puts the pills first for the same reason.
+
+               2. Grouping. The three facet groups were three <fieldset>s with
+                  three legends, which renders as three labelled blocks with
+                  three rows and a visible border on each — a form that
+                  describes itself at length. The reference has no legends and
+                  no borders at all: one continuous run of pills, because the
+                  label is on each pill and needs no heading to be legible.
+
+                  What the legends actually carried was the facet's scope —
+                  "categories OR within, AND across". That information does not
+                  go away without an <fieldset>; it moves to the fieldset's
+                  accessible name via aria-label, which the wrappers below do.
+                  The grouping semantics survive; only the chrome is gone.
+
+               3. An ALL pill. The reference leads with an active "ALL 10",
+                  which is a summary — the total — sitting among the facets.
+                  It is a real control (it clears the category selection) and it
+                  is the only thing on screen that answers "how much is there
+                  before I narrow anything". It is not decoration and it is not
+                  a duplicate of the reset link: the reset link clears every
+                  facet plus the query plus the sliders, and it stays hidden
+                  until something is actually set. */ ?>
+            <div class="vf-chips vf-chips--lead" id="vCats" role="group" aria-label="دسته‌بندی">
+              <label class="chip chip--all<?= !$qf['cats'] ? ' on' : '' ?>">
+                <input type="radio" name="f_cat[]" value=""
+                       <?= !$qf['cats'] ? 'checked' : '' ?> data-cat="">
+                <span class="chip--all-t">همه</span>
+                <small data-count><?= fa_num($catalogTotal) ?></small>
+              </label>
+              <?php foreach ($facetCats as $slug => $label): ?>
+              <label class="chip chip--check<?= in_array($slug, $qf['cats'] ?? [], true) ? ' on' : '' ?>"
+                     data-cat="<?= $esc($slug) ?>">
+                <input type="checkbox" name="f_cat[]" value="<?= $esc($slug) ?>"
+                       <?= in_array($slug, $qf['cats'] ?? [], true) ? 'checked' : '' ?>>
+                <span><?= $esc($label) ?></span>
+                <small data-count><?= fa_num($facetCounts['cat'][$slug] ?? 0) ?></small>
+              </label>
+              <?php endforeach; ?>
+            </div>
+
+            <div class="vf-chips vf-chips--sub">
+              <?php if ($facetSizes): ?>
+              <div class="vf-chipgroup" role="group" aria-label="سایز">
+                <?php foreach ($facetSizes as $sz): ?>
+                <label class="chip chip--check<?= in_array((string) $sz, $qf['sizes'] ?? [], true) ? ' on' : '' ?>"
+                       data-size="<?= (int) $sz ?>">
+                  <input type="checkbox" name="f_size[]" value="<?= (int) $sz ?>"
+                         <?= in_array((string) $sz, $qf['sizes'] ?? [], true) ? 'checked' : '' ?>>
+                  <span><?= fa_num($sz) ?></span>
+                </label>
+                <?php endforeach; ?>
+              </div>
+              <?php endif; ?>
+
+              <?php if ($facetColors): ?>
+              <div class="vf-chipgroup vf-chipgroup--color" role="group" aria-label="رنگ">
+                <?php foreach ($facetColors as $key => $cname): ?>
+                <label class="chip chip--color<?= in_array($key, $qf['colors'] ?? [], true) ? ' on sel' : '' ?>"
+                       data-color="<?= $esc($key) ?>" title="<?= $esc($cname) ?>">
+                  <input type="checkbox" name="f_color[]" value="<?= $esc($key) ?>"
+                         <?= in_array($key, $qf['colors'] ?? [], true) ? 'checked' : '' ?>>
+                  <span class="sw" style="--c:<?= $esc($hexForColor($key)) ?>" aria-hidden="true"></span>
+                  <span><?= $esc($cname) ?></span>
+                </label>
+                <?php endforeach; ?>
+              </div>
+              <?php endif; ?>
+
+              <div class="vf-chipgroup" role="group" aria-label="وضعیت">
+                <label class="chip chip--check<?= !empty($qf['instock']) ? ' on' : '' ?>">
+                  <input type="checkbox" name="f_instock" value="1" <?= !empty($qf['instock']) ? 'checked' : '' ?>>
+                  <span>فقط موجود</span>
+                </label>
+                <label class="chip chip--check<?= !empty($qf['deals']) ? ' on' : '' ?>">
+                  <input type="checkbox" name="f_deals" value="1" <?= !empty($qf['deals']) ? 'checked' : '' ?>>
+                  <span>تخفیف‌دار</span>
+                </label>
+                <label class="chip chip--check<?= !empty($qf['new']) ? ' on' : '' ?>">
+                  <input type="checkbox" name="f_new" value="1" <?= !empty($qf['new']) ? 'checked' : '' ?>>
+                  <span>جدید این فصل</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="vf-row vf-row--range">
+              <?php if ($priceBounds !== null): ?>
+              <?php /* TWO HANDLES, ONE RANGE.
+
+                   The reference shows a band with a handle at each end and the
+                   selected span written out beside it. This had one input and a
+                   "ceiling" label, so the floor of the band was not adjustable
+                   and a customer who wanted "between 1.2 and 1.8 million" had
+                   no way to ask for it — they could only take everything under
+                   a ceiling and then discard most of it by eye.
+
+                   Two <input type=range> stacked in one box is the only markup
+                   that does this without a custom widget: both handles are real
+                   form controls, both are keyboard-operable with the arrow keys,
+                   and both submit real names, so the no-JavaScript path keeps
+                   working with no special handling. A div-and-pointer-events
+                   widget would have taken all three away.
+
+                   Both inputs name themselves — they are not display:none
+                   stand-ins for one another — because a filter the keyboard
+                   cannot reach is a filter that does not exist for anyone using
+                   assistive technology or preferring the keyboard.
+
+                   The painted band between the handles is a sibling element, not
+                   a gradient on the track, so it can be positioned from two
+                   custom properties the script writes and it never depends on
+                   how wide either input's thumb is. */ ?>
+              <div class="vf-field vf-field--price">
+                <label class="vf-lbl" for="vPriceMin">بازهٔ قیمت</label>
+                <span class="vf-dual">
+                  <span class="vf-dual-track" aria-hidden="true"><span class="vf-dual-fill"></span></span>
+                  <input class="vf-slider vf-slider--min" id="vPriceMin" name="f_price_min" type="range"
+                         min="<?= (int) $priceBounds[0] ?>" max="<?= (int) $priceBounds[1] ?>" step="50000"
+                         value="<?= (int) $qf['price_min'] ?>" aria-label="کمترین قیمت">
+                  <input class="vf-slider vf-slider--max" id="vPrice" name="f_price" type="range"
+                         min="<?= (int) $priceBounds[0] ?>" max="<?= (int) $priceBounds[1] ?>" step="50000"
+                         value="<?= (int) $qf['price_max'] ?>" aria-label="بیشترین قیمت">
+                </span>
+                <output class="vf-rangeout mono" id="vPriceOut" for="vPriceMin vPrice"><?= fa_num((int) round($qf['price_min'] / 1000000)) ?> — <?= fa_num((int) round($qf['price_max'] / 1000000)) ?> میلیون تومان</output>
+              </div>
+              <?php endif; ?>
+
+              <?php if ($heelBounds !== null): ?>
+              <label class="vf-field vf-field--heel">
+                <span class="vf-lbl">ارتفاع پاشنه <em class="mono" id="vHeelOut"><?= fa_num((int) $qf['heel_min']) ?>–<?= fa_num((int) $qf['heel_max']) ?> میلی‌متر</em></span>
+                <span class="vf-range">
+                  <input class="vf-slider" id="vHeelMin" name="f_heel_min" type="range"
+                         min="<?= (int) $heelBounds[0] ?>" max="<?= (int) $heelBounds[1] ?>" step="5"
+                         value="<?= (int) $qf['heel_min'] ?>" aria-label="حداقل ارتفاع پاشنه">
+                  <input class="vf-slider" id="vHeelMax" name="f_heel_max" type="range"
+                         min="<?= (int) $heelBounds[0] ?>" max="<?= (int) $heelBounds[1] ?>" step="5"
+                         value="<?= (int) $qf['heel_max'] ?>" aria-label="حداکثر ارتفاع پاشنه">
+                </span>
+              </label>
+              <?php endif; ?>
+            </div>
+
             <div class="vf-row vf-row--main">
               <label class="vf-field vf-field--grow">
                 <span class="vf-lbl">جست‌وجو در مجموعه</span>
@@ -1431,97 +1613,21 @@ one. Both are filled in by main.js, which is the only thing that knows how
                   </svg>
                 </span>
               </label>
-              <button class="btn btn--gold btn--sm vf-apply" type="submit">اعمال</button>
+              <?php /* The submit button is gone. main.js filters live on every
+                     input event, so an "apply" step is a round trip the customer
+                     already paid without leaving the page. Removing it also
+                     removes the state where the grid shows one result and the
+                     search box shows another.
+
+                     The form still submits without JavaScript — the controls keep
+                     their names and their checked state, so a GET is still a
+                     valid way to filter. What is gone is only the button that
+                     made it the only way. Keyboard users were already covered:
+                     every control here is focusable and the Enter key submits
+                     the form from any input. */ ?>
+              <button class="vf-noscript" type="submit">اعمال فیلترها</button>
             </div>
 
-            <div class="vf-facets">
-            <?php if ($facetCats): ?>
-            <fieldset class="vf-group">
-              <legend class="vf-lbl">فرم</legend>
-              <div class="vf-chips" id="vCats" role="group" aria-label="دسته‌بندی">
-                <?php foreach ($facetCats as $slug => $label): ?>
-                <label class="chip chip--check<?= in_array($slug, $qf['cats'] ?? [], true) ? ' on' : '' ?>"
-                       data-cat="<?= $esc($slug) ?>">
-                  <input type="checkbox" name="f_cat[]" value="<?= $esc($slug) ?>"
-                         <?= in_array($slug, $qf['cats'] ?? [], true) ? 'checked' : '' ?>>
-                  <span><?= $esc($label) ?></span><small data-count><?= fa_num($facetCounts['cat'][$slug] ?? 0) ?></small>
-                </label>
-                <?php endforeach; ?>
-              </div>
-            </fieldset>
-            <?php endif; ?>
-
-            <?php if ($facetSizes): ?>
-            <fieldset class="vf-group">
-              <legend class="vf-lbl">سایز (موجود)</legend>
-              <div class="vf-chips" id="vSizes" role="group" aria-label="سایز">
-                <?php foreach ($facetSizes as $sz): ?>
-                <label class="chip chip--check<?= in_array((string) $sz, $qf['sizes'] ?? [], true) ? ' on' : '' ?>"
-                       data-size="<?= (int) $sz ?>">
-                  <input type="checkbox" name="f_size[]" value="<?= (int) $sz ?>"
-                         <?= in_array((string) $sz, $qf['sizes'] ?? [], true) ? 'checked' : '' ?>>
-                  <span><?= fa_num($sz) ?></span>
-                </label>
-                <?php endforeach; ?>
-              </div>
-            </fieldset>
-            <?php endif; ?>
-
-            <?php if ($facetColors): ?>
-            <fieldset class="vf-group">
-              <legend class="vf-lbl">رنگ</legend>
-              <div class="vf-chips" id="vColors" role="group" aria-label="رنگ">
-                <?php foreach ($facetColors as $key => $cname): ?>
-                <label class="chip chip--color<?= in_array($key, $qf['colors'] ?? [], true) ? ' on sel' : '' ?>"
-                       data-color="<?= $esc($key) ?>" title="<?= $esc($cname) ?>">
-                  <input type="checkbox" name="f_color[]" value="<?= $esc($key) ?>"
-                         <?= in_array($key, $qf['colors'] ?? [], true) ? 'checked' : '' ?>>
-                  <span class="sw" style="--c:<?= $esc($hexForColor($key)) ?>" aria-hidden="true"></span>
-                  <span><?= $esc($cname) ?></span>
-                </label>
-                <?php endforeach; ?>
-              </div>
-            </fieldset>
-            <?php endif; ?>
-            </div><!-- /.vf-facets -->
-
-            <div class="vf-row vf-row--range">
-              <?php if ($heelBounds !== null): ?>
-              <label class="vf-field">
-                <span class="vf-lbl">ارتفاع پاشنه <em class="mono" id="vHeelOut"><?= fa_num((int) $qf['heel_min']) ?>–<?= fa_num((int) $qf['heel_max']) ?> میلی‌متر</em></span>
-                <span class="vf-range">
-                  <input class="vf-slider" id="vHeelMin" name="f_heel_min" type="range"
-                         min="<?= (int) $heelBounds[0] ?>" max="<?= (int) $heelBounds[1] ?>" step="5"
-                         value="<?= (int) $qf['heel_min'] ?>" aria-label="حداقل ارتفاع پاشنه">
-                  <input class="vf-slider" id="vHeelMax" name="f_heel_max" type="range"
-                         min="<?= (int) $heelBounds[0] ?>" max="<?= (int) $heelBounds[1] ?>" step="5"
-                         value="<?= (int) $qf['heel_max'] ?>" aria-label="حداکثر ارتفاع پاشنه">
-                </span>
-              </label>
-              <?php endif; ?>
-              <?php if ($priceBounds !== null): ?>
-              <label class="vf-field">
-                <span class="vf-lbl">سقف قیمت <em class="mono" id="vPriceOut"><?= fa_num((int) round($qf['price_max'] / 1000000)) ?> میلیون تومان</em></span>
-                <input class="vf-slider vf-slider--wide" id="vPrice" name="f_price" type="range"
-                       min="<?= (int) $priceBounds[0] ?>" max="<?= (int) $priceBounds[1] ?>" step="100000"
-                       value="<?= (int) $qf['price_max'] ?>" aria-label="حداکثر قیمت">
-              </label>
-              <?php endif; ?>
-              <span class="vf-switches">
-                <label class="chip chip--check<?= !empty($qf['instock']) ? ' on' : '' ?>">
-                  <input type="checkbox" name="f_instock" value="1" <?= !empty($qf['instock']) ? 'checked' : '' ?>>
-                  <span>فقط موجود</span>
-                </label>
-                <label class="chip chip--check<?= !empty($qf['deals']) ? ' on' : '' ?>">
-                  <input type="checkbox" name="f_deals" value="1" <?= !empty($qf['deals']) ? 'checked' : '' ?>>
-                  <span>تخفیف‌دار</span>
-                </label>
-                <label class="chip chip--check<?= !empty($qf['new']) ? ' on' : '' ?>">
-                  <input type="checkbox" name="f_new" value="1" <?= !empty($qf['new']) ? 'checked' : '' ?>>
-                  <span>جدید این فصل</span>
-                </label>
-              </span>
-            </div>
             <div class="vf-pills" id="activePills" aria-live="polite"></div>
           </form>
         </div>

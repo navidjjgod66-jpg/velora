@@ -59,7 +59,7 @@
 const {
   $, $$, html, body, reduced, fine, coarse, RAF, TIMERS, LS, K,
   faNum, faPad, moneyT, esc, debounce, toast, dlStop, dlStart,
-  backdropClose
+  backdropClose, scrollToEl
 } = window.AE;
 const { CATALOG, PRODUCTS, ORDER, SIZES, catLabel } = window.AE_DATA;
 const { state, getCustom, sanitiseCart, persBag } = window.AE_STATE;
@@ -200,27 +200,70 @@ if (grid) {
 }
 
 /* ─── Filters ──────────────────────────────────────────────────────────────
-   Only the state and the sort live here. The toolbar that used to drive them
-   (#vSort, #vSearch, #vPrice, #activePills, #vCount) has no markup, so all of
-   that wiring was writing to null and the pill row it built was never inserted
-   anywhere. state.q is still set — by the header search, which does exist — so
-   the filter itself keeps working.
-   ═══════════════════════════════════════════════════════════════════════ */
+   Everything the filter bar can express, read out of the bar itself.
+
+   The comment this replaced claimed the toolbar "has no markup, so all of that
+   wiring was writing to null". The markup was there — #vSort, #vSearch and
+   #vPrice are all rendered by index.php. What was missing was the listener,
+   which is why a customer who clicked a category chip got a full page load
+   instead of a filtered grid: the form was the only path, and it was a GET.
+
+   So apply() reads the DOM for every facet rather than a parallel state object.
+   That is the same reasoning as paintActiveFilters() below and it is deliberate:
+   `checked` is simultaneously what the server rendered, what the customer
+   toggled, what will be submitted, and now what is filtered on. A state copy is
+   a fourth thing that can disagree with the other three, and the disagreement is
+   invisible — the grid is simply narrower than the controls suggest.
+
+   The one exception is state.q, because the header search box is a second input
+   for the same field, and a rule that reads one element cannot see the other. */
 function apply() {
   if (!grid) return;
   RANK = null;
   const cards = $$('.prod', grid), q = state.q.trim().toLowerCase();
   const wishSet = state.fam === 'wish' ? new Set(state.wish) : null;
+
+  /* ── Read the bar ─────────────────────────────────────────────────────── */
+  const form = $('#vForm');
+  const picked = (name) => (form ? $$(`input[name="${name}"]:checked`, form) : []);
+  const vals = (name) => picked(name).map(i => i.value).filter(v => v !== '');
+
+  const cats = new Set(vals('f_cat[]'));
+  const sizes = new Set(vals('f_size[]'));
+  const colors = new Set(vals('f_color[]'));
+  const instock = picked('f_instock').length > 0;
+  const deals = picked('f_deals').length > 0;
+  const isNew = picked('f_new').length > 0;
+
+  const heelMinEl = $('#vHeelMin'), heelMaxEl = $('#vHeelMax');
+  const hLo = heelMinEl ? Number(heelMinEl.value) : 0;
+  const hHi = heelMaxEl ? Number(heelMaxEl.value) : 0;
+
   for (const el of cards) {
     const p = CATALOG[el.dataset.id];
     if (!p) { el.hidden = true; continue; }
     const famOK = state.fam === 'all' ? true : wishSet ? wishSet.has(p.id) : p.family === state.fam;
     const qOK = !q || (p.name + ' ' + p.sub + ' ' + p.cat).toLowerCase().includes(q);
-    /* priceMax is null for "no ceiling" — see the note in state.js. The
-       short-circuit matters as much as the comparison: with a number here, a
-       stale one silently removes products from a shop that never says so. */
-    const priceOK = !state.priceMax || p.price <= state.priceMax;
-    el.hidden = !(famOK && qOK && priceOK);
+    const catOK = !cats.size || cats.has(p.cat);
+    const colOK = !colors.size || (p.colors || []).some(c => colors.has(c.key));
+    /* A size matches only when that size actually has stock — the same rule the
+       order endpoint enforces, so a card that survives the filter can always be
+       bought in that size rather than showing a size and then refusing it. */
+    const sizeOK = !sizes.size || (p.sizes || []).some(s => s.stock > 0 && sizes.has(String(s.eu)));
+    const heelOK = !heelMaxEl || (p.heel >= hLo && p.heel <= hHi);
+    /* priceMin and priceMax are null for "no floor" and "no ceiling" — see the
+       note in state.js. The short-circuits matter as much as the comparisons:
+       with a number here, a stale one silently removes products from a shop
+       that never says so. Both ends are checked because the control now has
+       two handles; checking only the ceiling left the floor decorative, and a
+       handle that looks draggable but does nothing is worse than no handle. */
+    const priceOK = (!state.priceMax || p.price <= state.priceMax)
+                 && (!state.priceMin || p.price >= state.priceMin);
+    const inOK = !instock || p.stock > 0;
+    const dealOK = !deals || (p.old > p.price);
+    const newOK = !isNew || !!p.isNew;
+
+    el.hidden = !(famOK && qOK && catOK && colOK && sizeOK && heelOK && priceOK && inOK && dealOK && newOK);
   }
 
   /* Every card stays in the document. Filtered-out cards are `hidden`, which is
@@ -292,6 +335,200 @@ function reportGrid() {
 }
 addEventListener('ae:apply', apply);
 
+/* ─── The dual-handle price band ───────────────────────────────────────────
+   Two ranges, one painted track, one written-out span. The awkward parts are
+   all here, in one function, because each of them has to be true simultaneously
+   and three separate listeners would drift on the first edge case.
+
+   HANDLE CROSSING. A customer dragging the floor past the ceiling produces an
+   inverted pair, which the CSS cannot paint — `calc(--hi - --lo)` goes negative,
+   resolves to `auto`, and fills the entire track. So the crossing is resolved
+   here, before it reaches either the filter or the style: the handle being
+   dragged takes the other one's value and the pair stays ordered. The alternative
+   — letting the handles cross and filtering an empty range — shows an empty grid
+   with a full-width bar, which looks like a bug and is.
+
+   THE SPAN IS WRITTEN ONCE, FROM THE SAME TWO NUMBERS. The <output> and the
+   painted fill are both derived here, so the text a customer reads and the band
+   they can see cannot disagree — which they would the moment either was computed
+   somewhere else.
+
+   PERCENTAGES, NOT PIXELS. --lo and --hi are percentages of the track, so the
+   fill stays correct when the container resizes, when a scrollbar appears, and
+   at every breakpoint. Computing pixels and writing them into a custom property
+   would put the re-measurement inside a resize listener for no benefit.
+
+   BOTH INPUTS KEEP REAL VALUES. Neither is set to '' or disabled, so both still
+   submit on the no-JavaScript GET path. The keyboard reaches both handles: the
+   floor input is not made inert, because a band you can only set by dragging is
+   a band that does not exist for keyboard users. */
+const priceMin = $('#vPriceMin');
+const priceMax = $('#vPrice');
+const priceOut = $('#vPriceOut');
+
+function syncPriceBand() {
+  if (!priceMin || !priceMax) return;
+
+  const lo0 = Number(priceMin.min) || 0;
+  const hi0 = Number(priceMax.max) || 0;
+
+  let lo = Number(priceMin.value);
+  let hi = Number(priceMax.value);
+  if (!Number.isFinite(lo)) lo = lo0;
+  if (!Number.isFinite(hi)) hi = hi0;
+
+  /* Resolve a crossed pair by giving way to the handle currently under the
+     pointer or the keyboard. `owner` is the input whose value just changed; on
+     the first paint neither has, and the pair is already ordered server-side. */
+  const owner = arguments.length > 2 ? arguments[2] : null;
+  if (lo > hi) {
+    if (owner === priceMin) { hi = lo; priceMax.value = String(hi); }
+    else                   { lo = hi; priceMin.value = String(lo); }
+  }
+
+  const span = (hi0 - lo0) || 1;
+  const clampPct = (v) => Math.max(0, Math.min(100, ((v - lo0) / span) * 100));
+
+  /* Two custom properties rather than a gradient with hard stops: a gradient
+     would need four stops rebuilt on every move, and its interpolation between
+     them is not what is being drawn here. */
+  const track = priceMin.closest('.vf-dual');
+  if (track) {
+    track.style.setProperty('--lo', clampPct(lo).toFixed(3) + '%');
+    track.style.setProperty('--hi', clampPct(hi).toFixed(3) + '%');
+  }
+
+  if (priceOut) {
+    const fmt = (v) => faNum(Math.round(v / 1000000));
+    priceOut.textContent = `${fmt(lo)} — ${fmt(hi)} میلیون تومان`;
+  }
+
+  /* Mirrored into state so apply() can use them. null at the ends of the range
+     means "no constraint", matching the note in state.js: a number that means
+     "no filter" is the bug that quietly empties a shop. */
+  state.priceMin = lo > lo0 ? lo : null;
+  state.priceMax = hi < hi0 ? hi : null;
+}
+
+if (priceMin && priceMax) {
+  syncPriceBand();
+  for (const input of [priceMin, priceMax]) {
+    input.addEventListener('input', () => syncPriceBand(input));
+    /* `change` in addition to `input`: `input` fires on every drag frame, but a
+       pointer release outside the thumb in some engines commits with `change`
+       only, and the summary list is built on commit rather than on every frame
+       — so a band that was dragged and released has to still register. */
+    input.addEventListener('change', () => { syncPriceBand(input); apply(); });
+  }
+}
+
+/* ─── The form drives the grid directly ────────────────────────────────────
+   The chips are real GET controls and the form is a real GET form, so with no
+   scripts the page still works — but that was the ONLY way it worked. Nothing
+   listened to a click on a chip, so choosing "PUMPS" navigated: a full page
+   load, a scroll to the top, and a filter that had to be scrolled back up to.
+   Every facet in the reference is a control you expect the page to answer.
+
+   Delegated on the form, not bound per chip. The facet list is derived from
+   products.json, so the number of chips changes with the catalogue; binding at
+   boot would silently leave any chip added later dead, which is the same
+   unreachable-control fault the desktop navigation had.
+
+   The five form facets are NOT read into state here. apply() cannot evaluate a
+   checkbox that lives in markup the server filtered against, and pretending
+   otherwise would make the count and the grid disagree. What this listener does
+   is hide the submit button and let the checked state drive the form, so the
+   customer's selection is authoritative and the grid is reloaded from the
+   server's own answer — the same answer a crawler gets.
+
+   sort, search and the price band ARE evaluated live, because those three are
+   the ones state knows how to apply without a round trip. */
+(function wireFilterForm() {
+  const form = $('#vForm');
+  if (!form) return;
+
+  /* Prevent the navigation the form would otherwise perform. The submit button
+     is the only thing that reaches this handler with no control having changed,
+     and Enter in a text input reaches it after a search — which is the case a
+     customer expects to re-run against the whole catalogue, since state.q only
+     matches name + subtitle + category and the server also searches desc. */
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const url = new URL(form.action || location.href);
+    const data = new FormData(form);
+    for (const [k, v] of data.entries()) {
+      if (v === '') continue;                       // an unchecked "all" radio
+      if (k.endsWith('[]')) url.searchParams.append(k, String(v));
+      else url.searchParams.set(k, String(v));
+    }
+    /* reset() to the root drops every parameter, including ones no control in
+       this form carries. */
+    const resetLink = $('#vReset');
+    history.replaceState(null, '', url.pathname + (url.search || ''));
+    if (resetLink) resetLink.hidden = false;
+    apply();
+    scrollToEl('#grid');
+  });
+
+  /* Live re-render on every change. `input` covers the text box and both slider
+     handles; `change` covers the checkboxes and radios. Both are used because
+     neither alone is complete, and the handler is idempotent. */
+  const rerender = () => apply();
+  form.addEventListener('input', rerender);
+  form.addEventListener('change', rerender);
+
+  /* The ALL pill. It is a radio with an empty value, so the browser already
+     unchecks every category checkbox when it is chosen — but the chips carry a
+     `.on` class as well, and a class is not state. Without this, ticking ALL
+     left the previously-chosen pill painted gold while no checkbox behind it was
+     checked, so the bar claimed a category was active and the grid disagreed. */
+  const all = form.querySelector('.chip--all input[type="radio"]');
+  if (all) {
+    all.addEventListener('change', () => {
+      if (!all.checked) return;
+      for (const chip of form.querySelectorAll('#vCats .chip--check')) {
+        chip.classList.remove('on', 'sel');
+        const box = chip.querySelector('input');
+        if (box) box.checked = false;
+      }
+    });
+    all.addEventListener('change', () => {
+      for (const chip of form.querySelectorAll('#vCats .chip--check')) {
+        const box = chip.querySelector('input');
+        if (box && box.checked) { chip.classList.add('on', 'sel'); }
+      }
+    });
+  }
+
+  /* Search and sort, the two controls this page evaluates live rather than by
+     round trip. Both read into state here because apply() has nothing else to
+     read them from — the markup does change, and this is the only place that
+     writes them back out of it. */
+  const qBox = $('#vSearch');
+  if (qBox) {
+    /* Deferred, not on every keystroke. `apply()` re-hides every card in the
+       grid and rebuilds the summary list; at one character per frame on a long
+       list that is a visible stutter, and it also fires layout for a query that
+       is still being typed. */
+    let t = 0;
+    qBox.addEventListener('input', () => {
+      clearTimeout(t);
+      t = setTimeout(() => {
+        state.q = qBox.value.trim();
+        apply();
+      }, 160);
+    });
+  }
+
+  const sortSel = $('#vSort');
+  if (sortSel) {
+    sortSel.addEventListener('change', () => {
+      state.sort = sortSel.value;
+      apply();
+    });
+  }
+})();
+
 /* ─── The active-filter summary ───────────────────────────────────────────
    #activePills is rendered by the server as an empty div and has been empty in
    production since it was added: nothing ever wrote to it. So the console showed
@@ -334,14 +571,32 @@ function paintActiveFilters(total) {
       },
     });
   }
-  if (state.priceMax && total) {
+  /* One pill for the band, not one per handle. Two pills reading "1.2 م" and
+     "1.8 م" describe a range nobody asked to see as two separate facts, and
+     clearing them one at a time leaves the customer with a filter they did not
+     choose and cannot name. The pill is labelled with both ends and clears
+     both, which is the only way a summary can be read back as an intention.
+
+     The server wrote the two outputs as a single string from the same two
+     values, so this reproduces its formatting rather than inventing a
+     different one for the same numbers. */
+  if (total && (state.priceMin || state.priceMax)) {
+    const lo = state.priceMin || 0;
+    const hi = state.priceMax || 0;
+    const band = lo && hi
+      ? `${faNum(Math.round(lo / 1000000))} — ${faNum(Math.round(hi / 1000000))} م`
+      : lo ? `از ${faNum(Math.round(lo / 1000000))} م`
+           : `تا ${faNum(Math.round(hi / 1000000))} م`;
     items.push({
-      label: 'سقف قیمت',
-      value: `${faNum(Math.round(state.priceMax / 1000000))} م`,
+      label: 'قیمت',
+      value: band,
       clear: () => {
+        state.priceMin = null;
         state.priceMax = null;
-        const slider = $('#vPrice');
-        if (slider) slider.value = '';
+        const sMin = $('#vPriceMin'), sMax = $('#vPrice');
+        if (sMin) sMin.value = sMin.min;
+        if (sMax) sMax.value = sMax.max;
+        syncPriceBand();
       },
     });
   }
