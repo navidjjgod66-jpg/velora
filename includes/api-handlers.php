@@ -25,6 +25,10 @@ if (!defined('VELORA_CONFIG_LOADED')) {
    Requiring the loader here, from the file that defines it, means the
    dependency travels with the code that needs it rather than living in the
    memory of whoever edits api.php. */
+/* The single import point for the helpers every handler under includes/api/
+   calls. Plain `require` is safe because api-handlers.php itself is pulled in
+   with require_once, so this file — and these two requires — run exactly once
+   per request; checkout.php and addresses.php are referenced nowhere else. */
 require __DIR__ . '/checkout.php';
 require __DIR__ . '/addresses.php';
 

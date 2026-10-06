@@ -18,18 +18,13 @@ function rate_limit(string $action, int $max = 5, int $window = 60, ?string $sco
     $safeAction = preg_replace('/[^A-Za-z0-9_-]+/', '_', $action) ?: 'rl';
     $bucketId   = ($scope !== null && $scope !== '') ? $scope : get_client_ip();
     $key        = $safeAction . ':' . hash('xxh3', $bucketId);
-    $dir = dirname(__DIR__) . '/storage/cache/rl';
-    /* The directory is created once, at boot, by the block that also creates
-       storage/cache and storage/logs. This called @mkdir() on every single
-       rate-limited request — a stat plus a syscall per call, on a path that
-       already exists — and rate_limit() is on nearly every action in api.php.
-
-       It was defensive: the directory could be deleted by a deploy, a cron
-       tmpfiles policy, or a misconfigured shared host, and mkdir is cheap
-       insurance against that. But the cost was paid unconditionally rather than
-       when it was needed, and the boot block plus velora_ratelimit_sweep() is a
-       better place for it: once per request at most, and only when a counter is
-       actually about to be written. */
+    $dir = STORAGE_DIR . '/cache/rl';
+    /* There is no boot-time mkdir block; this comment described one that was
+       removed while the lazy guard below stayed. The guard is correct as it is:
+       one is_dir() stat per call, mkdir only if the directory vanished (a
+       deploy, a cron tmpfiles sweep, a shared host). Rate-limit counters are
+       the hottest filesystem path in api.php, so the check stays cheap and the
+       recovery stays possible. */
     if (!is_dir($dir) && !@mkdir($dir, 0750, true) && !is_dir($dir)) {
         error_log('[VELORA RATE LIMIT] counter directory unavailable: ' . $dir);
         log_action('RATE_LIMIT_STORAGE_FAIL', ['action' => $action, 'fail_closed' => true]);
@@ -123,7 +118,11 @@ function velora_ratelimit_sweep(string $dir): void {
 function rate_limit_reset(string $action, string $scope): void {
     $safeAction = preg_replace('/[^A-Za-z0-9_-]+/', '_', $action) ?: 'rl';
     if ($scope === '') return;
-    $file = __DIR__ . '/storage/cache/rl/' . $safeAction . ':' . hash('xxh3', $scope) . '.json';
+    /* Was `__DIR__ . '/storage/...'` — after this file moved into includes/
+       that resolved to includes/storage/, which never exists, so resets
+       silently did nothing and a limited bucket stayed full until its window
+       expired. Same anchor as the writer above, so reset and write agree. */
+    $file = STORAGE_DIR . '/cache/rl/' . $safeAction . ':' . hash('xxh3', $scope) . '.json';
     if (is_file($file)) @unlink($file);
 }
 
@@ -230,7 +229,12 @@ function log_action(string $action, array $data = []): void {
     $line = sprintf("[%s] [%s] [%s] %s | %s\n", date('Y-m-d H:i:s'), get_client_ip(), substr(session_id(), 0, 12), $action, $encoded);
 
     static $writes = 0;
-    $file = __DIR__ . '/storage/logs/velora.log';
+    /* Was `__DIR__ . '/storage/...'`, i.e. includes/storage/logs/velora.log —
+       a path that does not exist since this file moved into includes/. Every
+       @file_put_contents silently failed, and the audit trail these comments
+       promise ("what puts 'check VELORA_DB_HOST' in the banner") never reached
+       disk. */
+    $file = STORAGE_DIR . '/logs/velora.log';
 
     if ((++$writes % 64) === 1) {
         $maxBytes = 8 * 1024 * 1024;

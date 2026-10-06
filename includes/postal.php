@@ -67,7 +67,7 @@ function velora_postal_valid_checksum(string $postal): bool {
 }
 
 function velora_postal_cache_dir(): string {
-    $dir = __DIR__ . '/../storage/cache/postal';
+    $dir = STORAGE_DIR . '/cache/postal';
     if (!is_dir($dir)) {
         /* 0750: only the web user needs to read it, and it holds the results of
            a billable API. Not 0777, and never a world-readable dump. */

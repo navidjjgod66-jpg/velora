@@ -28,7 +28,10 @@ define('ZARINPAL_START_BASE', ZARINPAL_SANDBOX
     ? 'https://sandbox.zarinpal.com/pg/StartPay/'
     : 'https://www.zarinpal.com/pg/StartPay/');
 
-const ZP_BREAKER_FILE   = __DIR__ . '/storage/cache/zp.breaker';
+/* Was `__DIR__ . '/storage/...'`: the breaker state lived next to this file,
+   so no path existed and the circuit breaker could never record a failure —
+   it opened and closed from memory alone, per process. */
+const ZP_BREAKER_FILE   = STORAGE_DIR . '/cache/zp.breaker';
 const ZP_BREAKER_THRESH = 5;
 const ZP_BREAKER_COOLDOWN = 300;
 

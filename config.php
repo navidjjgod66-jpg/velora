@@ -116,6 +116,19 @@ function velora_category_label(string $slug): string {
 
 date_default_timezone_set(env('VELORA_TZ', 'Asia/Tehran'));
 
+/* ─── Filesystem anchors ────────────────────────────────────────────────────
+   Every runtime-writable path used to be spelled from __DIR__ at its point of
+   use, which silently encodes "which directory is this file in". Three of the
+   five spellings were written as if the file still lived at the project root
+   after the includes/ extraction — net.php's rate-limit reset, net.php's log
+   writer, and zarinpal.php's breaker file all pointed at includes/storage/, a
+   directory that does not exist. The failures were quiet by construction:
+   every one sits behind an @ or a failed fopen on a best-effort path.
+
+   One anchor, defined once, cannot be wrong twice. */
+define('VELORA_ROOT', __DIR__);
+define('STORAGE_DIR', VELORA_ROOT . '/storage');
+
 $__req = env_require_all([
     'VELORA_DB_NAME',
     'VELORA_DB_USER',

@@ -16,10 +16,14 @@ require __DIR__ . '/includes/postal.php';
    into includes/checkout.php and includes/addresses.php — one home per
    concern. They used to live here as well as there, byte-for-byte identical;
    two copies of the same claim machine is exactly the drift that costs an
-   afternoon. The action handlers under includes/api/ call these functions, so
-   they must be loaded before dispatch. */
-require __DIR__ . '/includes/checkout.php';
-require __DIR__ . '/includes/addresses.php';
+   afternoon.
+
+   They are required exactly once, from includes/api-handlers.php (loaded at
+   the bottom of this file), which is the only code that calls them. api.php
+   used to require them here as well, and because both paths use plain
+   `require` rather than `require_once`, every request parsed both files
+   twice — a duplicate-declaration fatal in strict_types that was avoided
+   only by accident of load order. One importer, one require. */
 
 header('Content-Type: application/json; charset=utf-8');
 header('X-Frame-Options: SAMEORIGIN');
@@ -62,8 +66,6 @@ if ($__req_origin !== '' && $__req_method === 'POST') {
     }
 }
 unset($__req_origin, $__req_method, $__proto, $__host_origin);
-
-/* ── Address book helpers ──────────────────────────────────────────────────── */
 
 $action = req_str('action');
 
@@ -137,7 +139,7 @@ try {
        file per domain, resolved through an allow-list built from the
        directory itself (includes/api-handlers.php). Handlers run in this
        same global scope; they answer via jresp() (which exits) or return. */
-        require_once __DIR__ . '/includes/api-handlers.php';
+    require_once __DIR__ . '/includes/api-handlers.php';
     $__handler = velora_api_handler($action);
     if ($__handler !== null) {
         include $__handler;
