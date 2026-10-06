@@ -63,11 +63,32 @@ const {
 } = window.AE;
 const { CATALOG, PRODUCTS, ORDER, SIZES, catLabel } = window.AE_DATA;
 const { state, getCustom, sanitiseCart, persBag } = window.AE_STATE;
-const { wireImg, revealIO, setMode, setMnav, scrollToFilters } = window.AE_UI;
+const { wireImg, revealIO, setMode, setMnav, scrollToFilters, setLens, lensMenu } = window.AE_UI;
 const { openBag, openWish, toggleWish, openSheet, renderBag, paintInBag } = window.AE_CART;
 const { hydrate } = window.AE_PDP;
 const { openCko } = window.AE_CKO;
 const { openProfile } = window.AE_AUTH;
+
+/* Every navigation overlay, closed in one call.
+   There are two of them — the full-screen mobile sheet (#mnav) and the
+   wide-screen lens panel (#lensMenu) — and each of the four call sites that
+   open a dialog was checking only for the mobile one:
+
+       if (body.classList.contains('mnav-on')) setMnav(false);
+
+   On a desktop viewport that condition is never true, because .mnav is
+   display:none above the lens breakpoint. So opening the bag from the header
+   left the lens panel on screen: the dialog animated in underneath a scrim
+   that stayed opaque, and the customer could not tell whether the click had
+   done anything. The bug was only reachable at one screen size, which is the
+   worst size for a bug to live at.
+
+   Asking "is either layer open" instead of "is the mobile one open" removes the
+   viewport from the question entirely. */
+function closeNavLayers() {
+  if (body.classList.contains('mnav-on')) setMnav(false);
+  if (lensMenu && !lensMenu.hidden && typeof setLens === 'function') setLens(false);
+}
 const { toggleConc } = window.AE_CONC;
 const lowTier = window.AE.lowTier;
 
@@ -266,8 +287,149 @@ function reportGrid() {
         : 'در حال حاضر اثری با این مشخصات موجود نیست.';
     }
   }
+
+  paintActiveFilters(all.length);
 }
 addEventListener('ae:apply', apply);
+
+/* ─── The active-filter summary ───────────────────────────────────────────
+   #activePills is rendered by the server as an empty div and has been empty in
+   production since it was added: nothing ever wrote to it. So the console showed
+   its controls, and a customer who had ticked three of them could see them
+   ticked — but nothing on the page said *what was currently narrowing the grid*.
+
+   That matters more than it sounds. Three of the six facets are a native GET
+   form that main.js never evaluates, so after ticking a category the only way to
+   find out what is applied is to scroll back up and read the checkboxes. This
+   is the list that answers it, and each entry removes its own filter, which is
+   the only way to undo one facet without a full reset.
+
+   It reads the DOM rather than a state object on purpose. The checkbox `checked`
+   property is the single source of truth for the five form-driven facets — it is
+   what the server rendered, what the customer toggled, and what will be
+   submitted — so there is no second copy to fall out of step. state.q and
+   state.priceMax are added because those two ARE evaluated by apply() and are
+   therefore not reflected in any checkbox. */
+function paintActiveFilters(total) {
+  const host = $('#activePills');
+  if (!host) return;
+
+  const items = [];
+
+  /* The three facets apply() evaluates, which have no checkbox to read. */
+  const q = (state.q || '').trim();
+  if (q) {
+    items.push({
+      label: 'جست‌وجو',
+      value: q,
+      /* Clearing the pill clears the input it came from, not just the state.
+         Leaving the box full while the grid widens is the state this whole
+         summary exists to make visible — and the header search (#hdrQ) is the
+         input that wrote state.q in the first place, so both are emptied. */
+      clear: () => {
+        state.q = '';
+        if (hdrQ) hdrQ.value = '';
+        const box = $('#vSearch');
+        if (box) box.value = '';
+      },
+    });
+  }
+  if (state.priceMax && total) {
+    items.push({
+      label: 'سقف قیمت',
+      value: `${faNum(Math.round(state.priceMax / 1000000))} م`,
+      clear: () => {
+        state.priceMax = null;
+        const slider = $('#vPrice');
+        if (slider) slider.value = '';
+      },
+    });
+  }
+
+  /* The five form-driven facets, read off their own inputs. */
+  const form = $('#vForm');
+  if (form) {
+    const collect = (name, label, valueAttr = 'value') => {
+      for (const input of form.querySelectorAll(`input[name="${name}"]:checked`)) {
+        /* The visible label is a sibling <span>; a colour chip's own text is the
+           Persian colour name, which is what the customer recognises. */
+        const chip = input.closest('label');
+        const text = chip?.querySelector('span:not(.sw)')?.textContent?.trim()
+          || input[valueAttr];
+        items.push({ label, value: text, clear: () => { input.checked = false; chip?.classList.remove('on', 'sel'); } });
+      }
+    };
+    collect('f_cat[]', 'فرم');
+    collect('f_size[]', 'سایز');
+    collect('f_color[]', 'رنگ');
+    collect('f_instock', 'وضعیت');
+    collect('f_deals', 'وضعیت');
+    collect('f_new', 'وضعیت');
+  }
+
+  if (!items.length) { host.replaceChildren(); return; }
+
+  const frag = document.createDocumentFragment();
+  const lbl = document.createElement('span');
+  lbl.className = 'vf-pills-label';
+  lbl.textContent = 'انتخاب شما:';
+  frag.append(lbl);
+
+  for (const it of items) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'vf-pill';
+    btn.title = `حذف فیلتر ${it.label}`;
+
+    const lab = document.createElement('span');
+    lab.textContent = `${it.label}: `;
+    const val = document.createElement('b');
+    val.textContent = it.value;
+    const x = document.createElement('span');
+    x.className = 'vf-pill-x';
+    x.setAttribute('aria-hidden', 'true');
+    x.textContent = '×';
+
+    btn.append(lab, val, x);
+    btn.setAttribute('aria-label', `حذف فیلتر ${it.label} ${it.value}`);
+    btn.addEventListener('click', () => {
+      it.clear();
+      /* One path re-runs everything, so a pill removal and a checkbox click land
+         in exactly the same state. */
+      apply();
+    });
+    frag.append(btn);
+  }
+  host.replaceChildren(frag);
+}
+
+/* ─── Sticky masthead ────────────────────────────────────────────────────
+   Once the console has scrolled past, it collapses to its header line and
+   pins to the top, so the count and the reset stay reachable while the
+   customer is looking at products rather than at controls.
+
+   The class is only toggled when it actually changes, because this runs on
+   scroll: writing className on every frame is what turns a sticky element into
+   a janky one, and it also invalidates the backdrop-filter on each write. */
+(() => {
+  const bar = $('#vTools');
+  if (!bar) return;
+  /* A sticky masthead competes with the browser's own address bar for the same
+     few hundred pixels of a phone screen, and it wins. Only on a fine pointer. */
+  if (!matchMedia('(min-width: 900px) and (pointer: fine)').matches) return;
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  let stuck = false;
+  const sync = () => {
+    const shouldStick = bar.getBoundingClientRect().top <= 8;
+    if (shouldStick === stuck) return;
+    stuck = shouldStick;
+    bar.classList.toggle('is-stuck', stuck);
+  };
+  addEventListener('scroll', sync, { passive: true });
+  addEventListener('resize', sync, { passive: true });
+  sync();
+})();
 
 /* A catalogue sync is the only thing that re-renders the grid. It is NOT called
    on boot — the server already sent this markup. */
@@ -447,7 +609,7 @@ document.addEventListener('click', e => {
       break;
     case 'auth':
     case 'prof-open':
-      if (body.classList.contains('mnav-on')) setMnav(false);
+      closeNavLayers();
       openProfile();
       break;
     case 'home':
@@ -456,7 +618,7 @@ document.addEventListener('click', e => {
       else scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
       break;
     case 'cart-open':
-      if (body.classList.contains('mnav-on')) setMnav(false);
+      closeNavLayers();
       openBag();
       break;
     case 'wish-open':
@@ -1511,25 +1673,77 @@ if (window.AE_SYNC) window.AE_SYNC.run(false);
 
 /* ─── PWA Install Sheet (ویژگی ۸) ─────────────────────────────────────────
    سه شرط: beforeinstallprompt رخ داده، ≥۲۵ ثانیه ماندگاری، ≥۳۵٪ اسکرول.
-   یک‌بار تصمیم (نصب یا رد) برای همیشه علامت می‌خورد. */
+   یک‌بار تصمیم (نصب یا رد) برای همیشه علامت می‌خورد.
+
+   چرا بررسی تکرار می‌شود و نه یک‌بار در ثانیهٔ ۲۵:
+
+   کروم وقتی preventDefault() صدا زده شود ولی prompt() صدا نشود، در کنسول
+   می‌نویسد «Banner not shown … the page must call prompt()». آن پیام یعنی
+   بنرِ خودِ کروم را سرکوب کرده‌ایم — که دقیقاً هدف است، بنر مخصوص می‌خواهیم —
+   اما نتیجه‌اش این می‌شود که شیتِ خودمان *تنها* راه نصب است.
+
+   نسخهٔ قبل فقط یک‌بار در ثانیهٔ ۲۵ شرط‌ها را می‌سنجید. اگر کاربر در آن لحظه
+   کمتر از ۳۵٪ اسکرول کرده بود، یا یک دیالوگ باز بود، تابع return می‌کرد و
+   `deferred` تا ابد نگه داشته می‌شد بدون آنکه prompt() صدا زده شود: نه بنر خود
+   کروم، نه بنر ما. برای هر بازدیدی که دیرتر از ۲۵ ثانیه اسکرول می‌کند، نصب
+   در آن نشست عملاً غیرممکن بود — و پیام کروم دقیقاً همین را گزارش می‌کرد.
+
+   حالا بررسی دوباره مسلح می‌شود. روی یک بازدید بی‌تعامل فقط یک مقایسهٔ
+   بولی هر ۲ ثانیه است، و نتیجه این است که شیت هر وقت کاربر واقعاً درگیر شده
+   در دسترس است. سقف پنج دقیقه دارد تا روی یک تبِ باز‌مانده تا ابس نچرخد. */
 (() => {
   const sheet = $('#installSheet');
   if (!sheet || LS.get('ae.installed.v1', false)) return;
+
+  const DWELL_MS = 25000;      /* حداقل ماندگاری پیش از پیشنهاد نصب */
+  const MAX_WAIT_MS = 300000;  /* سقف: پنج دقیقه، بعدش دیگر پیشنهاد نمی‌دهیم */
+  const SCROLL_PCT = 35;
+  const started = Date.now();
+
   let deferred = null;
   addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferred = e; });
+
   const depth = () => Math.min(100, scrollY / (document.body.scrollHeight - innerHeight || 1) * 100);
-  setTimeout(() => {
-    if (!deferred || depth() < 35 || sheet.open || dialogOpenAny()) return;
+
+  let poll = null;
+  const stopPolling = () => { if (poll !== null) { clearInterval(poll); poll = null; } };
+
+  function maybeOffer() {
+    /* رویدادی که مصرف شده دیگر قابل prompt دوباره نیست، پس همین‌جا صفرش می‌کنیم. */
+    if (!deferred) return;
+    if (Date.now() - started > MAX_WAIT_MS) { stopPolling(); deferred = null; return; }
+    if (Date.now() - started < DWELL_MS) return;
+    if (sheet.open || dialogOpenAny()) return;
+    if (depth() < SCROLL_PCT) return;
+
+    const evt = deferred;
+    deferred = null;
+    stopPolling();
     LS.set('ae.installed.v1', true); /* حتی اگر نادیده گرفته شد، تکرار نکند */
+
     sheet._opener = document.activeElement;
     sheet.showModal();
-    $('#installGo')?.addEventListener('click', async () => {
+
+    const go = $('#installGo');
+    const no = $('#installNo');
+    go?.addEventListener('click', async () => {
       sheet.close();
-      try { deferred.prompt(); await deferred.userChoice; } catch (_) {}
-      deferred = null;
+      /* دکمه را می‌بندیم تا دوبار کلیک prompt() را دوباره صدا نزند. */
+      go.disabled = true;
+      try { await evt.prompt(); await evt.userChoice; } catch (_) {}
     }, { once: true });
-    $('#installNo')?.addEventListener('click', () => sheet.close(), { once: true });
-  }, 25000);
+    no?.addEventListener('click', () => sheet.close(), { once: true });
+  }
+
+  /* پس از پایان دورهٔ ماندگاری شروع می‌شود. اگر رویداد هنوز نرسیده باشد هم
+     باز می‌مانیم، چون روی اتصال کند ممکن است بعد از ۲۵ ثانیه برسد. */
+  setTimeout(() => {
+    poll = setInterval(maybeOffer, 2000);
+    maybeOffer();
+    addEventListener('scroll', () => { if (depth() >= SCROLL_PCT) maybeOffer(); },
+                     { passive: true });
+  }, DWELL_MS);
+
   function dialogOpenAny() {
     return $$('dialog[open]').some(d => d.id !== 'installSheet');
   }

@@ -74,6 +74,63 @@ html.scrolling .hero::after { animation-play-state: paused; }
 #heroTitle, .hero h1 { font-size: var(--t-5xl); line-height: 1.1; max-width: 14ch; min-height: 2.1em; text-shadow: 0 2px 44px color-mix(in oklch, var(--accent) 16%, transparent); text-wrap: balance; }
 html:not(.js) .hero h1 { min-height: 0; }
 .hero h1 em, #heroTitle em { background: var(--grad-foil); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; font-style: italic; filter: drop-shadow(0 4px 26px color-mix(in oklch, var(--accent) 34%, transparent)); }
+
+/* ── The Latin subline ───────────────────────────────────────────────────
+   The maison's name in the script it signs with, set under the Persian title.
+
+   Two details make it read as a signature instead of as a second headline:
+   0.34em tracking against --t-xs, and a hairline rule that runs the full
+   measure before it. A subtitle in the same size or weight as the title would
+   compete with it; at this size it is closer to the imprint at the foot of a
+   plate, which is what it is imitating.
+
+   aria-hidden in the markup, because the <h1>'s own aria-label already carries
+   the sentence for a screen reader and a Latin string would be read out as
+   decoration anyway.
+
+   The mask is not used here, unlike the headline: the headline animates from
+   below because its inner span is clipped, and this element has no inner span
+   to clip. It reveals with the rest of the hero-copy cascade instead, which is
+   what body.loaded drives. */
+.hero-subline {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-block-start: 1.15rem;
+  max-inline-size: none;
+  inline-size: min(100%, 30ch);
+}
+.hero-subline-rule {
+  flex: none;
+  inline-size: clamp(28px, 9vw, 62px);
+  block-size: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent));
+}
+.hero-subline-text {
+  font-family: var(--sans);
+  font-size: var(--t-xs);
+  font-weight: 600;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  direction: ltr;
+  unicode-bidi: isolate;          /* the Latin run is not reordered by the RTL context */
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color var(--d-cine) var(--ease-editorial) 0.95s;
+}
+body.loaded .hero-subline-text { color: var(--accent-2); }
+
+/* The whole block is inside the h1, so it inherits `max-width: 14ch` from the
+   rule above — which would wrap it. It opts out explicitly rather than relying
+   on the clamp, because 14ch of Vazirmatn and 30ch of the Latin face are very
+   different lengths. */
+.hero-subline { max-inline-size: min(100%, 34ch); }
+@media (max-width: 380px) {
+  .hero-subline { gap: 0.6rem; }
+  .hero-subline-text { font-size: 0.6rem; letter-spacing: 0.22em; }
+}
 [data-theme="ivoire"] .hero h1 em { filter: none; }
 [data-theme="ivoire"] .hero h1 { text-shadow: none; }
 
@@ -244,7 +301,420 @@ body.loaded .hero-visual .frame { clip-path: inset(0 0 0 0); }
 .selcard__name { font-family: var(--serif-d); font-size: 1.22rem; }
 .selcard__price { font-family: var(--serif-d); color: var(--accent); font-variant-numeric: tabular-nums; font-size: var(--t-sm); font-weight: 700; }
 
-.vault__tools { display: flex; flex-wrap: wrap; gap: 1rem 1.4rem; align-items: center; justify-content: space-between; border-block: 1px solid var(--line); padding-block: 1.15rem; margin-block-end: 1.5rem; }
+/* ═══════════════════════════════════════════════════════════════════════════
+   THE FILTER CONSOLE · «صیقل انتخاب»
+   ═══════════════════════════════════════════════════════════════════════════
+   Every .vf-* class below was undefined until now. The markup has shipped with
+   no rules for it at all, which is why the bar rendered as raw <select>,
+   <input> and default checkboxes on a hairline divider: correct HTML, no
+   design. These are the styles it should have had.
+
+   The register is the maison's, not a generic shop's: Cormorant for numerals
+   and headings, Vazirmatn for everything a Persian customer reads, gold used as
+   a hairline and a fill rather than as a colour, and vertical rhythm from the
+   --sp-* scale so the bar sits in the same measure as the section heading above
+   it.
+
+   Two things this block is careful about:
+
+   · IT NEVER HIDES A CONTROL. main.js evaluates only three of these (sort,
+     search, price ceiling); category, size, colour and heel are a native GET
+     form. Anything that collapsed a fieldset without a <summary> would remove a
+     working control from a no-JavaScript visitor's page, so the groups are
+     revealed with opacity and colour rather than with display:none.
+
+   · TOUCH TARGETS ARE 44px, ALWAYS. .chip already does this and the reset link
+     inherits it from .linklike-accent. Anything that shrinks on hover must take
+     the size with it — the gold fill is a border-width change, not a height
+     change, for exactly that reason. */
+
+/* ─── The console shell ─────────────────────────────────────────────────── */
+.vault__tools {
+  position: relative;
+  display: block;                       /* was a flex row; it is a panel now */
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-5);
+  background:
+    linear-gradient(180deg,
+      color-mix(in oklch, var(--surface) 88%, transparent) 0%,
+      color-mix(in oklch, var(--bg)     92%, transparent) 100%);
+  padding: var(--sp-3) var(--sp-3) var(--sp-3);
+  margin-block: 0 var(--sp-4);
+  box-shadow: 0 1px 0 color-mix(in oklch, var(--accent) 7%, transparent) inset,
+              0 24px 60px -40px color-mix(in oklch, var(--accent) 30%, transparent);
+}
+
+/* A single gold hairline along the top edge — the maison's foil rule, reduced
+   to one pixel. It reads as a seam rather than as a border because it fades at
+   both ends instead of stopping hard. */
+.vault__tools::before {
+  content: "";
+  position: absolute;
+  inset-block-start: -1px;
+  inset-inline: 12%;
+  block-size: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold-line) 22%, var(--accent) 50%, var(--gold-line) 78%, transparent);
+  opacity: 0.85;
+}
+
+/* ─── Console header: eyebrow · count · reset ───────────────────────────── */
+.vault__tools-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+  padding-block-end: var(--sp-2);
+  margin-block-end: var(--sp-2);
+  border-block-end: 1px solid var(--line);
+}
+
+.vault__tools-mark {
+  display: grid;
+  place-items: center;
+  inline-size: 26px;
+  block-size: 26px;
+  border-radius: 50%;
+  color: var(--accent);
+  background: var(--gold-ghost);
+  border: 1px solid var(--gold-line);
+  flex: none;
+}
+
+.vault__tools-eyebrow {
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+/* The rule between the eyebrow and the count: it is what makes the header read
+   as a masthead rather than as a toolbar with a stray label. */
+.vault__tools-rule {
+  flex: 1 1 40px;
+  min-inline-size: 24px;
+  block-size: 1px;
+  background: linear-gradient(90deg, var(--line-2), transparent);
+}
+
+/* ─── Row 1: search · sort · apply ──────────────────────────────────────── */
+.vf { display: flex; flex-direction: column; gap: var(--sp-3); }
+
+.vf-row { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: flex-end; }
+.vf-row--main { align-items: flex-end; }
+
+.vf-field { display: flex; flex-direction: column; gap: 0.4rem; min-inline-size: 0; }
+.vf-field--grow { flex: 1 1 260px; }
+
+.vf-lbl {
+  font-size: var(--t-xs);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--text-3);
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+.vf-lbl em { font-style: normal; color: var(--accent); font-family: var(--mono); letter-spacing: 0; }
+
+/* The search field is the one control that earns a filled treatment: it is the
+   only one a customer reaches for without reading the label first. */
+.vf-search { position: relative; display: flex; align-items: center; }
+
+.vf-search-icon {
+  position: absolute;
+  inset-inline-start: 0.95rem;
+  color: var(--text-4);
+  pointer-events: none;
+  transition: color var(--dur-fast) var(--ease-lux);
+}
+.vf-search:focus-within .vf-search-icon { color: var(--accent); }
+
+.vf-input {
+  inline-size: 100%;
+  min-block-size: 44px;
+  padding: 0.7rem 1rem 0.7rem 2.5rem;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-2);
+  background: color-mix(in oklch, var(--bg) 70%, transparent);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--t-sm);
+  transition: var(--tr-lux);
+}
+.vf-input::placeholder { color: var(--text-4); }
+.vf-input:hover { border-color: var(--border-3); }
+.vf-input:focus-visible {
+  outline: none;
+  border-color: var(--gold-line);
+  box-shadow: 0 0 0 3px var(--gold-ghost);
+}
+/* Chromium's native clear button inherits the UA colours and disappears against
+   this ground, which is how a field ends up looking un-clearable. */
+.vf-input::-webkit-search-cancel-button { -webkit-appearance: none; }
+
+.vf-selectwrap { position: relative; display: flex; align-items: center; }
+
+.vf-select {
+  appearance: none;
+  -webkit-appearance: none;
+  min-block-size: 44px;
+  padding: 0.7rem 2.4rem 0.7rem 1.1rem;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-2);
+  background: color-mix(in oklch, var(--bg) 70%, transparent);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--t-sm);
+  cursor: pointer;
+  transition: var(--tr-lux);
+}
+.vf-select:hover { border-color: var(--border-3); }
+.vf-select:focus-visible {
+  outline: none;
+  border-color: var(--gold-line);
+  box-shadow: 0 0 0 3px var(--gold-ghost);
+}
+.vf-select option { background: var(--bg-2); color: var(--text); }
+
+.vf-caret {
+  position: absolute;
+  inset-inline-end: 1.1rem;
+  color: var(--text-3);
+  pointer-events: none;
+  transition: transform var(--dur) var(--ease-lux);
+}
+.vf-selectwrap:focus-within .vf-caret { color: var(--accent); transform: translateY(-1px); }
+
+.vf-apply { flex: none; }
+.vf-reset { margin-inline-start: auto; white-space: nowrap; }
+
+/* ─── Facet groups ──────────────────────────────────────────────────────── */
+/* The grid is what makes this read as a console rather than a stack of
+   legends: three columns of facets, then ranges across the full width beneath.
+   minmax(0, 1fr) rather than 1fr because a long Persian colour name would
+   otherwise blow the track out and push the whole row wide. */
+.vf-facets {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+  gap: var(--sp-3) var(--sp-3);
+  align-items: start;
+}
+
+.vf-group {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-inline-size: 0;
+}
+.vf-group > legend {
+  padding: 0;
+  margin-block-end: 0.6rem;
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--text-3);
+}
+/* A legend is not focusable, so its label cannot be announced when the group is
+   reached by keyboard; the marker is hidden and the spacing is restored by hand
+   to keep the visual rhythm identical. */
+.vf-group > legend::-webkit-details-marker { display: none; }
+
+.vf-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+/* ─── Colour swatches ───────────────────────────────────────────────────── */
+/* The chip carries the name AND the dot. The dot is the reason the chip exists,
+   so it gets a ring on selection rather than only a fill change — a filter that
+   changed a background colour alone is invisible to anyone who cannot tell the
+   two colours apart, which is the whole reason a colour filter needs a dot. */
+.chip--color .sw {
+  inline-size: 12px;
+  block-size: 12px;
+  border-radius: 50%;
+  background: var(--c, var(--accent));
+  box-shadow: 0 0 0 1px color-mix(in oklch, var(--text) 22%, transparent);
+  flex: none;
+  transition: var(--tr-lux);
+}
+.chip--color.on .sw,
+.chip--color.sel .sw { box-shadow: 0 0 0 2px var(--invert), 0 0 0 3px var(--accent); }
+
+.chip small[data-count] { font-variant-numeric: tabular-nums; }
+
+/* The checkbox itself is visually replaced, never display:none — a hidden input
+   is still focusable and still submits, which is exactly what keeps the no-JS
+   path working, and the chip is its <label> so a click anywhere toggles it. */
+.vf-chips .chip--check input[type="checkbox"],
+.vf-switches .chip--check input[type="checkbox"] {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.chip--check { position: relative; padding-inline: 1rem; }
+.chip--check:has(input:focus-visible) {
+  outline: 2px solid var(--gold-line);
+  outline-offset: 2px;
+}
+
+/* ─── Range row ─────────────────────────────────────────────────────────── */
+.vf-row--range {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: var(--sp-3);
+  align-items: end;
+  padding-block-start: var(--sp-2);
+  border-block-start: 1px solid var(--line);
+}
+.vf-row--range .vf-field { inline-size: 100%; }
+
+.vf-range { position: relative; display: grid; gap: 0.35rem; }
+
+/* The two heel sliders share one track, so they are stacked with a negative
+   margin rather than laid out side by side. The second thumb is drawn over the
+   first at a higher z-index so the pair reads as a single bracket. */
+.vf-range .vf-slider + .vf-slider { margin-block-start: -22px; z-index: 1; }
+.vf-range .vf-slider + .vf-slider::-webkit-slider-thumb { z-index: 2; }
+
+/* A range input is the one control where the UA styling is most visible on a
+   dark ground — the default track is a light grey bar. Both engines are
+   restyled; the ::-moz- pair is what keeps Firefox from showing a native
+   widget, and -webkit-slider-runnable-track keeps the thumb on the filled part. */
+.vf-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  inline-size: 100%;
+  block-size: 22px;
+  background: transparent;
+  cursor: pointer;
+}
+.vf-slider::-webkit-slider-runnable-track {
+  block-size: 2px;
+  border-radius: 2px;
+  background: var(--border-3);
+}
+.vf-slider::-moz-range-track {
+  block-size: 2px;
+  border-radius: 2px;
+  background: var(--border-3);
+}
+.vf-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  inline-size: 18px;
+  block-size: 18px;
+  margin-block-start: -8px;
+  border-radius: 50%;
+  background: var(--grad-gold);
+  border: 1px solid var(--accent);
+  box-shadow: 0 2px 10px -2px color-mix(in oklch, var(--accent) 55%, transparent);
+  transition: var(--tr-lux);
+}
+.vf-slider::-moz-range-thumb {
+  inline-size: 18px;
+  block-size: 18px;
+  border-radius: 50%;
+  background: var(--grad-gold);
+  border: 1px solid var(--accent);
+  box-shadow: 0 2px 10px -2px color-mix(in oklch, var(--accent) 55%, transparent);
+  transition: var(--tr-lux);
+}
+.vf-slider:hover::-webkit-slider-thumb { transform: scale(1.12); }
+.vf-slider:focus-visible { outline: none; }
+.vf-slider:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px var(--gold-ghost), 0 2px 10px -2px color-mix(in oklch, var(--accent) 55%, transparent); }
+.vf-slider:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 4px var(--gold-ghost); }
+
+.vf-switches { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+
+/* ─── Active-filter summary ─────────────────────────────────────────────── */
+/* Populated by main.js. It is empty in the server-rendered markup because the
+   server already knows the selection — it drew the checked chips from it — so
+   rendering it here too would print the same list twice for a no-JS visitor. */
+.vf-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+.vf-pills:empty { display: none; }
+
+.vf-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-block-size: 32px;
+  padding: 0.3rem 0.5rem 0.3rem 0.85rem;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--gold-line);
+  background: var(--gold-ghost);
+  color: var(--text-2);
+  font-size: var(--t-xs);
+  font-family: inherit;
+  cursor: pointer;
+  transition: var(--tr-lux);
+}
+.vf-pill:hover { border-color: var(--accent); color: var(--accent); }
+.vf-pill b { font-weight: 700; color: var(--accent); }
+.vf-pill-x { font-size: 0.95em; line-height: 1; opacity: 0.7; }
+.vf-pill:hover .vf-pill-x { opacity: 1; }
+
+.vf-pills-label {
+  font-size: var(--t-xs);
+  letter-spacing: 0.14em;
+  color: var(--text-4);
+  margin-inline-end: 0.2rem;
+}
+
+/* ─── Sticky: a slim bar once the grid is in view ───────────────────────── */
+/* Applied by main.js once the console has scrolled past, and only on a fine
+   pointer — on touch, a sticky bar competes with the address bar for the same
+   few hundred pixels and wins, which makes the page feel worse than having no
+   sticky bar at all. */
+@media (min-width: 900px) and (pointer: fine) {
+  .vault__tools.is-stuck {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 40;
+    margin-block-end: var(--sp-3);
+    padding: var(--sp-2);
+    background: color-mix(in oklch, var(--bg) 88%, transparent);
+    backdrop-filter: blur(14px) saturate(1.2);
+    -webkit-backdrop-filter: blur(14px) saturate(1.2);
+    box-shadow: 0 18px 40px -28px color-mix(in oklch, var(--accent) 45%, transparent);
+  }
+  /* Everything but the masthead folds away, so what remains is one line: the
+     label, the live count and the reset. The controls are one scroll up. */
+  .vault__tools.is-stuck .vf,
+  .vault__tools.is-stuck .vault__tools-mark { display: none; }
+  .vault__tools.is-stuck .vault__tools-head {
+    padding-block-end: 0;
+    margin-block-end: 0;
+    border-block-end: 0;
+  }
+  .vault__tools.is-stuck::before { opacity: 0.5; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vf-slider::-webkit-slider-thumb,
+  .vf-slider::-moz-range-thumb { transition: none; }
+  .vf-slider:hover::-webkit-slider-thumb { transform: none; }
+}
+
+/* ─── Narrow ────────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .vault__tools { padding: var(--sp-2); border-radius: var(--r-6); }
+  .vf-row--main { gap: var(--sp-1); }
+  /* The apply button stops being a third column and becomes a full-width rule,
+     because a 44px target sharing a row with two other 44px targets on a 360px
+     screen leaves each of them under the comfortable minimum. */
+  .vf-apply { inline-size: 100%; }
+  .vf-reset { margin-inline-start: 0; inline-size: 100%; text-align: center; }
+  .vf-lbl { letter-spacing: 0.1em; }
+  .vf-slider { block-size: 28px; }              /* a fatter thumb for a finger */
+  .vf-slider::-webkit-slider-thumb { inline-size: 24px; block-size: 24px; margin-block-start: -11px; }
+  .vf-slider::-moz-range-thumb { inline-size: 24px; block-size: 24px; }
+}
+
 .vault__chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .vault__right { display: flex; flex-wrap: wrap; gap: 0.8rem; align-items: center; }
 .vault__meta { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-top: 1.4rem; align-items: center; margin-block-end: 1rem; }

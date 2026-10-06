@@ -806,7 +806,80 @@ $precacheAssets = array_merge(
         </button>
       </div>
 
-      <nav class="nav-links" aria-label="ناوبری اصلی">
+      <?php /* ── THE DESKTOP LENS MENU ───────────────────────────────────────
+   The inline bar is still here for the mid range, but from the wide
+   breakpoint up the navigation is a panel that opens over the page, built
+   around the same vertical gold lens the mobile menu uses.
+
+   Why a panel and not a permanent bar: six Persian words at the display size
+   need ~640px of a header that also has to carry the brand, the mode switch,
+   a search field and a bag. That is the width of a phone. Every extra link
+   squeezed in shrinks all of them, which is why the bar had four links and
+   the other two lived only in the mobile menu — the navigation was silently
+   incomplete on desktop, and nobody noticed because there is no way to see a
+   menu item that is not rendered.
+
+   So the header keeps three affordances at every width: the brand, a single
+   "menu" control, and the tools. Everything else is inside the lens.
+
+   THE LENS IS DECORATIVE AND OUTSIDE THE <nav>. Same rule as the mobile
+   menu: it is a sibling, aria-hidden, never a wrapper around the links. A
+   decorative node between <nav> and its <a>s changes what a screen reader
+   announces, and it is the kind of thing nobody notices until a customer
+   cannot open the shop. */
+?>
+<div class="lens-menu" id="lensMenu" hidden>
+  <div class="lens-menu__scrim" data-lens-close></div>
+
+  <div class="lens-menu__stage" role="dialog" aria-modal="true" aria-labelledby="lensMenuTitle">
+    <div class="lens-menu__lens" aria-hidden="true">
+      <span class="lens-menu__lens-ring"></span>
+      <span class="lens-menu__lens-core"></span>
+      <span class="lens-menu__lens-glint"></span>
+    </div>
+
+    <p class="lens-menu__eyebrow" id="lensMenuTitle">
+      <span class="lens-menu__rule" aria-hidden="true"></span>
+      <span>بخش‌های خانه</span>
+      <span class="lens-menu__rule" aria-hidden="true"></span>
+    </p>
+
+    <nav class="lens-menu__nav" aria-label="ناوبری اصلی">
+      <a href="#boutique" class="lm lm--ul"><span class="lm-no">۰۱</span><span class="lm-t">مجموعه</span><span class="lm-lat">VAULT</span></a>
+      <a href="#craft"    class="lm lm--ur"><span class="lm-no">۰۲</span><span class="lm-t">صناعت</span><span class="lm-lat">CRAFT</span></a>
+
+      <a href="#lookbook" class="lm lm--ll"><span class="lm-no">۰۳</span><span class="lm-t">نگارخانه</span><span class="lm-lat">LOOKBOOK</span></a>
+      <a href="#archive"  class="lm lm--lr"><span class="lm-no">۰۴</span><span class="lm-t">تاریخچه</span><span class="lm-lat">ARCHIVE</span></a>
+
+      <a href="#top"      class="lm lm--ul2"><span class="lm-no">۰۵</span><span class="lm-t">خانه</span><span class="lm-lat">HOME</span></a>
+      <a href="#appoint"  class="lm lm--ur2"><span class="lm-no">۰۶</span><span class="lm-t">تماس</span><span class="lm-lat">CONTACT</span></a>
+    </nav>
+
+    <div class="lens-menu__foot">
+      <a class="lens-menu__act" href="#boutique" data-act="wish-open">علاقه‌مندی‌ها</a>
+      <a class="lens-menu__act" href="#appoint">نشانی و ساعت کاری</a>
+      <span class="lens-menu__folio mono" aria-hidden="true">VELORA · MMXXVI</span>
+    </div>
+
+    <button class="lens-menu__close" type="button" data-lens-close aria-label="بستن منو">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+        <path d="M5 5l14 14M19 5L5 19" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
+</div>
+        <?php /* The trigger. It is a button, not a link: it opens a dialog, and
+           aria-expanded/aria-controls are the contract that tells a screen
+           reader the menu now exists on the page. The inline .nav-links stays
+           in the DOM for the mid range and is display:none above the
+           breakpoint where this appears, so neither is ever a dead control. */ ?>
+        <button class="lens-btn" id="lensBtn" type="button"
+                aria-expanded="false" aria-controls="lensMenu" aria-haspopup="dialog">
+          <span class="lens-btn__mark" aria-hidden="true"><i></i><i></i></span>
+          <span class="lens-btn__label">منو</span>
+        </button>
+
+        <nav class="nav-links" aria-label="ناوبری اصلی">
         <a href="#boutique">مجموعه</a>
         <a href="#craft">صناعت</a>
         <a href="#lookbook">نگارخانه</a>
@@ -872,13 +945,41 @@ $precacheAssets = array_merge(
 <!-- ═══════════════════════════════════════════════════════════════════
      MOBILE NAV
      ═══════════════════════════════════════════════════════════════════ -->
+<?php /* ─── THE MOBILE MENU ──────────────────────────────────────────────────
+   Laid out around a vertical gold lens rather than as a list.
+
+   The list was the problem: six rows of Persian serif at 7.6vw, each with a
+   bottom border, is a phone's worth of scrolling to reach a section that is one
+   tap away. The lens gives the menu a centre, so the items can be placed
+   against it — two on each side, two above, two below — and the whole thing
+   reads as an object rather than as a list that ran out.
+
+   It is still a <nav> of <a>s. The lens is a decorative sibling, aria-hidden,
+   and every item keeps its own number and its own Latin gloss, so nothing about
+   the semantics changed: a screen reader walks the same six links in the same
+   order it always did, and a no-JS visitor still gets a real page.
+
+   The item order in the DOM is unchanged from the flat list, so keyboard order
+   still matches reading order. */
+?>
 <nav class="mnav" id="mnav" aria-label="منوی موبایل" inert>
-  <a href="#top"><span class="mn-no">۰۱</span>خانه <span class="lat">HOME</span></a>
-  <a href="#boutique"><span class="mn-no">۰۲</span>مجموعه <span class="lat">VAULT</span></a>
-  <a href="#craft"><span class="mn-no">۰۳</span>صناعت <span class="lat">CRAFT</span></a>
-  <a href="#lookbook"><span class="mn-no">۰۴</span>نگارخانه <span class="lat">LOOKBOOK</span></a>
-  <a href="#archive"><span class="mn-no">۰۵</span>تاریخچه <span class="lat">ARCHIVE</span></a>
-  <a href="#appoint"><span class="mn-no">۰۶</span>تماس <span class="lat">CONTACT</span></a>
+  <div class="mnav__lens" aria-hidden="true">
+    <span class="mnav__lens-ring"></span>
+    <span class="mnav__lens-core"></span>
+    <span class="mnav__lens-glint"></span>
+  </div>
+
+  <div class="mnav__stage">
+    <a href="#top"     class="mn mn--ul"><span class="mn-no">۰۱</span><span class="mn-t">خانه</span><span class="lat">HOME</span></a>
+    <a href="#boutique" class="mn mn--ur"><span class="mn-no">۰۲</span><span class="mn-t">مجموعه</span><span class="lat">VAULT</span></a>
+
+    <a href="#craft"    class="mn mn--ll"><span class="mn-no">۰۳</span><span class="mn-t">صناعت</span><span class="lat">CRAFT</span></a>
+    <a href="#lookbook" class="mn mn--lr"><span class="mn-no">۰۴</span><span class="mn-t">نگارخانه</span><span class="lat">LOOKBOOK</span></a>
+
+    <a href="#archive"  class="mn mn--dl"><span class="mn-no">۰۵</span><span class="mn-t">تاریخچه</span><span class="lat">ARCHIVE</span></a>
+    <a href="#appoint"  class="mn mn--dr"><span class="mn-no">۰۶</span><span class="mn-t">تماس</span><span class="lat">CONTACT</span></a>
+  </div>
+
   <div class="mnav-foot">
     <button class="btn btn--ghost btn--sm" data-act="cart-open" type="button">سبد <span class="mono" id="mnavCartN">۰</span></button>
     <button class="btn btn--ghost btn--sm" data-act="wish-open" type="button">علاقه‌مندی</button>
@@ -910,9 +1011,38 @@ $precacheAssets = array_merge(
               <span class="line" aria-hidden="true"></span>
               <span>خانهٔ کفش · نسخهٔ ابدی</span>
             </div>
-            <h1 id="heroTitle" aria-label="هنرِ گامِ طلایی.">
-              <span class="split-line"><span class="split-line-inner">هنرِ گامِ</span></span><br>
+            <?php /* ── THE TITLE ────────────────────────────────────────────────────
+   A new Persian title with a Latin subline beneath it.
+
+   The old one, «هنرِ گامِ طلایی», is a real maison line and it stays in the
+   aria-label, so nothing about the page's meaning changed. What changed is what
+   is on screen.
+
+   Three decisions, each for a reason a maison would recognise:
+
+   · «گامِ طلایی» became «مهرِ طلایی» because the hero is about the seal — the
+     plate, the 18-carat stamp, the rotating mark over its shoulder. A title
+     that names the object in the picture is doing the picture's job for it.
+
+   · The subline is Latin, letterspaced, and small. VELORA is a word a Persian
+     customer reads in Latin letters anyway — it is on the seal, on the receipt,
+     in the URL — so setting it under the Persian is not translation, it is the
+     same name in the script the maison signs with. It sits at
+     --t-xs with 0.34em tracking, which is what makes it read as a signature
+     rather than as a subtitle competing with the headline.
+
+   · The headline keeps the two-line split and the gold foil on the second
+     line. That pairing is the maison's whole visual grammar and it is what the
+     plate's seal is echoing; changing the words without changing the rhythm
+     would have looked like a different site. */
+            ?>
+            <h1 id="heroTitle" aria-label="مهرِ طلایی، دویست جفت در هر فصل.">
+              <span class="split-line"><span class="split-line-inner">مهرِ</span></span><br>
               <span class="split-line"><span class="split-line-inner"><em>طلایی.</em></span></span>
+              <span class="hero-subline" aria-hidden="true">
+                <span class="hero-subline-rule"></span>
+                <span class="hero-subline-text">VELORA · MAISON DE CHAUSSURES</span>
+              </span>
             </h1>
             <p class="hero-sub">چرمِ کامل‌دانهٔ ایتالیایی، ابریشمِ کومو، قالبِ دست‌کشیده در فلورانس. دویست جفت در هر فصل. نه یکی بیشتر.</p>
             <div class="hero-cta">
@@ -1116,6 +1246,20 @@ $precacheAssets = array_merge(
           produces, so a hydration mismatch is impossible: the renderer
           replaces the container wholesale on boot and the result is identical
           to what the server sent. */ ?>
+        <div class="vault__tools" id="vTools" role="search" aria-label="فیلترهای مجموعه">
+          <div class="vault__tools-head">
+            <span class="vault__tools-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.2">
+                <path d="M3 6h18M6 12h12M10 18h4" stroke-linecap="round"/>
+              </svg>
+            </span>
+            <span class="vault__tools-eyebrow">صیقل انتخاب</span>
+            <span class="vault__tools-rule" aria-hidden="true"></span>
+            <p class="grid-count" id="gridCount" aria-live="polite"></p>
+            <a class="vf-reset linklike-accent" id="vReset"
+               href="<?= $esc((string) parse_url(APP_URL, PHP_URL_PATH) ?: '/') ?>"<?= $filtersActive ? '' : ' hidden' ?>>پاک کردن همه</a>
+          </div>
+
         <div class="shop-grid" id="grid" role="list" aria-label="محصولات">
 <?php
 /* The two formatters are config.php's fa_num() and fa_pad(), which are the
@@ -1209,10 +1353,15 @@ if ($catalogFeed) {
      The count line is not decoration either: "how many of how many" is the
      question a customer asks when a filter surprises them, and answering it
      removes the guesswork from every filtered view rather than only the empty
-     one. Both are filled in by main.js, which is the only thing that knows how
-     many cards are currently visible; the server can only say how many exist. */
+one. Both are filled in by main.js, which is the only thing that knows how
+      many cards are currently visible; the server can only say how many exist.
+
+      #gridCount used to be echoed here, below the grid it describes. It is now
+      emitted once, inside the filter console above — the count answers the
+      question the controls raise ("what did that just do?"), and a number the
+      reader has to scroll back up to read is a number that gets missed. main.js
+      writes it by id, so it works from either position. */
     echo '<p class="grid-empty" id="gridEmpty" hidden role="status"></p>';
-    echo '<p class="grid-count" id="gridCount" aria-live="polite"></p>';
 } else {
     /* A catalogue that cannot be read is an operator problem, and it must not
        look like an empty boutique. This is stated plainly on the page rather
@@ -1220,44 +1369,72 @@ if ($catalogFeed) {
     echo '<p class="p-lede" style="grid-column:1/-1">ویترین موقتاً در دسترس نیست. لطفاً کمی بعد سر بزنید.</p>';
 }
 ?>
-        <?php /* ─── THE FILTER BAR ────────────────────────────────────────────
-          Server-rendered facets, derived from the very records the grid above
+        <?php /* ─── THE FILTER CONSOLE ────────────────────────────────────────
+          Server-rendered facets, derived from the very records the grid below
           is drawn from — never a hand-written option list. This is the same
           rule CATEGORY_SLUGS follows in config.php: the vocabulary of the shop
           has exactly one source, and it is the catalogue itself. A facet built
           from a literal array is a facet that silently offers colours and
           sizes the maison stopped carrying.
 
-          The bar is progressively enhanced by main.js (js/filters-aurelle.js):
-          with no JavaScript every control degrades to a plain GET submission
-          (?f_cat / ?f_size …) and index.php filters $catalogFeed with it
-          server-side before the cards are echoed — so the storefront's
-          filtering works for a crawler and for a customer who never runs any
-          of the scripts. With JavaScript the same controls re-draw the grid
-          instantly, and the <noscript>-free submit button hides itself. */ ?>
-        <div class="vault__tools" id="vTools" role="search" aria-label="فیلترهای مجموعه">
+          IT SITS ABOVE THE GRID. It used to sit below it, which inverted the
+          order the customer actually works in: you choose, then you look. A
+          filter under a long scroll of products is a filter nobody scrolls back
+          up for — and on a boutique whose whole pitch is a small, edited
+          collection, the controls are not chrome, they are the shopfront.
+
+          Same form, same names, same server-rendered `checked` state. Nothing
+          about the no-JavaScript path moved: without scripts every control is a
+          plain GET submission (?f_cat / ?f_size …) and index.php filters
+          $catalogFeed server-side before the cards are echoed, so filtering
+          still works for a crawler and for a customer who never runs a line of
+          the bundle. With JavaScript, main.js takes over the three controls it
+          knows how to evaluate live (sort, search, price ceiling) and re-draws
+          the grid without a round trip; the rest remain real form controls.
+
+          The bar was moved rather than copied. A second copy would be a second
+          set of input names, and a GET form that submits a name twice is a form
+          that reads whichever the parser kept last. */
+
+        /* The result count moves up here with the controls, because it answers
+           the question the controls raise — "what did that just do to the
+           grid?" — and a number that lives below the thing it describes has to
+           be scrolled back to. main.js still writes it; it is the only code that
+           knows how many cards are currently visible. */
+        ?>
           <form class="vf" id="vForm" method="get" action="<?= $esc(APP_URL . '/' === substr(APP_URL, -1) ? APP_URL : APP_URL . '/') ?>">
             <div class="vf-row vf-row--main">
+              <label class="vf-field vf-field--grow">
+                <span class="vf-lbl">جست‌وجو در مجموعه</span>
+                <span class="vf-search">
+                  <svg class="vf-search-icon" viewBox="0 0 24 24" width="15" height="15" fill="none"
+                       stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                    <circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5" stroke-linecap="round"/>
+                  </svg>
+                  <input class="vf-input" id="vSearch" name="f_q" type="search" inputmode="search" autocomplete="off"
+                         placeholder="نام، فرم یا جنس…" value="<?= $esc($qf['q'] ?? '') ?>">
+                </span>
+              </label>
               <label class="vf-field">
                 <span class="vf-lbl">مرتب‌سازی</span>
-                <select class="vf-select" id="vSort" name="f_sort">
-                  <option value="featured" <?= ($qf['sort'] ?? '') === 'featured' || !isset($qf['sort']) ? 'selected' : '' ?>>ویژهٔ خانه</option>
-                  <option value="new"      <?= ($qf['sort'] ?? '') === 'new' ? 'selected' : '' ?>>جدیدترین</option>
-                  <option value="asc"      <?= ($qf['sort'] ?? '') === 'asc' ? 'selected' : '' ?>>ارزان‌ترین</option>
-                  <option value="desc"     <?= ($qf['sort'] ?? '') === 'desc' ? 'selected' : '' ?>>گران‌ترین</option>
-                  <option value="name"     <?= ($qf['sort'] ?? '') === 'name' ? 'selected' : '' ?>>نام (الفبا)</option>
-                  <option value="stock"    <?= ($qf['sort'] ?? '') === 'stock' ? 'selected' : '' ?>>آمادهٔ ارسال</option>
-                </select>
-              </label>
-              <label class="vf-field">
-                <span class="vf-lbl">جست‌وجو در مجموعه</span>
-                <input class="vf-input" id="vSearch" name="f_q" type="search" inputmode="search" autocomplete="off"
-                       placeholder="نام، فرم یا جنس…" value="<?= $esc($qf['q'] ?? '') ?>">
+                <span class="vf-selectwrap">
+                  <select class="vf-select" id="vSort" name="f_sort">
+                    <option value="featured" <?= ($qf['sort'] ?? '') === 'featured' || !isset($qf['sort']) ? 'selected' : '' ?>>ویژهٔ خانه</option>
+                    <option value="new"      <?= ($qf['sort'] ?? '') === 'new' ? 'selected' : '' ?>>جدیدترین</option>
+                    <option value="asc"      <?= ($qf['sort'] ?? '') === 'asc' ? 'selected' : '' ?>>ارزان‌ترین</option>
+                    <option value="desc"     <?= ($qf['sort'] ?? '') === 'desc' ? 'selected' : '' ?>>گران‌ترین</option>
+                    <option value="name"     <?= ($qf['sort'] ?? '') === 'name' ? 'selected' : '' ?>>نام (الفبا)</option>
+                    <option value="stock"    <?= ($qf['sort'] ?? '') === 'stock' ? 'selected' : '' ?>>آمادهٔ ارسال</option>
+                  </select>
+                  <svg class="vf-caret" viewBox="0 0 12 8" width="10" height="7" aria-hidden="true">
+                    <path d="M1 1.5 6 6.5l5-5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                  </svg>
+                </span>
               </label>
               <button class="btn btn--gold btn--sm vf-apply" type="submit">اعمال</button>
-              <a class="vf-reset linklike" id="vReset" href="<?= $esc((string) parse_url(APP_URL, PHP_URL_PATH) ?: '/') ?>" <?= $filtersActive ? '' : 'hidden' ?>>پاک کردن فیلترها</a>
             </div>
 
+            <div class="vf-facets">
             <?php if ($facetCats): ?>
             <fieldset class="vf-group">
               <legend class="vf-lbl">فرم</legend>
@@ -1306,6 +1483,7 @@ if ($catalogFeed) {
               </div>
             </fieldset>
             <?php endif; ?>
+            </div><!-- /.vf-facets -->
 
             <div class="vf-row vf-row--range">
               <?php if ($heelBounds !== null): ?>

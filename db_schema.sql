@@ -837,18 +837,63 @@ PREPARE st FROM @ddl; EXECUTE st; DEALLOCATE PREPARE st;
 -- column that excludes cancelled slots, so a cancelled time becomes bookable
 -- again while live slots stay race-free. The booking endpoint already treats
 -- error 1062 as TIME_TAKEN, so the guarantee is still enforced by the index.
+--
+-- This migration has to decide on TWO independent things, and it was asking one
+-- question of one guard. It now asks each separately, because each has its own
+-- failure mode and they are opposites of each other:
+--
+--   1. DROP INDEX uk_appt_date_time  — only if that index EXISTS. Guarded by
+--      COUNT(*) > 0. This was the import-breaking bug: the condition was
+--      `COUNT(*) = 0`, which fired the DROP precisely when the index was ABSENT
+--      — so a fresh database (where the index does not exist) got
+--      "ERROR 1091 (42000): Can't DROP INDEX `uk_appt_date_time`; check that it
+--      exists", and the import aborted at line 853 before any later section
+--      ran. Every ADD-style guard in this file is correctly `= 0` because
+--      adding is the action when the thing is absent; a DROP is the action when
+--      the thing is PRESENT, so copying that idiom here is what inverted it.
+--
+--   2. ADD COLUMN active_slot / ADD UNIQUE KEY uk_appt_active_slot — only if
+--      those do NOT exist. Guarded by COUNT(*) = 0, the correct polarity, and
+--      now checked separately so that a database which already has the
+--      generated column but still has the old blanket index (an interrupted
+--      earlier import) gets the DROP it needs instead of being skipped whole.
+--
+-- ORDER IS LOAD-BEARING: the DROP is evaluated first, then the ADDs. MySQL
+-- evaluates and prepares in statement order, and the two are independent, so
+-- either order would work today — but dropping after adding would mean a
+-- re-run finds the new column, skips, and never removes the old constraint.
 SET @ddl := (
-    SELECT IF(COUNT(*) = 0,
-        'ALTER TABLE velora_appointments
-            DROP INDEX uk_appt_date_time,
-            ADD COLUMN active_slot VARCHAR(24)
-                GENERATED ALWAYS AS (IF(status = ''cancelled'', NULL, CONCAT(date, '' '', time))) VIRTUAL,
-            ADD UNIQUE KEY uk_appt_active_slot (active_slot)',
+    SELECT IF(COUNT(*) > 0,
+        'ALTER TABLE velora_appointments DROP INDEX uk_appt_date_time',
         'DO 0')
     FROM information_schema.STATISTICS
     WHERE TABLE_SCHEMA = DATABASE()
       AND TABLE_NAME   = 'velora_appointments'
       AND INDEX_NAME   = 'uk_appt_date_time'
+);
+PREPARE st FROM @ddl; EXECUTE st; DEALLOCATE PREPARE st;
+
+SET @ddl := (
+    SELECT IF(COUNT(*) = 0,
+        'ALTER TABLE velora_appointments
+            ADD COLUMN active_slot VARCHAR(24)
+                GENERATED ALWAYS AS (IF(status = ''cancelled'', NULL, CONCAT(date, '' '', time))) VIRTUAL',
+        'DO 0')
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME   = 'velora_appointments'
+      AND COLUMN_NAME  = 'active_slot'
+);
+PREPARE st FROM @ddl; EXECUTE st; DEALLOCATE PREPARE st;
+
+SET @ddl := (
+    SELECT IF(COUNT(*) = 0,
+        'ALTER TABLE velora_appointments ADD UNIQUE KEY uk_appt_active_slot (active_slot)',
+        'DO 0')
+    FROM information_schema.STATISTICS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME   = 'velora_appointments'
+      AND INDEX_NAME   = 'uk_appt_active_slot'
 );
 PREPARE st FROM @ddl; EXECUTE st; DEALLOCATE PREPARE st;
 

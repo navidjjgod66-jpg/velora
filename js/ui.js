@@ -361,6 +361,93 @@ function setMnav(on) {
 menuBtns.forEach(b => b.setAttribute('aria-expanded', 'false'));
 $$('a', mnav).forEach(a => a.addEventListener('click', () => setMnav(false)));
 
+/* ═══ Desktop lens menu ═══
+   The wide-screen counterpart of #mnav: the same six destinations around the
+   same vertical lens, in a panel rather than a full-screen sheet.
+
+   It is NOT the same function, deliberately. setMnav() is a full-screen overlay
+   with a slide-down, and reusing it for a side panel would mean one function
+   carrying two animations, two z-indexes and two sets of focus rules — and the
+   next edit would be the one that breaks the mobile one. The two share the
+   lens's CSS and nothing else.
+
+   Three things a modal panel owes the keyboard, all of them here:
+     · focus moves in on open, to the first link;
+     · Tab is TRAPPED inside, so it cannot walk into the page behind a scrim
+       that is visually covering it;
+     · focus returns to the button on close, so closing a menu does not dump
+       you at the top of the document. */
+const lensMenu = $('#lensMenu');
+const lensBtn  = $('#lensBtn');
+let lensOpener = null;
+
+const LENS_FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+function setLens(on) {
+  if (!lensMenu) return;
+  if (on) {
+    lensOpener = document.activeElement;
+    lensMenu.hidden = false;
+    /* One frame before the class lands, so the transition has a start state to
+       animate FROM. Without the reflow the panel appears already in its final
+       position and the reveal is a cut rather than a slide. */
+    void lensMenu.offsetWidth;
+    lensMenu.classList.add('on');
+    body.classList.add('lens-on');
+    html.classList.add('lock');
+    dlStop();
+    lensBtn && lensBtn.setAttribute('aria-expanded', 'true');
+    const first = $(LENS_FOCUSABLE, lensMenu);
+    first && first.focus({ preventScroll:true });
+  } else {
+    lensMenu.classList.remove('on');
+    body.classList.remove('lens-on');
+    html.classList.remove('lock');
+    lensBtn && lensBtn.setAttribute('aria-expanded', 'false');
+    const done = () => { lensMenu.hidden = true; };
+    /* Wait for the slide-out before hiding, or the panel vanishes instead of
+       leaving. One frame is enough: the class is what the transition reads. */
+    if (reduced) done(); else requestAnimationFrame(done);
+    if (lensOpener && lensOpener.focus) lensOpener.focus({ preventScroll:true });
+    else lensBtn && lensBtn.focus({ preventScroll:true });
+    lensOpener = null;
+    dlStart();
+  }
+}
+
+if (lensBtn && lensMenu) {
+  lensBtn.setAttribute('aria-expanded', 'false');
+  lensBtn.addEventListener('click', () => setLens(lensMenu.hidden));
+
+  $$('[data-lens-close]', lensMenu).forEach(el =>
+    el.addEventListener('click', () => setLens(false)));
+
+  /* Any section link closes the panel and then lets the browser do the
+     scrolling — an href is a real navigation, and swallowing it would break
+     middle-click, ctrl-click and "copy link address". */
+  $$('.lm', lensMenu).forEach(a => a.addEventListener('click', () => setLens(false)));
+
+  lensMenu.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { e.preventDefault(); setLens(false); return; }
+    if (e.key !== 'Tab') return;
+
+    const items = $$(LENS_FOCUSABLE, lensMenu).filter(el => el.offsetParent !== null);
+    if (!items.length) return;
+    const first = items[0], last = items[items.length - 1];
+    /* Tab past the last, or Shift-Tab before the first, wraps inside. Without
+       this a keyboard user tabs straight out of an open modal and into the
+       page behind the scrim, which is still visibly there. */
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  });
+
+  /* The mode switch toggles boutique/atelier, and the atelier panel replaces
+     this menu entirely. Leaving it open across the switch would strand a
+     panel whose navigation no longer exists. */
+  $$('[data-act="mode"]').forEach(b =>
+    b.addEventListener('click', () => { if (!lensMenu.hidden) setLens(false); }));
+}
+
 /* ═══ Scroll helper for filters ═══ */
 function scrollToFilters(delay) {
   const run = () => {
@@ -383,6 +470,9 @@ function scrollToFilters(delay) {
 window.AE_UI = {
   wireImg, revealIO,
   renderFamChips, setTheme, setMode, setMnav, setMnavGet: () => body.classList.contains('mnav-on'),
-  themeMenu, scrollToFilters, mnav, menuBtns
+  themeMenu, scrollToFilters, mnav, menuBtns,
+  /* Exported so main.js can close the panel on a route change — otherwise a
+     hash navigation from inside it leaves the scrim covering the new section. */
+  setLens, lensMenu, lensBtn
 };
 })();

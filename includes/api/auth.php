@@ -238,15 +238,43 @@ jresp(['ok' => true, 'message' => 'خروج موفق']);
     return;
 }
 
-/* ---- me ---- */
+/* ---- me ----
+   200, not 401, for an anonymous visitor.
+
+   `me` is a session PROBE, not a protected resource: the question is "is there a
+   signed-in user on this session?", and "no" is a complete and successful answer
+   to it. 401 means "present credentials, and they were rejected or absent" —
+   which is a statement about access to a resource, and there is no resource here
+   that anyone is being kept out of.
+
+   The 401 was visible on every anonymous page load: js/auth.js and
+   js/checkout.js both call sessionGet() at boot, so every visitor who is not
+   signed in — that is, every first visit — got a red 401 in the console from the
+   one endpoint that was answering correctly. Any monitoring or session-replay
+   tool reading the browser log counts it as a failed request.
+
+   Nothing on the client branches on this status: sessionGet() reads r.logged,
+   and checkout.js wraps the call in try/catch. So this is the same JSON, the
+   same meaning, and one less false error.
+
+   The endpoints that DO protect something — my_orders, address_*, checkout —
+   keep their 401, because there the status is the answer. */
 if ($action === 'me') {
 if (!is_user()) {
-    jresp(['ok' => false, 'logged' => false, 'error' => 'LOGIN_REQUIRED'], 401);
+    jresp(['ok' => true, 'logged' => false]);
 }
 $st = $pdo->prepare("SELECT id, phone, name, email, created_at FROM velora_users WHERE id=?");
 $st->execute([current_user_id()]);
 $user = $st->fetch();
-if (!$user) jresp(['ok' => false, 'error' => 'USER_NOT_FOUND'], 404);
+/* A session that names a user_id the table does not contain is a stale session,
+   not a missing product: answering 404 told the client the account was gone,
+   which is a different and much more alarming claim than "that row is gone".
+   Clearing the identity and answering "not signed in" lets auth.js fall back to
+   the sign-in sheet instead of surfacing a not-found state nobody can act on. */
+if (!$user) {
+    unset($_SESSION['user_id'], $_SESSION['user_phone'], $_SESSION['user_phone_verified']);
+    jresp(['ok' => true, 'logged' => false]);
+}
 jresp(['ok' => true, 'logged' => true, 'user' => $user]);
     return;
 }
