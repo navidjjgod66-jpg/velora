@@ -4,17 +4,11 @@ declare(strict_types=1);
 /* This file is required by config.php in the running site, and by the test
    suite on its own — a test that has to bootstrap the whole application to
    check a list of cities is a test that stops being run. So the one helper it
-   borrows is defined here when it is missing, identically to the copy in
-   config.php. Same body, deliberately: two versions of "Persian digits are
-   ASCII digits" is the kind of duplication that costs an afternoon later. */
-if (!function_exists('normalize_digits')) {
-    function normalize_digits(string $raw): string {
-        return strtr($raw, [
-            '۰'=>'0','۱'=>'1','۲'=>'2','۳'=>'3','۴'=>'4','۵'=>'5','۶'=>'6','۷'=>'7','۸'=>'8','۹'=>'9',
-            '٠'=>'0','١'=>'1','٢'=>'2','٣'=>'3','٤'=>'4','٥'=>'5','٦'=>'6','٧'=>'7','٨'=>'8','٩'=>'9',
-        ]);
-    }
-}
+   borrows is pulled from includes/digits.php, its single home: the guard there
+   means this require is a no-op once formatting.php has loaded it through the
+   same file, and it can never define a second version of "Persian digits are
+   ASCII digits". */
+require_once __DIR__ . '/digits.php';
 
 /**
 * VELORA · Maison de Chaussures

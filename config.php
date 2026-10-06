@@ -435,6 +435,17 @@ PRODUCT CATALOGUE · products.json
 ═══════════════════════════════════════════════════════════════════════════ */
 require_once __DIR__ . '/includes/catalog.php';
 
+/* The response/HTTP helpers are loaded here, ahead of the startup audit below,
+   because the audit calls is_https() — defined in http.php — while it runs at
+   include time. They used to be required only further down, so every CLI entry
+   point (and any request that reached the audit) fataled on
+   "Call to undefined function is_https()" before the rest of config.php ever
+   executed. require_once below makes the original position a no-op, so the
+   load order stays exactly as the split-include comment describes: net.php
+   still precedes the files that use it at load time, and each of them still
+   precedes the API handlers api.php dispatches into. */
+require_once __DIR__ . '/includes/http.php';        // jresp · CSP headers · esc · 404/410/503
+
 /* ═══════════════════════════════════════════════════════════════════════════
 STARTUP CONFIG AUDIT
 ═══════════════════════════════════════════════════════════════════════════ */
