@@ -557,8 +557,13 @@ SPLIT-INCLUDE HELPERS · one home per concern
    they can rely on the constants and the PDO handle while still being loadable
    exactly once. Order matters only where a helper calls another helper at load
    time: net.php (logging/IP) precedes the files that use it, and each of them
-   precedes the API handlers api.php dispatches into. */
-require_once __DIR__ . '/includes/http.php';        // jresp · CSP headers · esc · 404/410/503
+   precedes the API handlers api.php dispatches into.
+
+   http.php is not repeated in this list: it is already required above, ahead
+   of the startup audit (which calls its is_https() at include time). The two
+   lines used to be duplicated here and there; require_once made one of them a
+   silent no-op, but two lines claiming to load the same helper invite someone
+   to "fix" the wrong one. One line per file, one home per concern. */
 require_once __DIR__ . '/includes/input.php';       // req_*() request accessors
 require_once __DIR__ . '/includes/formatting.php';  // fa_num · fa_pad · digit/phone normalizers
 require_once __DIR__ . '/includes/net.php';         // client IP · admin allow-list · log_action

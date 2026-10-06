@@ -78,11 +78,10 @@ function fa_num(int|float|string $n): string {
         ? $intPart . "\u{066B}" . rtrim(rtrim(substr(sprintf('%.3f', $abs - floor($abs)), 2), '0'), '.')
         : $intPart;
 
-    $out = strtr($out, [
-        '0' => "\u{06F0}", '1' => "\u{06F1}", '2' => "\u{06F2}", '3' => "\u{06F3}",
-        '4' => "\u{06F4}", '5' => "\u{06F5}", '6' => "\u{06F6}", '7' => "\u{06F7}",
-        '8' => "\u{06F8}", '9' => "\u{06F9}",
-    ]);
+    /* The digit mapping itself lives in includes/digits.php as
+       to_persian_digits() — one table, shared with fa_pad(), geo.php and every
+       other caller, instead of a copy per function. */
+    $out = to_persian_digits($out);
     return $neg ? "\u{200E}\u{2212}" . $out : $out;
 }
 
@@ -92,11 +91,7 @@ function fa_pad(int|string $n, int $width = 2): string {
     if (strlen($s) < $width) {
         $s = str_pad($s, $width, '0', STR_PAD_LEFT);
     }
-    return strtr($s, [
-        '0' => "\u{06F0}", '1' => "\u{06F1}", '2' => "\u{06F2}", '3' => "\u{06F3}",
-        '4' => "\u{06F4}", '5' => "\u{06F5}", '6' => "\u{06F6}", '7' => "\u{06F7}",
-        '8' => "\u{06F8}", '9' => "\u{06F9}",
-    ]);
+    return to_persian_digits($s);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

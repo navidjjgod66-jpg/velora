@@ -249,14 +249,12 @@ function velora_postal_valid(string $code): bool {
 
 /** Latin digits to Persian ones, for the places a number is read rather than stored. */
 function velora_fa_digits(string $s): string {
-    /* The array form of strtr, not the two-string form: that one maps bytes to
-       bytes, so handing it a 20-byte "to" string against 10 one-byte "from"
-       bytes truncates the Persian half of the table and shreds the output. */
-    static $map = [
-        '0' => '۰', '1' => '۱', '2' => '۲', '3' => '۳', '4' => '۴',
-        '5' => '۵', '6' => '۶', '7' => '۷', '8' => '۸', '9' => '۹',
-    ];
-    return strtr($s, $map);
+    /* Delegates to to_persian_digits() in includes/digits.php — the single
+       home of the mapping (see that file's header for why the array form of
+       strtr is mandatory). Kept as a named wrapper because every caller in
+       this file reads better with the velora_ prefix, and re-declaring the
+       table here is exactly the drift digits.php was extracted to prevent. */
+    return to_persian_digits($s);
 }
 
 /** Group the 10 digits for display: ۱۰۶۳۷-۴۸۴۹۳ reads faster than a bare run. */
