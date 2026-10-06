@@ -126,20 +126,14 @@ function velora_postal_cache_put(string $code, array $data): void {
     }
 }
 
-/** Drop a code from the cache. Used after a save, where the customer has just
-    told us the answer they want is not the one on file.
- *
- *  No caller today: the save path in includes/api/address.php replaces the
- *  cached entry rather than deleting it, because a corrected address is itself
- *  the freshest answer for that code. Kept because the cache is time-limited
- *  and an operator fixing a bad upstream response needs a way to force a
- *  re-fetch without waiting out POSTAL_CACHE_TTL.
- */
-// TODO: verify dead code — no caller in this repository today.
-function velora_postal_cache_forget(string $code): void {
-    $path = velora_postal_cache_path($code);
-    if (is_file($path)) @unlink($path);
-}
+/* velora_postal_cache_forget() was removed during refactoring: it had no
+   caller anywhere in the repository. The save path in includes/api/address.php
+   replaces the cached entry rather than deleting it, because a corrected
+   address is itself the freshest answer for that code; and an operator who
+   needs to force a re-fetch of a bad upstream response can simply delete
+   storage/cache/postal/<code>.json by hand — there is no reason to keep a
+   function alive to do one unlink(). Reintroduce it only together with a
+   caller that needs it. */
 
 /**
  * Look one code up. Never throws, never returns the token, never returns a
@@ -479,27 +473,15 @@ function velora_postal_unit(array $d): string {
     return '';
 }
 
-/**
- * Health check. A known-good code, no cache involved.
- *
- * For an operator with a shell, and for the test suite. It is deliberately not
- * an API action: a probe that costs a billed call must not be reachable from
- * the storefront, or it becomes the most expensive endpoint in the app.
- *
- * Not called anywhere in this repository — there is no test suite yet. Run it
- * from the project root with:
- *
- *   php -r 'require "config.php"; print_r(velora_postal_probe());'
- *
- * which is also the fastest way to tell a dead token from a dead endpoint.
- */
-// TODO: verify dead code — no caller in this repository today (no test suite).
-function velora_postal_probe(string $code = '1639613891'): array {
-    if (!POSTAL_ENABLED) return ['ok' => false, 'error' => 'POSTAL_NOT_CONFIGURED'];
-    $n = velora_postal_normalize($code);
-    if ($n === '') return ['ok' => false, 'error' => 'INVALID_FORMAT'];
-    if (!velora_postal_valid_checksum($n)) return ['ok' => false, 'error' => 'INVALID_CHECKSUM'];
-    $res = velora_postal_http_request($n);
-    unset($res['town'], $res['buildingName'], $res['sideFloor']);
-    return $res;
-}
+/* velora_postal_probe() was removed during refactoring: nothing in the
+   repository called it, and its documented consumer ("the test suite") does
+   not exercise it either. The same diagnosis — is the token alive, or is the
+   endpoint? — is one line away without a privileged helper that could later
+   be mistaken for an API surface:
+
+     php -r 'require "config.php"; print_r(velora_postal_lookup("1639613891"));'
+
+   A probe that costs a billed upstream call must stay out of the storefront,
+   and keeping a never-called function to do that was the wrong trade. If an
+   operator-facing CLI (or a real test harness) wants a probe, add it together
+   with the thing that calls it. */
