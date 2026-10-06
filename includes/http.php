@@ -185,7 +185,31 @@ HTML;
     exit;
 }
 
+/* The one HTML-escaping recipe in the project. Every emitter (index.php,
+   admin.php, includes/seo.php, the error pages above) used to spell its own
+   htmlspecialchars() call with its own flag combination — ENT_QUOTES here,
+   ENT_SUBSTITUTE there, ENT_HTML5 somewhere else. The flags are not a style
+   choice: ENT_SUBSTITUTE is what turns malformed UTF-8 into U+FFFD instead of
+   silently returning an empty string, and without it a broken product name
+   erases the attribute that carries it. One function, one flag set, no way to
+   get it wrong on the next emitter. */
 function esc(?string $s): string {
     return htmlspecialchars((string) $s, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5, 'UTF-8', true);
+}
+
+/* A CSP nonce for one document.
+ *
+ * index.php and admin.php each minted their own inline try/catch, and they
+ * disagreed about the fallback: admin.php caught \Exception while random_bytes
+ * throws RandomError/Error under PHP 8's Throwable hierarchy, so the weaker
+ * openssl_random_pseudo_bytes() arm was unreachable there. Both arms now live
+ * here, guarded by Throwable, so every document gets the same nonce policy
+ * from one place. */
+function velora_nonce(): string {
+    try {
+        return base64_encode(random_bytes(16));
+    } catch (Throwable $e) {
+        return base64_encode(openssl_random_pseudo_bytes(16));
+    }
 }
 

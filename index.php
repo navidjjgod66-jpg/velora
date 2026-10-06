@@ -57,11 +57,7 @@ require __DIR__ . '/config.php';
    sitemap advertised all five as separate pages. A parameter that selects
    nothing is not a parameter, so it is gone from the request rather than left
    behind as a variable that lies about what it does. */
-try {
-    $nonce = base64_encode(random_bytes(16));
-} catch (Throwable $e) {
-    $nonce = base64_encode(openssl_random_pseudo_bytes(16));
-}
+$nonce = velora_nonce();
 $csrf = csrf_token();
 
 /* ─── Product id ───────────────────────────────────────────────────────────
@@ -397,100 +393,24 @@ if ($isProductPage) {
 }
 
 /* ─── Presentation helpers shared with the browser ──────────────────────────
-   `$esc` is bound to config.php's esc() as a local closure, the same way
-   $hexForColor and $product_img below are bound to their data.
+   These now live in includes/presentation.php, required by config.php like
+   every other split-include. The inline copies that used to sit here — the
+   $VELORA_HEX table, the hand-rolled velora_product_plate() guarded by
+   function_exists(), and the $product_img closure that duplicated
+   velora_product_image() byte for byte — were the second opinion the module
+   was extracted to remove. What remains is only the local aliases the card
+   renderer and the filter bar below capture.
 
-   The card renderer below captures `$esc` rather than calling esc() fifteen
-   times, which is the more readable of the two spellings — but the capture
-   named a variable that did not exist. `use ($esc, …)` on an undefined name
-   binds null, silently: no warning at the point of the mistake, only
-   "Value of type null is not callable" from inside the closure at render time,
-   one file and one function away from where the omission was. Aliasing the
-   function here, next to the sibling helpers, keeps the binding and the thing
-   it binds in the same place. */
-$esc = static fn(?string $s): string => esc($s);
-
-/* A colour key means nothing to a browser; it needs a hex. This is the same
-   table data.js holds, and it is duplicated rather than imported because the
-   server cannot run the client's module before it has sent HTML. The two must
-   agree, so the table is short, fixed, and commented as the single place to
-   change. */
-$VELORA_HEX = [
-    'champ' => '#b8942a', 'noir' => '#161310', 'ivory' => '#efe6d8',
-    'suede' => '#a8825c', 'oxblood' => '#5a1f26', 'cognac' => '#6b3a1e',
-    'pearl' => '#e8e4da', 'satin' => '#161310', 'gold' => '#d4af37',
-    'patent' => '#0b0b0e',
-];
-$hexForColor = static function (string $key) use ($VELORA_HEX): string {
-    return $VELORA_HEX[$key] ?? '#8a8a8a';
-};
-
-/* Resolve a product's primary image the same way the browser will.
- *
-   Two steps, and the order matters:
- *   1. an uploaded WebP or an absolute https URL — a real photograph;
- *   2. otherwise the maison's inline SVG monogram plate.
- *
- * Step 2 used to return product_brand_image(), a 50 KB 512×512 PNG, used as the
- * product photograph for all eleven cards. That is one request, but it is a
- * 50 KB PNG on the critical path of a page whose whole point is that the
- * collection is server-rendered — and then main.js threw it away on the first
- * frame and substituted the data-URI plate that data.js draws, so the browser
- * decoded 50 KB of PNG to display something nobody kept.
- *
- * velora_product_plate() is a deliberate twin of plate() in js/data.js: same
- * viewBox, same colours, same deterministic monogram, same 640×800 (= exactly
- * the 4/5 aspect-ratio the card declares). Because both sides draw the same
- * picture from the same id, the server's card and the client's re-render are
- * byte-identical — which is what makes the claim at index.php:787 ("a hydration
- * mismatch is impossible") actually true rather than aspirational. */
-if (!function_exists('velora_product_plate')) {
-    function velora_product_plate(string $id, string $label = ''): string {
-        $ch = mb_substr(trim($label !== '' ? $label : $id), 0, 1, 'UTF-8');
-        if ($ch === '') $ch = '·';
-        $fg = '#d9b98a';
-        $bg = '#0b0a09';
-        $svg =
-            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 800">'
-          . '<rect width="640" height="800" fill="' . $bg . '"/>'
-          . '<rect x="26" y="26" width="588" height="748" fill="none" stroke="' . $fg
-          . '" stroke-opacity=".34" stroke-width="1.5"/>'
-          . '<path d="M320 236 404 320 320 404 236 320Z" fill="none" stroke="' . $fg
-          . '" stroke-opacity=".8" stroke-width="2"/>'
-          . '<circle cx="320" cy="320" r="86" fill="none" stroke="' . $fg
-          . '" stroke-opacity=".3" stroke-width="1"/>'
-          . '<text x="320" y="352" text-anchor="middle" font-family="Georgia,serif" font-size="104" fill="'
-          . $fg . '" fill-opacity=".92">' . htmlspecialchars($ch, ENT_QUOTES | ENT_XML1, 'UTF-8') . '</text>'
-          . '<text x="320" y="500" text-anchor="middle" font-family="Georgia,serif" font-size="30" letter-spacing="8" fill="'
-          . $fg . '" fill-opacity=".62">VELORA</text>'
-          . '</svg>';
-        return 'data:image/svg+xml;charset=utf-8,' . rawurlencode($svg);
-    }
-}
-
-$product_img = static function (array $p): string {
-    $key = (string) ($p['img'] ?? '');
-    if ($key !== '' && function_exists('product_image_url')) {
-        $u = product_image_url($key, 1200, 0, 80);
-        if ($u !== '') return $u;
-    }
-    /* An absolute https URL pasted by an operator wins outright. */
-    if ($key !== '' && preg_match('#^https://#i', $key)) return $key;
-    /* A gallery entry, if the product has one. */
-    $gal = $p['gallery'] ?? [];
-    if (is_array($gal)) {
-        foreach ($gal as $g) {
-            $g = trim((string) $g);
-            if ($g === '') continue;
-            if (function_exists('product_image_url')) {
-                $u = product_image_url($g, 1200, 0, 80);
-                if ($u !== '') return $u;
-            }
-            if (preg_match('#^https://#i', $g)) return $g;
-        }
-    }
-    return velora_product_plate((string) ($p['id'] ?? ''), (string) ($p['name'] ?? ''));
-};
+   `$esc` is an alias of config.php's esc(). The card renderer captures it
+   rather than calling esc() fifteen times, which is the more readable of the
+   two spellings — but the capture once named a variable that did not exist:
+   `use ($esc, …)` on an undefined name binds null silently, and the failure
+   surfaced as "Value of type null is not callable" from inside the closure at
+   render time, one file away from the omission. Aliasing it here, next to the
+   siblings, keeps the binding and the thing it binds in the same place. */
+$esc         = static fn(?string $s): string => esc($s);
+$hexForColor = static fn(string $key): string => velora_color_hex($key);
+$product_img = static fn(array $p): string => velora_product_image($p);
 
 /* The nonce and the CSRF token were minted at the top of this file, before
    the headers below quote the nonce. */

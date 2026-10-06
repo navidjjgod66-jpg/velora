@@ -49,6 +49,23 @@ function velora_color_hex(string $key): string {
     return VELORA_COLOR_HEX[$key] ?? '#8a8a8a';
 }
 
+/* The JSON encoder for anything that is interpolated into HTML.
+ *
+ * index.php carried two names for one closure ($encodeLd / $encodeJs) and
+ * seo.php had its own copy; the admin boot block re-implemented escaping by
+ * hand. They all need the same guarantee: JSON_HEX_TAG|AMP|APOS|QUOT makes a
+ * payload safe inside <script> and inside a double-quoted attribute without a
+ * CDATA dance, so a product name containing "</script>" is emitted escaped and
+ * cannot close the element. One function, every emitter. */
+function velora_json_escape(mixed $data): string {
+    $j = json_encode(
+        $data,
+        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+        | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+    );
+    return $j === false ? 'null' : (string) $j;
+}
+
 /**
  * The maison's inline-SVG monogram plate, as a data URI.
  *
