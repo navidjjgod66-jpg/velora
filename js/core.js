@@ -402,7 +402,7 @@ function overlayHide(host) {
   back && back.focus && back.focus({ preventScroll:true });
 }
 
-/* ═══ Shared dialog lifecycle (native <dialog>) — opener focus restore + lenis pause ═══ */
+/* ═══ Shared dialog lifecycle (native <dialog>) — opener focus restore ═══ */
 const dialogCloseH = d => {
   d._opener && d._opener.focus && d._opener.focus({ preventScroll:true });
   d._opener = null; dlStart();
@@ -415,35 +415,19 @@ const wireDialog = d => {
   return d;
 };
 
-/* ═══ Lenis motion (boot deferred) ═══ */
-let lenis = null;
-const useLenis = !reduced && !coarse;
-function bootMotion() {
-  if (!useLenis || lenis) return;
-  if (typeof window.Lenis === 'undefined') return;
-  if (window.gsap && window.ScrollTrigger) gsap.registerPlugin(ScrollTrigger);
-  if (window.gsap && window.Flip) gsap.registerPlugin(Flip);
-  lenis = new Lenis({
-    duration: 1.1,
-    easing: t => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-    smoothWheel: true,
-    touchMultiplier: 2
-  });
-  lenis.on('scroll', () => window.ScrollTrigger && ScrollTrigger.update());
-  if (window.gsap) { gsap.ticker.add(t => lenis.raf(t * 1000)); gsap.ticker.lagSmoothing(0); }
-  else { const raf = t => { lenis.raf(t); RAF.add(raf); }; RAF.add(raf); }
-}
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootMotion);
-else bootMotion();
-
-const dlStop  = () => { lenis && lenis.stop(); };
-const dlStart = () => { lenis && lenis.start(); };
+/* ═══ Scroll helpers ═════════════════════════════════════════════════════
+   These used to drive a vendored Lenis smooth-scroll instance and pause it
+   while a dialog was open. Lenis and GSAP were removed from the page (see
+   the SCRIPTS note in index.php): nothing ever loaded window.Lenis, so
+   bootMotion() returned at its second line on every visit, `lenis` stayed
+   null, and every branch below took the native path anyway. The dead
+   library scaffolding is gone; the API surface (dlStop · dlStart ·
+   scrollToEl) is unchanged because nine other modules call it. */
+const dlStop  = () => {};
+const dlStart = () => {};
 const scrollToEl = t => {
-  if (lenis) lenis.scrollTo(t, { offset:-100, duration:1.2 });
-  else {
-    const el = typeof t === 'string' ? $(t) : t;
-    el && el.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' });
-  }
+  const el = typeof t === 'string' ? $(t) : t;
+  el && el.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' });
 };
 
 /* ═══ Environment: dust canvas, motes, cursor ═══ */
@@ -642,6 +626,6 @@ window.AE = {
   backdropClose, withLoad, wireDialog, dialogCloseH,
   HAPTIC, haptic, toast,
   trapFocus, overlayShow, overlayHide, overlayOpen, FOCUSABLE,
-  lenis: () => lenis, dlStop, dlStart, scrollToEl
+  dlStop, dlStart, scrollToEl
 };
 })();
