@@ -27,7 +27,6 @@ function finishPL() {
     document.body.classList.add('loaded');
     setTimeout(() => pl && pl.remove(), 1600);
     initSplitReveal(); initHeroParallax();
-    window.ScrollTrigger && ScrollTrigger.refresh();
   }, 300);
 }
 const tickPL = () => {
@@ -41,8 +40,6 @@ if (reduced || !pl) finishPL();
 else { RAF.add(tickPL); TIMERS.once(finishPL, 2100, 'pl:cap'); }
 addEventListener('load', () => {
   TIMERS.once(finishPL, 400, 'pl:load');
-  window.ScrollTrigger && ScrollTrigger.refresh();
-  initSectionReveals();
 }, { once:true });
 
 /* ═══ Announcement ═══ */
@@ -200,6 +197,13 @@ if (!reduced) $$('[data-decode]').forEach(el => decodeIO.observe(el));
 /* ═══ Hero ═══ */
 const heroStars = $('#heroStars'); if (heroStars) heroStars.innerHTML = window.AE.starsHTML(4.9);
 
+/* ─── Hero title reveal — CSS transitions only ─────────────────────────────
+   This used to branch on window.gsap with a timeline path and a CSS-transition
+   fallback. GSAP was removed from the page (see the SCRIPTS note in index.php),
+   so the gsap branch could never run; it is gone and the fallback is the
+   implementation. The section-scroll reveals that lived next to it were also
+   written against ScrollTrigger, which was never loaded even when GSAP was —
+   they never animated anything and have been deleted with it. */
 function initSplitReveal() {
   const h1 = $('#heroTitle'); if (!h1) return;
   const lines = $$('.split-line-inner', h1);
@@ -207,17 +211,11 @@ function initSplitReveal() {
   const lh = parseFloat(getComputedStyle(h1).lineHeight);
   if (lh && !isNaN(lh)) h1.style.minHeight = (lh * 2) + 'px';
   if (reduced) return;
-  if (window.gsap) {
-    gsap.set(lines, { yPercent: 115 });
-    const tl = gsap.timeline({ delay:.35 });
-    lines.forEach((el, i) => tl.to(el, { yPercent:0, duration:1.25, ease:'power4.out' }, i*.15));
-  } else {
-    lines.forEach((el, i) => {
-      el.style.transform = 'translateY(115%)';
-      el.style.transition = 'transform .9s cubic-bezier(.16,1,.3,1)';
-      setTimeout(() => { el.style.transform = 'translateY(0)'; }, 300 + i*150);
-    });
-  }
+  lines.forEach((el, i) => {
+    el.style.transform = 'translateY(115%)';
+    el.style.transition = 'transform .9s cubic-bezier(.16,1,.3,1)';
+    setTimeout(() => { el.style.transform = 'translateY(0)'; }, 300 + i*150);
+  });
 }
 let heroParallaxBuilt = false;
 /* ─── Hero parallax — vanilla rewrite ──────────────────────────────────────
@@ -259,15 +257,6 @@ function initHeroParallax() {
   document.addEventListener('visibilitychange', kick);
   kick();
 }
-function initSectionReveals() {
-  if (!window.gsap || reduced) return;
-  $$('.stats .stat').forEach((s, i) => gsap.from(s, { y:30, opacity:0, duration:.8, ease:'power3.out', delay:i*.1, scrollTrigger:{ trigger:s, start:'top 92%' } }));
-  $$('.ghost').forEach(g => {
-    const sec = g.closest('section'); if (!sec) return;
-    gsap.fromTo(g, { yPercent:-8 }, { yPercent:14, ease:'none', scrollTrigger:{ trigger:sec, start:'top bottom', end:'bottom top', scrub:1.2 } });
-  });
-}
-
 /* ═══ Index row ═══ */
 const idxRow = $('#idxRow');
 if (idxRow) idxRow.innerHTML = IDX_CATS.map((c, i) =>
