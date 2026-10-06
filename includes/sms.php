@@ -5,13 +5,18 @@ declare(strict_types=1);
  *
  * Extracted verbatim from config.php during the monolith split — same code,
  * same behaviour, one home per concern. Covers meli_send_otp(), the panel-generated OTP sender.
- */if (!defined('VELORA_CONFIG_LOADED')) {
+ */
+
+if (!defined('VELORA_CONFIG_LOADED')) {
     http_response_code(500);
     exit('includes/sms.php requires config.php to be loaded first.');
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+OTP SENDER · MeliPayamak
+═══════════════════════════════════════════════════════════════════════════
 
-MeliPayamak's /api/send/otp/{token} endpoint GENERATES the OTP itself and
+   MeliPayamak's /api/send/otp/{token} endpoint GENERATES the OTP itself and
 returns it in the response `code` field. We POST only the phone number — no
 text, no sender — because the panel owns both the code and the message
 template. Per the vendor documentation:
@@ -22,7 +27,7 @@ So the value we persist is the one the panel returned, never one we invented.
 Response shape on success:
     {"code":"3741437414","status":"..."}
 On failure, `code` is empty/absent and `status` carries a Persian message.
-═══════════════════════════════════════════════════════════════════════════ */
+*/
 function meli_send_otp(string $phone): array {
     if (MELI_API === '') {
         error_log('[MELI] API URL not configured');
