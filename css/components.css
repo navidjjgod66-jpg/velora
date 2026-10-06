@@ -2678,11 +2678,11 @@ body.mnav-on .menu-btn i:last-child { transform: translateY(-3.5px) rotate(-45de
 
 .theme-swatch { width: 26px; height: 26px; border-radius: 50%; flex: none; border: 2px solid var(--border-2); position: relative; overflow: hidden; }
 
-.swatch-nuit { background: linear-gradient(135deg, #2a2c3a 40%, #c8a24a 100%); }
+.swatch-nuit { background: linear-gradient(135deg, #1e1c19 40%, #6d2b33 100%); }
 
-.swatch-ivoire { background: linear-gradient(135deg, #f7f3ea 40%, #8b6914 100%); }
+.swatch-ivoire { background: linear-gradient(135deg, #f5f2ec 40%, #8f2f2c 100%); }
 
-.swatch-emeraude { background: linear-gradient(135deg, #1a3a30 40%, #e0c070 100%); }
+.swatch-emeraude { background: linear-gradient(135deg, #16201d 40%, #8a7442 100%); }
 
 .menu-sep { height: 1px; background: var(--border); margin: 4px 2px; }
 

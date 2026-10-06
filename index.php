@@ -548,7 +548,20 @@ $encodeJs = $encodeLd;   /* identical guarantees; two names for two intents */
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0a0b12" id="metaTheme">
+<?php /* The browser chrome colour, in the maison's warm charcoal rather than the
+       source's blue-black.
+
+       It has to be a literal and not the token: a meta content is read before
+       the stylesheet, so a var() here resolves to nothing and the browser falls
+       back to its own default white. The value is oklch(0.128 0.008 60) flattened
+       to hex — the same ground the page paints, so the address bar and the
+       first screen are one surface rather than two.
+
+       The pre-paint block below rewrites it when the theme changes, and that is
+       the only thing that should ever write to it. */
+$veloraThemeHex = '#1e1c19';
+?>
+<meta name="theme-color" content="<?= $veloraThemeHex ?>" id="metaTheme">
 <meta name="color-scheme" content="dark light">
 <meta name="format-detection" content="telephone=no">
 <meta name="csrf-token" content="<?= esc($csrf) ?>">
@@ -1048,7 +1061,23 @@ foreach ($VELORA_CSS as $__preloadCss): ?>
      ═══════════════════════════════════════════════════════════════════ -->
 <div class="theme-menu" id="themeMenu" role="menu" aria-label="پوسته و صحنه">
   <div class="menu-lbl">پوسته</div>
-  <button class="theme-opt" data-theme-set="nuit" role="menuitem" type="button"><span class="theme-swatch swatch-nuit"></span>شبِ طلایی</button>
+  <?php /* The three rooms, named for what they are rather than for what used to be
+       in them.
+
+       "شبِ طلایی" was accurate while gold was the accent and the ground was a
+       blue-black — a gold night. The ground is now a warm charcoal and the only
+       saturated hue on the page is a bordeaux, so the same name would promise a
+       colour the screen does not have. A theme named for a hue it does not
+       contain is the cheapest kind of inconsistency: a customer who switches
+       rooms and sees no change concludes the control is broken.
+
+       · شبِ آجر  — the charcoal room, where the bordeaux is the ink and the
+                     foil appears only on the mark.
+       · عاجِ روشن — unchanged, and it was already the right name.
+       · زمردِ شبانه — unchanged. The foil desaturates toward brass in here so
+                     it reads as a different room rather than as a hue swap. */
+?>
+  <button class="theme-opt" data-theme-set="nuit" role="menuitem" type="button"><span class="theme-swatch swatch-nuit"></span>شبِ آجر</button>
   <button class="theme-opt" data-theme-set="ivoire" role="menuitem" type="button"><span class="theme-swatch swatch-ivoire"></span>عاجِ روشن</button>
   <button class="theme-opt" data-theme-set="emeraude" role="menuitem" type="button"><span class="theme-swatch swatch-emeraude"></span>زمردِ شبانه</button>
   <div class="menu-sep"></div>

@@ -1395,8 +1395,7 @@ function bootSync() {
   const curS = LS.getRaw(K.scene, null) || html.getAttribute('data-scene') || 'night';
   $$('[data-theme-set]').forEach(b => b.classList.toggle('on', b.dataset.themeSet === curT));
   $$('[data-scene-set]').forEach(b => b.classList.toggle('on', b.dataset.sceneSet === curS));
-  const meta = document.querySelector('meta[name=theme-color]');
-  if (meta) meta.setAttribute('content', curT === 'ivoire' ? '#F6F2E8' : curT === 'emeraude' ? '#0e2020' : '#0a0b12');
+  AE.paintChrome && AE.paintChrome(curT);
 
   const savedMode = LS.getRaw(K.mode, 'boutique');
   if (savedMode !== 'atelier') return;

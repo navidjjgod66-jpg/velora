@@ -614,6 +614,28 @@ if (fine && !reduced && curRing) {
 } else if (curDot) { curDot.remove(); curRing && curRing.remove(); }
 
 /* ═══ Public API ═══ */
+/* ═══ THE BROWSER CHROME COLOUR ═════════════════════════════════════════════
+   One place writes meta[name=theme-color], and both theme paths call it.
+
+   It was written in two files with two different tables, and they disagreed:
+   ui.js knew two themes and wrote #F6F2E8 / #08090F, while main.js knew all
+   three and wrote #F6F2E8 / #0e2020 / #0a0b12. Whichever ran last won, and
+   which ran last depended on whether the change came from the boot paint or
+   from a click — so entering the page with one theme already selected and
+   switching to the same theme afterwards produced two different address bars
+   for one theme. Neither value matched the token either: the ground is
+   oklch(0.128 0.008 60), which is #1e1c19, not #08090F.
+
+   These are literals because a meta content is read before the stylesheet and a
+   var() there resolves to nothing. That is also why this table needs updating
+   when a theme's ground changes, which is the reason it is commented rather
+   than inline. */
+const THEME_HEX = { nuit: '#1e1c19', ivoire: '#f5f2ec', emeraude: '#16201d' };
+const paintChrome = (name) => {
+  const meta = document.querySelector('meta[name=theme-color]');
+  if (meta) meta.setAttribute('content', THEME_HEX[name] || THEME_HEX.nuit);
+};
+
 window.AE = {
   $, $$, html, body,
   clamp, lerp, PHI, PHI2, wait, reduced, fine, coarse, FA,
@@ -626,6 +648,7 @@ window.AE = {
   backdropClose, withLoad, wireDialog, dialogCloseH,
   HAPTIC, haptic, toast,
   trapFocus, overlayShow, overlayHide, overlayOpen, FOCUSABLE,
-  dlStop, dlStart, scrollToEl
+  dlStop, dlStart, scrollToEl,
+  paintChrome, THEME_HEX
 };
 })();

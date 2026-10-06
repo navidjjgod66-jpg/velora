@@ -298,7 +298,9 @@ function setTheme(t) {
      باید دوباره خوانده شوند. رویداد جدید، بدون تغییر رفتار بقیهٔ مصرف‌کننده‌ها. */
   window.dispatchEvent(new CustomEvent('ae:theme-change', { detail: { theme: t } }));
   $$('[data-theme-set]').forEach(b => b.classList.toggle('on', b.dataset.themeSet === t));
-  document.querySelector('meta[name=theme-color]')?.setAttribute('content', t === 'ivoire' ? '#F6F2E8' : '#08090F');
+  /* One table, in core.js. This line and the equivalent one in main.js each had
+     their own pair of hexes and they disagreed; see the note on THEME_HEX. */
+  AE.paintChrome && AE.paintChrome(t);
   /* The settle is a property animation on the document element, published by
      main.js and a no-op where the device cannot afford it. Called after the
      attribute is written, not before, so it animates the new palette. */
