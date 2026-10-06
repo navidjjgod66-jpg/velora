@@ -1,1 +1,5 @@
-(empty)
+# Environment
+.env
+
+# Logs
+storage/logs/
