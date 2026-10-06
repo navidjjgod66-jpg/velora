@@ -642,9 +642,31 @@ $VELORA_CSS = [
     'css/dialogs.css',
     'css/animations.css',
 ];
+/* THE SPLIT IS CRITICAL, and it is the one list in this file with a shape that
+   would look like an oversight.
+
+   The first list is what the document loads. The second is what the lazy loader
+   fetches on demand. A module may be in exactly one of them and never in both:
+   in both, its bytes are downloaded on the first paint and the loader's whole
+   purpose is lost; in neither, a dialog opens with nothing behind it.
+
+   Nine modules moved to the second list — the product dialog, the gallery, the
+   checkout, the account, the concierge, the atelier, the hero's 3-D stage, the
+   ambient voice and the quick-size wizard's model. Together they are 54 KB of
+   gzip, and not one byte of them is needed to render the first screen: each is
+   reachable only through an overlay that is closed when the page arrives.
+
+   The nine that stayed are needed for the first paint or for the first
+   interaction — core, the quality governor (its DPR decision is read by the
+   hero), intel, data, the bridge, renderers, state, ui and cart — plus main,
+   which routes everything.
+
+   Ordering inside the first list is load-bearing, not alphabetical, and the
+   comments say why for the three cases where it looks arbitrary. */
 $VELORA_JS = [
     'js/core.js',
     'js/quality-gov.js',          // حاکم کیفیت — باید زودتر از همهٔ renderableها باشد
+    'js/lazy.js',                 // بارگذار — پیش از main.js چون main.js به آن ارجاع می‌دهد
     'js/aurelle-intel.js',        // هوش شخصیسازی — فقط به AE وابسته است
     'js/data.js',
     'js/velora-bridge.js',
@@ -652,17 +674,34 @@ $VELORA_JS = [
     'js/state.js',
     'js/ui.js',
     'js/cart.js',
+    'js/sync-aurelle.js',
+    'js/main.js',
+];
+
+/* Fetched on demand by js/lazy.js. Kept beside the first list rather than in the
+   loader itself so the two cannot disagree about a filename: a module renamed
+   here and not there is a 404 on the first click, which is the hardest kind of
+   bug to see in a page that otherwise looks perfect.
+
+   js/pdp-3d-stage.js, js/shader-hero.js and js/ambient-voice.js publish no
+   namespace — they attach themselves to elements — so the loader reaches them
+   through whenScript() with the path, and they are listed here for the same
+   reason.
+
+   The ?v= query is added by the loader from this map, not written here. These are
+   paths, not URLs: the version belongs to the file, and a hand-written query
+   next to a filemtime-derived one is a query that silently stops being updated
+   the day someone edits one of them. */
+$VELORA_JS_LAZY = [
     'js/pdp-aurelle.js',
-    'js/pdp-3d-stage.js',         // سه‌بعدی PDP — lazy-import داخل خود ماژول
     'js/lbxaurelle.js',
     'js/checkout.js',
     'js/auth.js',
     'js/concierge-aurelle.js',
     'js/atelier-aurelle.js',
-    'js/sync-aurelle.js',
-    'js/shader-hero.js',          // WebGL هیرو — بعد از همه (به AE_QUALITY و ae:theme-change وابسته است)
-    'js/ambient-voice.js',        // صدای محیط + فرمان صوتی — بعد از همه
-    'js/main.js',
+    'js/pdp-3d-stage.js',
+    'js/shader-hero.js',
+    'js/ambient-voice.js',
 ];
 
 /* The manifest itself: the same URLs the tags use, plus the icon. The icon is
@@ -678,7 +717,33 @@ $precacheAssets = array_merge(
     ['brand-icon-192.png']
 );
 ?>
-<link rel="preload" as="style" href="<?= $assetV($VELORA_CSS[0]) ?>">
+<?php /* Every stylesheet is preloaded, not only the first.
+
+   Only aurelle-tokens.css was. That is one of seven, and the browser had to
+   discover the other six by parsing the document — so the first paint waited on
+   a waterfall of seven sequential lookups where the HTML already named every
+   one of them.
+
+   The seven tags cost about 700 bytes and they are not redundant with the
+   <link rel=stylesheet> that follows: a preload starts the fetch at the
+   point the parser reaches it, while the stylesheet tag both fetches and
+   blocks rendering. Same URL, same response — the browser matches them, and
+   nothing is downloaded twice.
+
+   as=style on all of them, and no crossorigin: these are same-origin, so the
+   preload and the stylesheet have to agree on the request's mode or the
+   response is fetched twice and the second copy is discarded. That is the
+   usual cause of "the preload warns and then the CSS appears a moment later".
+
+   JS is deliberately NOT preloaded. Every script is deferred, and a deferred
+   script has to be fetched before it runs anyway; preloading it competes with
+   the stylesheets for the same connections during exactly the window in which
+   the page is trying to paint. The three that decide the first screen —
+   aurelle-tokens, components and main — are covered by the CSS preloads and
+   the inline boot script respectively. */
+foreach ($VELORA_CSS as $__preloadCss): ?>
+<link rel="preload" as="style" href="<?= $assetV($__preloadCss) ?>">
+<?php endforeach; ?>
 <?php foreach ($VELORA_CSS as $__css): ?>
 <link rel="stylesheet" href="<?= $assetV($__css) ?>">
 <?php endforeach; ?>
@@ -2299,6 +2364,47 @@ window.VELORA_FILTER_BOOT = <?= $encodeLd([
    to cache hard: a change to any file changes its URL, so a precache can never
    serve a stale stylesheet or script under a matching name. */
 window.VELORA_PRECACHE = <?= $encodeLd($precacheAssets) ?>;
+
+/* The lazy loader's two maps. Both are emitted here, beside the precache list
+   and from the same source, because all three are the same question — what does
+   the document load, what does the loader fetch later, and what version is each
+   — answered in one place.
+
+   The map is path → version rather than a bare array so js/lazy.js never has to
+   build a URL. It used a bare path and appended `?v=` itself, which is the
+   version rule duplicated outside the only function that knows it: a change to
+   any lazy module then produced a request the service worker's
+   VERSIONED_QUERY_RE could not recognise, and the module would be cached under
+   a key nothing can invalidate.
+
+   Only the path is published, never an absolute URL, for the same reason
+   VELORA_CATALOG_URL is a path: the CSP's connect-src is 'self', and an
+   absolute URL on a different origin is refused outright.
+
+   Both maps are built from $assetV(), the closure every <link> and <script>
+   uses, so a lazy request is versioned by exactly the rule an eager one is. The
+   version is the raw filemtime rather than the whole `?v=` string, because that
+   is what the loader has to append to. */
+<?php /* One map, not two.
+
+   It started as VELORA_LAZY_MAP (the paths, so the loader knew what to fetch)
+   plus VELORA_VERSIONS (the filemtimes, so it could build a cache-busting URL).
+   Both were produced by the same array_combine over the same list, and the
+   loader's own comment said a path and its version belong together — so the
+   second map was a duplicate that could disagree with the first, and would on
+   the day someone added a module to one of them.
+
+   The version is the raw filemtime rather than the whole `?v=` string, because
+   that is what the loader has to append. */
+$veloraLazyMap = array_combine(
+    $VELORA_JS_LAZY,
+    array_map(
+        static fn(string $rel): int => (int) (@filemtime(__DIR__ . '/' . $rel) ?: 0),
+        $VELORA_JS_LAZY
+    )
+);
+?>
+window.VELORA_LAZY_MAP  = <?= $encodeLd($veloraLazyMap) ?>;
 /* The voucher table, straight out of velora_voucher_map() in config.php.
    data.js used to hard-code `VELORA10`, a code validate_voucher() has never
    heard of, and apply an UNCAPPED percentage to the basket — so a customer was

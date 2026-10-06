@@ -12,10 +12,6 @@ html {
   font-optical-sizing: auto;
   scroll-behavior: auto;
 }
-html.lenis, html.lenis body { height: auto; }
-.lenis.lenis-smooth { scroll-behavior: auto; }
-.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
-.lenis.lenis-stopped { overflow: hidden; }
 html.lock { overflow: hidden; }
 html:has(dialog[open]) { overflow: hidden; }
 html, body { max-width: 100%; overflow-x: clip; }
@@ -132,20 +128,8 @@ address { font-style: normal; }
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.025em;
 }
-.lat {
-  font-family: var(--mono);
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  font-size: 10.5px;
-  color: var(--text-3);
-  direction: ltr;
-  display: inline-block;
-  unicode-bidi: isolate;
-}
 .ltr { direction: ltr; unicode-bidi: isolate; }
-.fa-num { font-feature-settings: "ss01"; font-variant-numeric: tabular-nums; }
 .accent-txt { color: var(--accent); }
-.free-txt   { color: var(--verd); }
 .lede { font-size: var(--t-lg); color: var(--text-2); line-height: 2.05; max-width: 62ch; }
 
 /* Gold foil — بدون انیمیشن دائمی */
@@ -159,14 +143,6 @@ address { font-style: normal; }
   display: inline-block;
   position: relative;
 }
-.plat-foil {
-  background: var(--grad-plat, var(--grad-foil));
-  background-size: 200% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  display: inline-block;
-}
 
 /* ─── Layout ─── */
 .container {
@@ -177,7 +153,6 @@ address { font-style: normal; }
   position: relative;
   z-index: 3;
 }
-.container-narrow { max-width: calc(var(--w-narrow) + var(--pad) * 2); }
 
 section, .ledger, .trust, .press, .idx, .ticker-bar, .zone { position: relative; }
 section {
@@ -341,17 +316,6 @@ html:not(.js) .rv { opacity: 1; transform: none; }
   content-visibility: visible;
 }
 
-/* ─── Utilities ─── */
-.zone {
-  display: flex; align-items: center; gap: 1.6rem;
-  max-width: calc(var(--w) + var(--pad) * 2);
-  margin-inline: auto;
-  padding: 2rem var(--gutter);
-}
-.zone span { flex: 1; height: 1px; background: linear-gradient(90deg, transparent, var(--line-2)); }
-.zone span:last-child { background: linear-gradient(90deg, var(--line-2), transparent); }
-.zone i { width: 7px; height: 7px; border: 1px solid var(--gold-line); transform: rotate(45deg); }
-
 .ghost {
   position: absolute; z-index: 0; pointer-events: none; user-select: none;
   font-family: var(--serif-d); font-weight: 700; line-height: 0.78;
@@ -360,7 +324,6 @@ html:not(.js) .rv { opacity: 1; transform: none; }
   font-size: clamp(6.5rem, 4.5rem + 10vw, 15rem);
   inset-inline-end: clamp(0px, 2vw, 24px); top: -0.5rem;
 }
-.ghost--center { inset-inline-start: 50%; translate: -50% 0; top: -1rem; opacity: 0.32; }
 
 .split-line { display: inline-block; overflow: hidden; vertical-align: top; }
 .split-line-inner { display: inline-block; }

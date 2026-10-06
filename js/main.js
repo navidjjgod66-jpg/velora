@@ -65,9 +65,49 @@ const { CATALOG, PRODUCTS, ORDER, SIZES, catLabel } = window.AE_DATA;
 const { state, getCustom, sanitiseCart, persBag } = window.AE_STATE;
 const { wireImg, revealIO, setMode, setMnav, scrollToFilters, setLens, lensMenu } = window.AE_UI;
 const { openBag, openWish, toggleWish, openSheet, renderBag, paintInBag } = window.AE_CART;
-const { hydrate } = window.AE_PDP;
-const { openCko } = window.AE_CKO;
-const { openProfile } = window.AE_AUTH;
+
+/* The four dialog namespaces are LAZY. They used to be destructured here, at
+   the top of the file, which meant 54 KB of gzip for overlays that are closed
+   when the page arrives — and it also meant the destructuring had to happen
+   before any lazy module had a chance to load.
+
+   `need()` returns the namespace if it is there and otherwise loads it and
+   resolves with it, so a call site reads as one call and the await is where it
+   belongs. The five call sites below are all user actions, so awaiting costs
+   nothing on the first paint.
+
+   AE_PDP and AE_CONC are also read defensively elsewhere in this file
+   (renderCustomPanel, guilloche, isAdmin) — those checks are load-bearing now
+   rather than historical, because the namespaces are genuinely absent until the
+   customer asks for the dialog. */
+const need = (ns) => (window.AE_LAZY ? window.AE_LAZY.when(ns) : Promise.resolve(window[ns]));
+const needScript = (src) => (window.AE_LAZY ? window.AE_LAZY.whenScript(src) : Promise.resolve());
+
+/* The three modules that publish no namespace. Each attaches itself to an
+   element that already exists, so they are reached by path.
+
+   shader-hero is warm on the first paint, not idle: the hero backdrop is the
+   largest element above the fold and the quality governor's DPR decision exists
+   to serve it, so deferring the shader past the first paint defers the thing the
+   governor was tuned for. It is 3.4 KB and it is the only reason the governor
+   exists at all.
+
+   The 3-D stage and the ambient voice wait for idle. The stage attaches to the
+   product dialog and has nothing to attach to until the dialog is open; the
+   voice is a control in the header that nobody has pressed. Warming either of
+   them during the first paint competes with the stylesheets for connections
+   during exactly the window the page is trying to paint in. */
+needScript('js/shader-hero.js');
+
+if (window.AE_LAZY) {
+  const warmBehaviour = () => {
+    needScript('js/pdp-3d-stage.js').catch(() => {});
+    needScript('js/ambient-voice.js').catch(() => {});
+  };
+  if (typeof requestIdleCallback === 'function') requestIdleCallback(warmBehaviour, { timeout: 3000 });
+  else setTimeout(warmBehaviour, 3000);
+}
+
 
 /* Every navigation overlay, closed in one call.
    There are two of them — the full-screen mobile sheet (#mnav) and the
@@ -89,7 +129,12 @@ function closeNavLayers() {
   if (body.classList.contains('mnav-on')) setMnav(false);
   if (lensMenu && !lensMenu.hidden && typeof setLens === 'function') setLens(false);
 }
-const { toggleConc } = window.AE_CONC;
+const toggleConc = (...a) => (window.AE_CONC ? AE_CONC.toggleConc(...a) : need('AE_CONC').then(() => AE_CONC.toggleConc(...a)));
+/* Same shape for the account dialog: the call sites read as a plain call, and
+   the branch is invisible to them. A wrapper rather than eight `if (!window.
+   AE_AUTH)` lines at eight call sites — the eight lines are what drift, and
+   six of them already existed as a bug in this file. */
+const openProfile = (arg) => (window.AE_AUTH ? AE_AUTH.openProfile(arg) : need('AE_AUTH').then(() => AE_AUTH.openProfile(arg)));
 const lowTier = window.AE.lowTier;
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -766,13 +811,24 @@ function paintActiveFilters(total) {
 }
 
 /* ─── Sticky masthead ────────────────────────────────────────────────────
-   Once the console has scrolled past, it collapses to its header line and
-   pins to the top, so the count and the reset stay reachable while the
-   customer is looking at products rather than at controls.
+   Once the console has scrolled past, it pins to the top so the count and the
+   reset stay reachable while the customer is looking at products rather than at
+   controls.
 
-   The class is only toggled when it actually changes, because this runs on
-   scroll: writing className on every frame is what turns a sticky element into
-   a janky one, and it also invalidates the backdrop-filter on each write. */
+   The threshold is read from scrollY, not from getBoundingClientRect().
+
+   That is not a micro-optimisation; it is the difference between a scroll that
+   is free and one that is not. getBoundingClientRect() forces a synchronous
+   layout, and on a document this size the layout is the expensive part — so
+   reading it inside a scroll listener means every scroll frame waits for the
+   whole tree to be measured before it can decide whether to do nothing. The
+   class was only written when the answer changed, which kept the invalidation
+   count low, but the measurement still ran on every single frame.
+
+   scrollY costs nothing to read: it is a property of the scroll offset, already
+   known, and it forces no layout at all. The offset that makes the bar stick is
+   derived once here rather than measured, so the two can never drift apart when
+   the page's header height changes. */
 (() => {
   const bar = $('#vTools');
   if (!bar) return;
@@ -782,14 +838,30 @@ function paintActiveFilters(total) {
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
   let stuck = false;
+  let limit = 8;
+  /* Measured once, on the next frame, and only ever recomputed on resize — the
+     distance from the bar to the top of the document, which is what the
+     threshold has to match. Recomputing it per frame is the forced reflow this
+     function exists to avoid. */
+  const measure = () => { limit = Math.max(8, bar.getBoundingClientRect().top + window.scrollY); };
+
   const sync = () => {
-    const shouldStick = bar.getBoundingClientRect().top <= 8;
+    const shouldStick = window.scrollY >= limit;
     if (shouldStick === stuck) return;
     stuck = shouldStick;
     bar.classList.toggle('is-stuck', stuck);
   };
+
+  RAF.add(measure);
   addEventListener('scroll', sync, { passive: true });
-  addEventListener('resize', sync, { passive: true });
+  let rT = 0;
+  addEventListener('resize', () => {
+    clearTimeout(rT);
+    /* Debounced, because resize fires continuously during a drag and each of
+       those measurements is a full layout. The bar's position only needs to be
+       right by the time the drag ends. */
+    rT = setTimeout(() => { measure(); sync(); }, 140);
+  }, { passive: true });
   sync();
 })();
 
@@ -835,6 +907,24 @@ function openPDPByRoute(id) {
   if (bag.open) bag.close();
   if (wishd.open) wishd.close();
   state.lastFocus = document.activeElement;
+
+  /* The product dialog is the one lazy module a customer can arrive at with a
+     URL — #/pdp/<id> is shareable and indexable — so this call site has to wait
+     for the module and then re-enter, rather than opening an empty dialog.
+
+     The route is re-dispatched instead of the function being called directly
+     again, because handleRoute() is what decides between the PDP, the profile
+     and the home view; calling openPDPByRoute from inside itself would be a
+     second path through that decision, and the next route added would find one
+     path wired and one not. */
+  if (!window.AE_PDP) {
+    need('AE_PDP').then(handleRoute).catch(() => {
+      if (location.hash.startsWith('#/pdp/')) setRouteSilent('#/boutique');
+    });
+    return;
+  }
+
+  const hydrate = window.AE_PDP.hydrate;
   hydrate(p);
   if (!pdp.open) pdp.showModal();
   pdp.scrollTop = 0;
@@ -878,7 +968,15 @@ function handleRoute() {
   if (/^#\/checkout\?/.test(h)) return;
   const pm = h.match(/^#\/pdp\/([a-z0-9_-]+)/i);
   if (pm) { if (CATALOG[pm[1]]) openPDPByRoute(pm[1]); else if (nf) nf._open(); return; }
-  if (h === '#/profile') { openProfile(true); return; }
+  if (h === '#/profile') {
+    /* A shareable route into a lazy dialog: the module is absent until something
+       asks for it, so the route waits and re-enters rather than opening an
+       empty dialog. setRouteSilent leaves the hash alone, so the customer keeps
+       the profile URL while it loads. */
+    if (!window.AE_AUTH) { need('AE_AUTH').then(handleRoute); return; }
+    AE_AUTH.openProfile(true);
+    return;
+  }
   if (h === '#/admin') {
     /* Never open on a local flag — wait for the server's real answer. */
     if (window.AE_ADMIN && window.AE_AUTH && window.AE_AUTH.isAdmin()) { window.AE_ADMIN.open(true); return; }
@@ -945,6 +1043,11 @@ document.addEventListener('keydown', e => {
 const checkoutBtn = $('#checkout');
 if (checkoutBtn) checkoutBtn.addEventListener('click', () => {
   if (!state.cart.length) { toast('سبد شما خالی است.', 'err'); return; }
+  /* Every dialog behind this branch is lazy. Re-dispatching the click after the
+     load keeps one code path per action: the routing table stays the single
+     place that knows what a `data-act` means, so the next action added is wired
+     here once rather than in two places that can disagree. */
+  if (!window.AE_CKO) { need('AE_CKO').then(openCko); return; }
   openCko();
 });
 
@@ -975,6 +1078,9 @@ document.addEventListener('click', e => {
     case 'auth':
     case 'prof-open':
       closeNavLayers();
+      /* Lazy: the click is re-dispatched once the module is present, so the
+         routing table remains the only place that knows what `prof-open` means. */
+      if (!window.AE_AUTH) { need('AE_AUTH').then(() => t.click()); return; }
       openProfile();
       break;
     case 'home':
@@ -1267,7 +1373,12 @@ if (mzSave) mzSave.addEventListener('click', () => {
   if (!mzCalc) return;
   LS.set(K.custom, { L: mzCalc.L, W: mzCalc.W, eu: mzCalc.eu, wide: mzCalc.wide, at: Date.now() });
   mz.close();
-  if (window.AE_PDP.renderCustomPanel) window.AE_PDP.renderCustomPanel();
+  /* Both halves are optional. The wizard lives in the main bundle, but the panel
+     it renders into is drawn by the product dialog — which is lazy and may not
+     be loaded, because a customer can measure a foot and never open a product.
+     Reading the namespace unguarded here would be a TypeError on a path a
+     customer reaches by walking away from the shop. */
+  if (window.AE_PDP && window.AE_PDP.renderCustomPanel) window.AE_PDP.renderCustomPanel();
   toast(`سایز ${faNum(mzCalc.eu)} سفارشی — ثبت و ذخیره شد.`);
 });
 
@@ -1563,8 +1674,17 @@ window.AE_SETTLE = (function () {
   if (heroSection) {
     const draw = () => {
       if (!heroSection.isConnected) return;
+      /* The namespace is lazy now, so this runs on the first frame — before
+         anything has asked for the product dialog. The guard has to come
+         BEFORE the destructure: `const { guilloche } = window.AE_PDP` on an
+         undefined namespace throws a TypeError, and a hero ornament is not
+         worth taking the hero's scroll handler down for.
+
+         When the module is later loaded there is nothing to redraw — the
+         guilloche is decoration at opacity .08 on the hero backdrop — so the
+         early return is also the whole fix. */
+      if (!window.AE_PDP || typeof window.AE_PDP.guilloche !== 'function') return;
       const { guilloche } = window.AE_PDP;
-      if (typeof guilloche !== 'function') return;
       const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       svg.setAttribute('viewBox', '0 0 1200 800');
       svg.setAttribute('aria-hidden', 'true');
