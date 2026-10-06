@@ -557,3 +557,13 @@ require_once __DIR__ . '/includes/orders.php';      // vouchers · order ids · 
 require_once __DIR__ . '/includes/otp.php';         // OTP digest/HMAC helpers
 require_once __DIR__ . '/includes/sms.php';         // MeliPayamak OTP sender
 require_once __DIR__ . '/includes/totp.php';        // admin TOTP (encrypted secret)
+
+/* Presentation helpers come last among the split-includes: they have no
+   callers until a storefront document runs, and they lean on the catalogue
+   helpers above (product_image_url()). index.php used to carry its own inline
+   copies of velora_product_plate(), $VELORA_HEX and $product_img; this module
+   was extracted from that file and then never required, so the "single home"
+   existed on disk while the duplication stayed live. Requiring it here means
+   every entry point gets the same presentation vocabulary, exactly like every
+   other split-include. */
+require_once __DIR__ . '/includes/presentation.php'; // colour table · monogram plate · image resolver · JSON escaper
