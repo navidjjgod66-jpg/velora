@@ -235,9 +235,16 @@ function apply() {
   const deals = picked('f_deals').length > 0;
   const isNew = picked('f_new').length > 0;
 
-  const heelMinEl = $('#vHeelMin'), heelMaxEl = $('#vHeelMax');
-  const hLo = heelMinEl ? Number(heelMinEl.value) : 0;
-  const hHi = heelMaxEl ? Number(heelMaxEl.value) : 0;
+  /* The heel band is the one facet read from state rather than from the DOM.
+     It is written there by wireBand()'s onChange, which runs on every input and
+     resolves a crossed pair — and apply() must see the resolved pair, not the
+     raw one the DOM still holds for the frame before the change event. Reading
+     the inputs here would filter on lo > hi for that frame.
+
+     null at either end means "no constraint", so the checks short-circuit on
+     null rather than comparing against a bound: state.js documents why a number
+     that means "no filter" is the fault that quietly empties a shop. */
+  const hLo = state.heelMin, hHi = state.heelMax;
 
   for (const el of cards) {
     const p = CATALOG[el.dataset.id];
@@ -250,7 +257,10 @@ function apply() {
        order endpoint enforces, so a card that survives the filter can always be
        bought in that size rather than showing a size and then refusing it. */
     const sizeOK = !sizes.size || (p.sizes || []).some(s => s.stock > 0 && sizes.has(String(s.eu)));
-    const heelOK = !heelMaxEl || (p.heel >= hLo && p.heel <= hHi);
+    const heelOK = (hLo === null && hHi === null)
+             || (hLo !== null && hHi !== null && p.heel >= hLo && p.heel <= hHi)
+             || (hLo === null && p.heel <= hHi)
+             || (hHi === null && p.heel >= hLo);
     /* priceMin and priceMax are null for "no floor" and "no ceiling" — see the
        note in state.js. The short-circuits matter as much as the comparisons:
        with a number here, a stale one silently removes products from a shop
@@ -362,66 +372,163 @@ addEventListener('ae:apply', apply);
    submit on the no-JavaScript GET path. The keyboard reaches both handles: the
    floor input is not made inert, because a band you can only set by dragging is
    a band that does not exist for keyboard users. */
-const priceMin = $('#vPriceMin');
-const priceMax = $('#vPrice');
-const priceOut = $('#vPriceOut');
+/* ─── The dual-handle bands ─────────────────────────────────────────────────
+   One function for both bands — price and heel — because they have the same
+   three awkward parts, and three near-identical copies of the same awkward parts
+   drift apart on the first edge case.
 
-function syncPriceBand() {
-  if (!priceMin || !priceMax) return;
+   The awkward parts:
 
-  const lo0 = Number(priceMin.min) || 0;
-  const hi0 = Number(priceMax.max) || 0;
+   · HANDLE CROSSING. A customer dragging the floor past the ceiling produces an
+     inverted pair, which the CSS cannot paint: the fill is calc(--hi - --lo),
+     a negative value resolves to `auto`, and the whole track fills. So the
+     crossing is resolved here, before it reaches either the filter or the style
+     — the handle being dragged yields and the pair stays ordered. Letting them
+     cross instead would filter an empty range while painting a full bar, which
+     looks like a bug and is.
 
-  let lo = Number(priceMin.value);
-  let hi = Number(priceMax.value);
-  if (!Number.isFinite(lo)) lo = lo0;
-  if (!Number.isFinite(hi)) hi = hi0;
+   · THE SPAN IS WRITTEN ONCE, FROM THE SAME TWO NUMBERS. The painted fill and
+     the written-out value are both derived here, so what the customer reads and
+     what the customer sees cannot disagree — which they would the moment either
+     was computed somewhere else.
 
-  /* Resolve a crossed pair by giving way to the handle currently under the
-     pointer or the keyboard. `owner` is the input whose value just changed; on
-     the first paint neither has, and the pair is already ordered server-side. */
-  const owner = arguments.length > 2 ? arguments[2] : null;
-  if (lo > hi) {
-    if (owner === priceMin) { hi = lo; priceMax.value = String(hi); }
-    else                   { lo = hi; priceMin.value = String(lo); }
-  }
+   · PERCENTAGES, NOT PIXELS. --lo and --hi are percentages of the track, so the
+     fill stays right when the container resizes, when a scrollbar appears, and
+     at every breakpoint. Pixels would need a re-measurement inside a resize
+     listener for no benefit.
 
+   BOTH INPUTS KEEP REAL VALUES. Neither is set to '' or disabled, so both still
+   submit on the no-JavaScript GET path and both answer the arrow keys. The
+   keyboard can set the floor, which a canvas-and-pointer-events version could
+   not do at all. */
+function wireBand(minEl, maxEl, outEl, opts) {
+  if (!minEl || !maxEl) return null;
+
+  const format = opts.format;
+  const onChange = opts.onChange || function () {};
+  const lo0 = Number(minEl.min) || 0;
+  const hi0 = Number(maxEl.max) || 0;
   const span = (hi0 - lo0) || 1;
-  const clampPct = (v) => Math.max(0, Math.min(100, ((v - lo0) / span) * 100));
+  const track = minEl.closest('.vf-dual');
 
-  /* Two custom properties rather than a gradient with hard stops: a gradient
-     would need four stops rebuilt on every move, and its interpolation between
-     them is not what is being drawn here. */
-  const track = priceMin.closest('.vf-dual');
-  if (track) {
-    track.style.setProperty('--lo', clampPct(lo).toFixed(3) + '%');
-    track.style.setProperty('--hi', clampPct(hi).toFixed(3) + '%');
+  function sync(owner) {
+    let lo = Number(minEl.value);
+    let hi = Number(maxEl.value);
+    if (!Number.isFinite(lo)) lo = lo0;
+    if (!Number.isFinite(hi)) hi = hi0;
+
+    if (lo > hi) {
+      if (owner === minEl) { hi = lo; maxEl.value = String(hi); }
+      else                 { lo = hi; minEl.value = String(lo); }
+    }
+
+    if (track) {
+      const pct = (v) => Math.max(0, Math.min(100, ((v - lo0) / span) * 100)).toFixed(3);
+      track.style.setProperty('--lo', pct(lo) + '%');
+      track.style.setProperty('--hi', pct(hi) + '%');
+    }
+
+    if (outEl) outEl.textContent = format(lo, hi);
+
+    /* Both ends, to the caller, which decides what "no constraint" means for its
+       own facet. Mirroring them into one shared state object is the fault
+       state.js documents: a number that means "no filter" quietly empties a
+       shop. So null at the ends of the range, never a bound. */
+    onChange(lo > lo0 ? lo : null, hi < hi0 ? hi : null);
+    return { lo: lo, hi: hi };
   }
 
-  if (priceOut) {
-    const fmt = (v) => faNum(Math.round(v / 1000000));
-    priceOut.textContent = `${fmt(lo)} — ${fmt(hi)} میلیون تومان`;
+  sync(null);
+  for (const input of [minEl, maxEl]) {
+    input.addEventListener('input', function () { sync(input); });
+    /* `change` alongside `input`: input fires on every drag frame, but a release
+       outside the thumb commits with change only in some engines, and the
+       summary list is built on commit — so a band that was dragged and released
+       has to still register. */
+    input.addEventListener('change', function () { sync(input); apply(); });
   }
-
-  /* Mirrored into state so apply() can use them. null at the ends of the range
-     means "no constraint", matching the note in state.js: a number that means
-     "no filter" is the bug that quietly empties a shop. */
-  state.priceMin = lo > lo0 ? lo : null;
-  state.priceMax = hi < hi0 ? hi : null;
+  return { sync: sync, reset: function () { minEl.value = minEl.min; maxEl.value = maxEl.max; sync(null); } };
 }
 
-if (priceMin && priceMax) {
-  syncPriceBand();
-  for (const input of [priceMin, priceMax]) {
-    input.addEventListener('input', () => syncPriceBand(input));
-    /* `change` in addition to `input`: `input` fires on every drag frame, but a
-       pointer release outside the thumb in some engines commits with `change`
-       only, and the summary list is built on commit rather than on every frame
-       — so a band that was dragged and released has to still register. */
-    input.addEventListener('change', () => { syncPriceBand(input); apply(); });
-  }
-}
+const million = function (v) { return faNum(Math.round(v / 1000000)); };
 
+const priceBand = wireBand($('#vPriceMin'), $('#vPrice'), $('#vPriceOut'), {
+  format: function (lo, hi) { return million(lo) + ' — ' + million(hi) + ' م'; },
+  onChange: function (lo, hi) { state.priceMin = lo; state.priceMax = hi; },
+});
+
+const heelBand = wireBand($('#vHeelMin'), $('#vHeelMax'), $('#vHeelOut'), {
+  format: function (lo, hi) {
+    return (lo === hi ? faNum(lo) : faNum(lo) + '–' + faNum(hi)) + ' م‌م';
+  },
+  onChange: function (lo, hi) { state.heelMin = lo; state.heelMax = hi; },
+});
+
+/* Retained because the summary's clear handler calls it — clearing one facet
+   must put the band's handles back at their defaults, not just forget the state
+   and leave the painted span showing a range that is no longer applied. */
+function syncPriceBand() { if (priceBand) priceBand.sync(null); }
+
+/* ─── The layout toggle ─────────────────────────────────────────────────────
+   Grid and list are two presentations of the same products, so this is a view
+   preference and not a filter: it carries no name attribute, never enters the
+   query string, and is never drawn among the pills — grouping it there would
+   describe it as a facet, and the summary list would then claim to be a
+   complete account of what is narrowing the grid when it was not narrowing
+   anything.
+
+   The choice is kept in localStorage because it is a display preference of the
+   device, not of the visit — the same argument as the theme. A key that the
+   reset link does not clear, deliberately: clearing a layout preference is not
+   what "پاک کردن همه" means. */
+(function wireViewToggle() {
+  const gridBtn = $('#vViewGrid');
+  const listBtn = $('#vViewList');
+  const host = $('#grid');
+  if (!gridBtn || !listBtn || !host) return;
+
+  const KEY = 'velora.view.v1';
+
+  function paint(mode) {
+    const list = mode === 'list';
+    host.classList.toggle('is-list', list);
+    gridBtn.classList.toggle('on', !list);
+    listBtn.classList.toggle('on', list);
+    gridBtn.setAttribute('aria-pressed', String(!list));
+    listBtn.setAttribute('aria-pressed', String(list));
+  }
+
+  let saved = null;
+  try { saved = localStorage.getItem(KEY); } catch (e) { /* private mode */ }
+  paint(saved === 'list' ? 'list' : 'grid');
+
+  const set = (mode) => {
+    paint(mode);
+    try { localStorage.setItem(KEY, mode); } catch (e) { /* nothing to do */ }
+  };
+  gridBtn.addEventListener('click', function () { set('grid'); });
+  listBtn.addEventListener('click', function () { set('list'); });
+
+  /* Arrow keys between the two, because they sit side by side in one pill and a
+     Tab stop between two mutually-exclusive toggles is a step the keyboard user
+     has to take to change view. The group is not a radiogroup — both are always
+     visible and only one is active — so the roving focus is added here rather
+     than assumed from the markup. */
+  const keys = [gridBtn, listBtn];
+  for (let i = 0; i < keys.length; i++) {
+    keys[i].addEventListener('keydown', function (e) {
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      e.preventDefault();
+      /* Arrow direction is physical, and the document is RTL, so ArrowRight is
+         the visually-leftward key here. Mapping it by index instead would send
+         the focus the wrong way in Persian. */
+      const forward = (e.key === 'ArrowRight') === (getComputedStyle(html).direction !== 'rtl');
+      const next = keys[(i + (forward ? 1 : keys.length - 1)) % keys.length];
+      next.focus();
+      set(next === listBtn ? 'list' : 'grid');
+    });
+  }
+})();
 /* ─── The form drives the grid directly ────────────────────────────────────
    The chips are real GET controls and the form is a real GET form, so with no
    scripts the page still works — but that was the ONLY way it worked. Nothing

@@ -328,373 +328,235 @@ body.loaded .hero-visual .frame { clip-path: inset(0 0 0 0); }
      the size with it — the gold fill is a border-width change, not a height
      change, for exactly that reason. */
 
-/* ─── The console shell ─────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   THE FILTER BAR
+   ═══════════════════════════════════════════════════════════════════════════
+   One horizontal band: the facet pills on one side, the instruments on the
+   other, wrapping as a unit below a given width.
+
+   Three properties this block refuses to trade away.
+
+   · EVERY INSTRUMENT IS 44px AND PILLSHAPED, ON ONE BASELINE. The old layout
+     gave each control a <label> above it in a different type size, which made
+     the right-hand cluster roughly three times taller than the pills and broke
+     the single line the reference gets on the strength of exactly that. A row
+     of equal-height pill controls reads as one instrument panel; a row of
+     stacked label-above-field pairs reads as three unrelated forms.
+
+   · NO FIELD IS EVER display:none ON A CONTROL. The chips are real checkboxes
+     and a real radio, visually replaced but present, because a replaced input is
+     still focusable and still submits — which is what keeps the no-JavaScript GET
+     path working and what keeps the keyboard working.
+
+   · THE PILL RUN HAS NO FACET HEADINGS AND NO FACET BORDERS. The three
+     <fieldset>s and three <legend>s this replaced said "categories OR within,
+     AND across"; that rule now lives in the container's aria-label, which a
+     screen reader announces and nobody sees. Every pill already carries its own
+     name, so the visible heading was redundant, and a border drawn around a set
+     of pills that are already pill-shaped reads as a card inside a card.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 .vault__tools {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-3);
-  padding-block-end: var(--sp-3);
+  display: block;
   margin-block-end: var(--sp-4);
-  border-block-end: 1px solid var(--line);
 }
 
-/* A single gold hairline along the bottom edge — the maison's foil rule,
-   reduced to one pixel. It reads as a seam rather than as a border because it
-   fades at both ends instead of stopping hard.
-
-   The panel treatment it replaced — a rounded rectangle with a border and an
-   inset shadow — put the filter inside a card that was visually louder than
-   the products it filters. The reference sets the controls on the page's own
-   surface and separates them with a rule, which is why the products stay the
-   thing you look at rather than the filter. */
+/* The maison's foil rule, one pixel, fading at both ends so it reads as a seam
+   rather than as a border. A bordered panel was tried and rejected: it put the
+   filter inside a card that was visually louder than the products it filters. */
 .vault__tools::after {
   content: "";
   position: absolute;
-  inset-block-end: -1px;
-  inset-inline: 12%;
+  inset-block-end: 0;
+  inset-inline: 6%;
   block-size: 1px;
   background: linear-gradient(90deg, transparent, var(--gold-line) 22%, var(--accent) 50%, var(--gold-line) 78%, transparent);
-  opacity: 0.85;
-}
-
-/* The count and the reset. Both were in a header row with a decorative mark and
-   an eyebrow; the mark and the eyebrow are gone, because a customer who came
-   to shop should meet a filter, not a title for one. The count stays — it is
-   the only element that can report how many pieces survived the selection — and
-   the reset stays hidden until something is actually set, so an untouched page
-   shows neither. */
-#gridCount {
-  order: 1;
-  margin: 0;
-  font-size: var(--t-xs);
-  letter-spacing: 0.12em;
-  color: var(--text-4);
-}
-.vf-reset {
-  order: 2;
-  margin-inline-start: auto;
-  white-space: nowrap;
-  font-size: var(--t-xs);
-  min-block-size: 32px;
-  display: inline-flex;
-  align-items: center;
-}
-
-/* ─── The form ──────────────────────────────────────────────────────────── */
-.vf { display: flex; flex-direction: column; gap: var(--sp-3); }
-
-.vf-row { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: flex-end; }
-.vf-row--main { align-items: flex-end; }
-/* Search and sort sit on the last row, sharing a line the way the reference
-   does. They grow to fill it, so the row is not two fixed-width controls with
-   dead space between them at 1440px. */
-.vf-row--main .vf-field--grow { flex: 1 1 320px; }
-
-.vf-field { display: flex; flex-direction: column; gap: 0.4rem; min-inline-size: 0; }
-.vf-field--grow { flex: 1 1 260px; }
-
-.vf-lbl {
-  font-size: var(--t-xs);
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  color: var(--text-3);
-  display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
-}
-.vf-lbl em { font-style: normal; color: var(--accent); font-family: var(--mono); letter-spacing: 0; }
-
-/* The search field is the one control that earns a filled treatment: it is the
-   only one a customer reaches for without reading the label first. */
-.vf-search { position: relative; display: flex; align-items: center; }
-
-.vf-search-icon {
-  position: absolute;
-  inset-inline-start: 0.95rem;
-  color: var(--text-4);
+  opacity: 0.7;
   pointer-events: none;
-  transition: color var(--dur-fast) var(--ease-lux);
 }
-.vf-search:focus-within .vf-search-icon { color: var(--accent); }
 
-.vf-input {
-  inline-size: 100%;
-  min-block-size: 44px;
-  padding: 0.7rem 1rem 0.7rem 2.5rem;
-  border-radius: var(--r-pill);
-  border: 1px solid var(--line-2);
-  background: color-mix(in oklch, var(--bg) 70%, transparent);
-  color: var(--text);
-  font: inherit;
-  font-size: var(--t-sm);
-  transition: var(--tr-lux);
-}
-.vf-input::placeholder { color: var(--text-4); }
-.vf-input:hover { border-color: var(--border-3); }
-.vf-input:focus-visible {
-  outline: none;
-  border-color: var(--gold-line);
-  box-shadow: 0 0 0 3px var(--gold-ghost);
-}
-/* Chromium's native clear button inherits the UA colours and disappears against
-   this ground, which is how a field ends up looking un-clearable. */
-.vf-input::-webkit-search-cancel-button { -webkit-appearance: none; }
+.vf { display: flex; flex-direction: column; gap: var(--sp-2); }
 
-.vf-selectwrap { position: relative; display: flex; align-items: center; }
-
-.vf-select {
-  appearance: none;
-  -webkit-appearance: none;
-  min-block-size: 44px;
-  padding: 0.7rem 2.4rem 0.7rem 1.1rem;
-  border-radius: var(--r-pill);
-  border: 1px solid var(--line-2);
-  background: color-mix(in oklch, var(--bg) 70%, transparent);
-  color: var(--text);
-  font: inherit;
-  font-size: var(--t-sm);
-  cursor: pointer;
-  transition: var(--tr-lux);
-}
-.vf-select:hover { border-color: var(--border-3); }
-.vf-select:focus-visible {
-  outline: none;
-  border-color: var(--gold-line);
-  box-shadow: 0 0 0 3px var(--gold-ghost);
-}
-.vf-select option { background: var(--bg-2); color: var(--text); }
-
-.vf-caret {
-  position: absolute;
-  inset-inline-end: 1.1rem;
-  color: var(--text-3);
-  pointer-events: none;
-  transition: transform var(--dur) var(--ease-lux);
-}
-.vf-selectwrap:focus-within .vf-caret { color: var(--accent); transform: translateY(-1px); }
-
-.vf-apply { flex: none; }
-.vf-reset { margin-inline-start: auto; white-space: nowrap; }
-
-/* ─── The chip run ──────────────────────────────────────────────────────── */
-/* The reference layout is a single continuous run of pills with no headings,
-   no borders and no fieldset chrome, and the wrappers below reproduce that
-   without dropping the grouping the markup used to get from <fieldset>.
-
-   What was removed and why it cost nothing:
-     · three <fieldset>s + three <legend>s  — the legend said "categories OR
-       within, AND across". That rule still has to be conveyed, so it moved to
-       each group's aria-label, which a screen reader announces and nobody sees.
-       The visible heading was always redundant: every pill is labelled.
-     · the bordered block per facet — a border around a set of pills that are
-       already pill-shaped reads as a card inside a card, and it drew three
-       rectangles around content the reference sets on one open plane.
-
-   The lead row wraps on its own; the secondary facets sit in one shared row.
-   Four chips to a line is what the reference shows, so `minmax` is set to
-   make that the natural count rather than hoping for it — at 1280px this
-   yields four, at 900px three, and never one very long line of six. */
-.vf-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.vf-chips--lead { gap: 0.55rem 0.5rem; }
-
-.vf-chips--sub {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
-  gap: var(--sp-2) var(--sp-3);
-  align-items: start;
-}
-.vf-chipgroup {
+/* ─── The band ──────────────────────────────────────────────────────────── */
+.vf-bar {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
   align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2) var(--sp-3);
+  padding-block: var(--sp-2);
+}
+
+.vf-bar__chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  flex: 1 1 340px;
   min-inline-size: 0;
 }
-/* Sizes are numerals and short, so they get a tighter gap than the text pills
-   in the lead row — otherwise the group reads as the same thing at a different
-   size rather than as a different kind of choice. */
-.vf-chipgroup--color { gap: 0.4rem; }
 
-/* The ALL pill. Radio, not checkbox: "no category filter" and "category = pumps"
-   are mutually exclusive answers to one question, and two checkboxes would let
-   both be ticked at once, which is a state the filter predicate cannot
-   represent. The count beside it is the size of the unfiltered collection, so
-   the lead of the run is a summary of what is on offer before anything is
-   narrowed. */
-.chip--all { padding-inline: 1.1rem; }
-.chip--all-t { letter-spacing: 0.04em; }
-.chip--all input[type="radio"] {
-  position: absolute;
+.vf-bar__tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  flex: 0 1 auto;
+}
+
+/* A hairline between facet families inside the run — categories | sizes |
+   colours. It is the only thing marking the facet boundary now that the
+   headings are gone, and it costs one pixel where a heading cost a whole line. */
+.vf-div {
   inline-size: 1px;
-  block-size: 1px;
-  opacity: 0;
-  pointer-events: none;
-}
-.chip--all:has(input:focus-visible) {
-  outline: 2px solid var(--gold-line);
-  outline-offset: 2px;
-}
-
-/* The count is the reason a chip is a filter rather than a link: it says how
-   many pieces are behind the choice, computed from the catalogue before any
-   filtering, so narrowing the view never makes an option disappear. */
-.chip small[data-count] {
-  font-variant-numeric: tabular-nums;
-  opacity: 0.62;
-  font-size: 0.92em;
-  letter-spacing: 0.02em;
-}
-.chip.on small[data-count] { opacity: 0.75; }
-
-/* ─── Colour swatches ───────────────────────────────────────────────────── */
-/* The chip carries the name AND the dot. The dot is the reason the chip exists,
-   so it gets a ring on selection rather than only a fill change — a filter that
-   changed a background colour alone is invisible to anyone who cannot tell the
-   two colours apart, which is the whole reason a colour filter needs a dot. */
-.chip--color .sw {
-  inline-size: 12px;
-  block-size: 12px;
-  border-radius: 50%;
-  background: var(--c, var(--accent));
-  box-shadow: 0 0 0 1px color-mix(in oklch, var(--text) 22%, transparent);
+  block-size: 18px;
+  background: var(--line-2);
   flex: none;
-  transition: var(--tr-lux);
+  margin-inline: 0.2rem;
 }
-.chip--color.on .sw,
-.chip--color.sel .sw { box-shadow: 0 0 0 2px var(--invert), 0 0 0 3px var(--accent); }
 
-/* The checkbox itself is visually replaced, never display:none — a hidden input
-   is still focusable and still submits, which is exactly what keeps the no-JS
-   path working, and the chip is its <label> so a click anywhere toggles it. */
-.vf-chips .chip--check input[type="checkbox"],
-.vf-chipgroup .chip--check input[type="checkbox"] {
+/* ─── The pills ─────────────────────────────────────────────────────────── */
+/* The pills here override .chip's 44px minimum and drop to 34px. The reference
+   fits seven categories, five sizes and ten colours on one line; at 44px each
+   that run is over 900px before the instruments get a single pixel, so the band
+   wraps at every desktop width and stops being a band.
+
+   34px is a real touch target, not a compromise made for looks: it is above the
+   24px minimum every accessibility guideline sets, and the coarse-pointer block
+   below takes it to 44px again on touch, where the finger is. */
+.vf-bar__chips .chip {
+  min-height: 34px;
+  padding: 0.3rem 0.72rem;
+  gap: 0.4rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+.vf-bar__chips .chip small[data-count] {
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  opacity: 0.6;
+  font-variant-numeric: tabular-nums;
+}
+.vf-bar__chips .chip.on small[data-count] { opacity: 0.72; }
+
+/* ALL. Leads the run and reports the size of the unfiltered collection. */
+.vf-bar__chips .chip--all {
+  padding-inline: 0.95rem;
+  font-weight: 700;
+}
+.chip--all-t { letter-spacing: 0.04em; }
+
+/* Sizes are numerals: mono, tighter, no letter-spacing, because a Persian letter
+   gap between two digits reads as a decimal point that is not there. */
+.vf-bar__chips .chip--size {
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  min-inline-size: 40px;
+  justify-content: center;
+  padding-inline: 0.5rem;
+}
+.vf-bar__chips .chip--color .sw {
+  inline-size: 11px;
+  block-size: 11px;
+}
+.vf-bar__chips .chip--color { padding-inline: 0.6rem; }
+
+/* The visually-replaced inputs. Never display:none — see the note above. */
+.vf-bar__chips .chip input[type="checkbox"],
+.vf-bar__chips .chip input[type="radio"] {
   position: absolute;
   inline-size: 1px;
   block-size: 1px;
   opacity: 0;
   pointer-events: none;
 }
-.chip--check { position: relative; padding-inline: 1rem; }
-.chip--check:has(input:focus-visible) {
+.vf-bar__chips .chip { position: relative; }
+.vf-bar__chips .chip:has(input:focus-visible) {
   outline: 2px solid var(--gold-line);
   outline-offset: 2px;
+  border-radius: var(--r-pill);
 }
 
-/* The submit button, shown only where nothing can filter live.
-   main.js binds `input` on every control and re-draws the grid, so with
-   scripts the button would be a second, slower way to do something that already
-   happened. Without them it is the only way, so it is removed from the flow
-   rather than merely styled — and not with display:none, which would hide it
-   from the no-JS page as well. */
-.vf-noscript { display: none; }
-.no-js .vf-noscript,
-html:not(.js) .vf-noscript {
+/* ─── Search ────────────────────────────────────────────────────────────── */
+.vf-search {
   display: inline-flex;
   align-items: center;
-  min-block-size: 44px;
-  padding: 0.5rem 1.2rem;
+  gap: 0.5rem;
+  block-size: 44px;
+  padding-inline: 0.95rem;
+  border: 1px solid var(--border-2);
   border-radius: var(--r-pill);
-  border: 1px solid var(--gold-line);
-  background: transparent;
+  background: var(--surface);
+  transition: var(--tr-lux);
+  min-inline-size: 0;
+}
+.vf-search:focus-within {
+  border-color: var(--gold-line);
+  box-shadow: var(--ring);
+}
+.vf-search-icon { color: var(--text-4); flex: none; transition: color var(--dur-1); }
+.vf-search:focus-within .vf-search-icon { color: var(--accent); }
+.vf-input {
+  inline-size: clamp(96px, 12vw, 168px);
+  min-inline-size: 0;
+  border: 0;
+  background: none;
+  outline: 0;
+  font-size: 0.74rem;
+  color: var(--text);
+  padding: 0;
+}
+.vf-input::placeholder { color: var(--text-4); }
+.vf-input::-webkit-search-cancel-button { -webkit-appearance: none; }
+
+/* ─── A price / heel band ───────────────────────────────────────────────── */
+/* The label sits beside the track rather than above it, which is what lets this
+   be the same 44px as everything else in the row. */
+.vf-band {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  block-size: 44px;
+  padding-inline: 0.9rem;
+  border: 1px solid var(--border-2);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  white-space: nowrap;
+}
+.vf-band:focus-within { border-color: var(--gold-line); }
+.vf-band__lbl {
+  font-size: var(--t-xs);
+  font-weight: 600;
+  color: var(--text-3);
+  flex: none;
+}
+/* Tabular figures in a fixed-width box: the band's own width must not change as
+   the handle moves, or every other control in the row jumps sideways. */
+.vf-band__out {
+  font-size: 0.62rem;
   color: var(--accent);
-  font-size: 0.72rem;
-  font-weight: 700;
-  cursor: pointer;
+  min-inline-size: 8.5ch;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  flex: none;
 }
 
+/* ─── The dual-handle track ─────────────────────────────────────────────── */
+/* Two stacked range inputs over one painted track. Keeping them in one grid
+   cell is what makes both thumbs land exactly on the paint at every width.
 
-/* ─── Range row ─────────────────────────────────────────────────────────── */
-.vf-row--range {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
-  gap: var(--sp-3);
-  align-items: end;
-  padding-block-start: var(--sp-2);
-  border-block-start: 1px solid var(--line);
-}
-.vf-row--range .vf-field { inline-size: 100%; }
-
-.vf-range { position: relative; display: grid; gap: 0.35rem; }
-
-/* The two heel sliders share one track, so they are stacked with a negative
-   margin rather than laid out side by side. The second thumb is drawn over the
-   first at a higher z-index so the pair reads as a single bracket. */
-.vf-range .vf-slider + .vf-slider { margin-block-start: -22px; z-index: 1; }
-.vf-range .vf-slider + .vf-slider::-webkit-slider-thumb { z-index: 2; }
-
-/* A range input is the one control where the UA styling is most visible on a
-   dark ground — the default track is a light grey bar. Both engines are
-   restyled; the ::-moz- pair is what keeps Firefox from showing a native
-   widget, and -webkit-slider-runnable-track keeps the thumb on the filled part. */
-.vf-slider {
-  -webkit-appearance: none;
-  appearance: none;
-  inline-size: 100%;
-  block-size: 22px;
-  background: transparent;
-  cursor: pointer;
-}
-.vf-slider::-webkit-slider-runnable-track {
-  block-size: 2px;
-  border-radius: 2px;
-  background: var(--border-3);
-}
-.vf-slider::-moz-range-track {
-  block-size: 2px;
-  border-radius: 2px;
-  background: var(--border-3);
-}
-.vf-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  inline-size: 18px;
-  block-size: 18px;
-  margin-block-start: -8px;
-  border-radius: 50%;
-  background: var(--grad-gold);
-  border: 1px solid var(--accent);
-  box-shadow: 0 2px 10px -2px color-mix(in oklch, var(--accent) 55%, transparent);
-  transition: var(--tr-lux);
-}
-.vf-slider::-moz-range-thumb {
-  inline-size: 18px;
-  block-size: 18px;
-  border-radius: 50%;
-  background: var(--grad-gold);
-  border: 1px solid var(--accent);
-  box-shadow: 0 2px 10px -2px color-mix(in oklch, var(--accent) 55%, transparent);
-  transition: var(--tr-lux);
-}
-.vf-slider:hover::-webkit-slider-thumb { transform: scale(1.12); }
-.vf-slider:focus-visible { outline: none; }
-.vf-slider:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px var(--gold-ghost), 0 2px 10px -2px color-mix(in oklch, var(--accent) 55%, transparent); }
-.vf-slider:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 4px var(--gold-ghost); }
-
-/* ─── The dual-handle price band ────────────────────────────────────────── */
-/* The reference shows a band with a handle at each end and the chosen span
-   written out beside it. Two stacked <input type=range> over one painted
-   track is what produces that without a custom widget, and it keeps two
-   properties a hand-rolled pointer-events version cannot have:
-
-   · both handles are real form controls, so both submit a name and the
-     no-JavaScript GET path needs no special handling;
-   · both are focusable and respond to the arrow keys, Home and End, so the
-     floor of the band is adjustable by keyboard rather than by drag alone.
-
-   The painted fill is a sibling element rather than a gradient on the track,
-   because it has to be positioned from BOTH ends at once and its geometry must
-   not depend on either thumb's width — which differs between engines and
-   between a mouse and a touch drag.
-
-   The fill is driven by two custom properties, --lo and --hi, as percentages of
-   the track, written by main.js from the two input values. Both are clamped in
-   the script as well as here: an unclamped pair produces a negative width,
-   which resolves to `auto` and silently paints the whole track. */
+   pointer-events:none on the INPUT is not optional. Without it the upper input
+   covers the lower one's whole track, and dragging the left handle past the
+   right one simply stops working. Engines still route a pointerdown to the thumb
+   when the parent is transparent, so this is safe on the thumb and only there. */
 .vf-dual {
   position: relative;
   display: grid;
-  block-size: 22px;
+  inline-size: clamp(76px, 9vw, 128px);
+  block-size: 24px;
   align-items: center;
+  flex: none;
 }
 .vf-dual-track {
   position: absolute;
@@ -712,64 +574,196 @@ html:not(.js) .vf-noscript {
   border-radius: 2px;
   background: var(--grad-gold);
 }
-/* Both inputs occupy the same cell of the grid, so neither adds height and the
-   handles sit exactly on the painted track at every width. The upper one is the
-   floor: it needs the lower z-index, because at a fully-collapsed band the two
-   thumbs coincide and the customer must be able to grab either end. */
+/* Both inputs occupy the same cell, so neither adds height. The floor takes the
+   lower z-index: at a fully collapsed band the thumbs coincide, and the
+   customer must be able to grab either end. */
 .vf-dual .vf-slider {
   grid-area: 1 / 1;
   margin: 0;
-  pointer-events: none;   /* the TRACK is not grabbable; the thumb still is */
+  pointer-events: none;
 }
 .vf-dual .vf-slider::-webkit-slider-thumb { pointer-events: auto; }
 .vf-dual .vf-slider::-moz-range-thumb       { pointer-events: auto; }
 .vf-dual .vf-slider--min { z-index: 1; }
 .vf-dual .vf-slider--max { z-index: 2; }
 
-/* pointer-events:none on the input is what makes a two-thumb range workable at
-   all: without it the upper input covers the lower one's track, and dragging
-   the left thumb to the right past the right thumb stops working. Engines
-   still route a pointerdown on the thumb even when the parent is transparent,
-   which is why this is safe on the thumb and only there. */
-.vf-field--price { display: grid; gap: 0.5rem; inline-size: 100%; }
+/* A range input is the one control where the UA styling is most visible on a
+   dark ground — the default track is a light grey bar. Both engines are
+   restyled; the ::-moz- pair is what keeps Firefox from drawing a native widget
+   over the paint, and -webkit-slider-runnable-track keeps the thumb on the
+   filled part. */
+.vf-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  inline-size: 100%;
+  block-size: 24px;
+  background: transparent;
+  cursor: pointer;
+}
+.vf-slider::-webkit-slider-runnable-track {
+  block-size: 2px;
+  border-radius: 2px;
+  background: transparent;
+}
+.vf-slider::-moz-range-track {
+  block-size: 2px;
+  border-radius: 2px;
+  background: transparent;
+}
+.vf-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  inline-size: 15px;
+  block-size: 15px;
+  margin-block-start: -6.5px;
+  border-radius: 50%;
+  background: var(--grad-gold);
+  border: 1px solid var(--accent);
+  box-shadow: 0 2px 10px -2px color-mix(in oklch, var(--accent) 55%, transparent);
+  transition: var(--tr-lux);
+}
+.vf-slider::-moz-range-thumb {
+  inline-size: 15px;
+  block-size: 15px;
+  border-radius: 50%;
+  background: var(--grad-gold);
+  border: 1px solid var(--accent);
+  box-shadow: 0 2px 10px -2px color-mix(in oklch, var(--accent) 55%, transparent);
+  transition: var(--tr-lux);
+}
+.vf-slider:hover::-webkit-slider-thumb { transform: scale(1.12); }
+.vf-slider:focus-visible { outline: none; }
+.vf-slider:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px var(--gold-ghost), 0 2px 10px -2px color-mix(in oklch, var(--accent) 55%, transparent);
+}
+.vf-slider:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 4px var(--gold-ghost); }
 
-/* The written-out span. It is an <output>, so it is a live region in practice
-   and assistive technology reads the new value when the handle moves, rather
-   than the customer having to drag and then go and look. */
-.vf-rangeout {
-  font-size: var(--t-xs);
-  color: var(--text-3);
-  letter-spacing: 0.04em;
+/* ─── Sort ──────────────────────────────────────────────────────────────── */
+.vf-selectwrap { position: relative; display: inline-flex; align-items: center; flex: none; }
+.vf-select {
+  -webkit-appearance: none;
+  appearance: none;
+  block-size: 44px;
+  padding-inline: 0.95rem 2.1rem;
+  border: 1px solid var(--border-2);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: var(--tr-lux);
+  max-inline-size: 12rem;
+  text-overflow: ellipsis;
+}
+.vf-select:hover { border-color: var(--border-3); color: var(--text); }
+.vf-select:focus-visible {
+  border-color: var(--gold-line);
+  outline: none;
+  box-shadow: var(--ring);
+}
+.vf-select option { background: var(--bg-2); color: var(--text); }
+.vf-caret {
+  position: absolute;
+  inset-inline-end: 0.85rem;
+  color: var(--accent);
+  pointer-events: none;
+  transition: var(--tr-lux);
+}
+.vf-selectwrap:focus-within .vf-caret { transform: translateY(-1px); }
+
+/* ─── The layout toggle ─────────────────────────────────────────────────── */
+/* Two 44px squares in one pill. It carries no name attribute and never enters
+   the query string: it changes how the same eleven products are presented, not
+   which of them are shown, so it is a view preference and not a facet. */
+.vf-view {
+  display: inline-flex;
+  flex: none;
+  block-size: 44px;
+  padding: 3px;
+  border: 1px solid var(--border-2);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  gap: 3px;
+}
+.vf-view__b {
+  inline-size: 36px;
+  block-size: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-pill);
+  color: var(--text-4);
+  transition: var(--tr-lux);
+}
+.vf-view__b:hover { color: var(--text); }
+.vf-view__b:focus-visible { outline: 2px solid var(--gold-line); outline-offset: 1px; }
+.vf-view__b.on {
+  background: var(--grad-gold);
+  color: var(--invert);
+  box-shadow: 0 2px 10px -2px color-mix(in oklch, var(--accent) 55%, transparent);
 }
 
-@media (max-width: 640px) {
-  .vf-rangeout { font-size: var(--t-2xs, 0.66rem); }
-}
-
-/* ─── Active-filter summary ─────────────────────────────────────────────── */
-/* Populated by main.js. It is empty in the server-rendered markup because the
-   server already knows the selection — it drew the checked chips from it — so
-   rendering it here too would print the same list twice for a no-JS visitor. */
-.vf-pills {
+/* ─── The foot: what is applied, how much is left ───────────────────────── */
+/* Below the band, separated from it. The pills are the answer to "what is
+   narrowing this right now" and the count is the answer to "what did that do" —
+   both of which the band itself raises, so both sit directly under it. */
+.vf-bar__foot {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
   align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  padding-block-start: var(--sp-2);
 }
+
+.vf-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-inline-start: auto;
+  white-space: nowrap;
+}
+.vf-count {
+  font-size: var(--t-xs);
+  letter-spacing: 0.12em;
+  color: var(--text-4);
+  font-variant-numeric: tabular-nums;
+}
+.vf-reset {
+  font-size: var(--t-xs);
+  font-weight: 600;
+  min-block-size: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: color var(--dur-1);
+}
+.vf-reset::before {
+  content: "×";
+  font-size: 1.05em;
+  line-height: 1;
+  opacity: 0.7;
+}
+.vf-reset:hover { color: var(--accent); }
+
+/* ─── The active-filter summary ─────────────────────────────────────────── */
+/* Populated by main.js. Empty in the server-rendered markup because the server
+   already knows the selection — it drew the lit pills from it — so rendering it
+   here too would print the same list twice for a no-JS visitor. */
+.vf-pills { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
 .vf-pills:empty { display: none; }
 
 .vf-pill {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  min-block-size: 32px;
-  padding: 0.3rem 0.5rem 0.3rem 0.85rem;
+  min-block-size: 30px;
+  padding: 0.2rem 0.5rem 0.2rem 0.8rem;
   border-radius: var(--r-pill);
   border: 1px solid var(--gold-line);
   background: var(--gold-ghost);
   color: var(--text-2);
-  font-size: var(--t-xs);
-  font-family: inherit;
+  font-size: 0.66rem;
+  font-weight: 600;
   cursor: pointer;
   transition: var(--tr-lux);
 }
@@ -785,33 +779,50 @@ html:not(.js) .vf-noscript {
   margin-inline-end: 0.2rem;
 }
 
-/* ─── Sticky: a slim bar once the grid is in view ───────────────────────── */
-/* Applied by main.js once the console has scrolled past, and only on a fine
-   pointer — on touch, a sticky bar competes with the address bar for the same
-   few hundred pixels and wins, which makes the page feel worse than having no
-   sticky bar at all. */
-@media (min-width: 900px) and (pointer: fine) {
-  .vault__tools.is-stuck {
-    position: sticky;
-    inset-block-start: 0;
-    z-index: 40;
-    margin-block-end: var(--sp-3);
-    padding: var(--sp-2);
-    background: color-mix(in oklch, var(--bg) 88%, transparent);
-    backdrop-filter: blur(14px) saturate(1.2);
-    -webkit-backdrop-filter: blur(14px) saturate(1.2);
-    box-shadow: 0 18px 40px -28px color-mix(in oklch, var(--accent) 45%, transparent);
-  }
-  /* Everything but the masthead folds away, so what remains is one line: the
-     label, the live count and the reset. The controls are one scroll up. */
-  .vault__tools.is-stuck .vf,
-  .vault__tools.is-stuck .vault__tools-mark { display: none; }
-  .vault__tools.is-stuck .vault__tools-head {
-    padding-block-end: 0;
-    margin-block-end: 0;
-    border-block-end: 0;
-  }
-  .vault__tools.is-stuck::before { opacity: 0.5; }
+/* ─── The submit button, out of the flow ────────────────────────────────── */
+/* main.js re-renders on every input event, so an "apply" step is a round trip
+   the customer has already paid without leaving the page — and it removed the
+   state where the grid shows one result and the search box another. The form
+   still submits without JavaScript, so the button is not display:none here:
+   that would take away the only control the no-JS path has. */
+.vf-noscript { display: none; }
+html:not(.js) .vf-noscript {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  block-size: 44px;
+  padding-inline: 1.3rem;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--gold-line);
+  background: transparent;
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* ─── Narrow ────────────────────────────────────────────────────────────── */
+@media (max-width: 720px) {
+  /* Below this the instruments cannot share a line with anything, so the tools
+     cluster takes the full width and the band becomes two rows. */
+  .vf-bar__tools { inline-size: 100%; }
+  .vf-search { flex: 1 1 auto; }
+  .vf-input { inline-size: 100%; }
+  .vf-bar__chips { order: 2; }
+  .vf-bar__tools { order: 1; }
+  .vf-meta { margin-inline-start: 0; inline-size: 100%; justify-content: space-between; }
+}
+
+/* On touch the pills go back to 44px. A 34px pill is a legal touch target but
+   it is at the bottom of the range, and these are the controls a customer taps
+   most often, so they get the full height here rather than everywhere. */
+@media (pointer: coarse) {
+  .vf-bar__chips .chip { min-height: 44px; padding-inline: 0.9rem; }
+  .vf-bar__chips .chip--size { min-inline-size: 46px; }
+  .vf-slider { block-size: 32px; }
+  .vf-slider::-webkit-slider-thumb { inline-size: 22px; block-size: 22px; margin-block-start: -10px; }
+  .vf-slider::-moz-range-thumb { inline-size: 22px; block-size: 22px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -820,37 +831,80 @@ html:not(.js) .vf-noscript {
   .vf-slider:hover::-webkit-slider-thumb { transform: none; }
 }
 
-/* ─── Narrow ────────────────────────────────────────────────────────────── */
-@media (max-width: 640px) {
-  .vault__tools { padding: var(--sp-2); border-radius: var(--r-6); }
-  .vf-row--main { gap: var(--sp-1); }
-  /* The apply button stops being a third column and becomes a full-width rule,
-     because a 44px target sharing a row with two other 44px targets on a 360px
-     screen leaves each of them under the comfortable minimum. */
-  .vf-apply { inline-size: 100%; }
-  .vf-reset { margin-inline-start: 0; inline-size: 100%; text-align: center; }
-  .vf-lbl { letter-spacing: 0.1em; }
-  .vf-slider { block-size: 28px; }              /* a fatter thumb for a finger */
-  .vf-slider::-webkit-slider-thumb { inline-size: 24px; block-size: 24px; margin-block-start: -11px; }
-  .vf-slider::-moz-range-thumb { inline-size: 24px; block-size: 24px; }
+/* ─── Sticky: the band follows once the grid is in view ────────────────── */
+/* Applied by main.js once the console has scrolled past, and only on a fine
+   pointer — on touch a sticky bar competes with the address bar for the same
+   few hundred pixels and wins, which makes the page feel worse than having no
+   sticky bar at all. */
+@media (min-width: 900px) and (pointer: fine) {
+  .vault__tools.is-stuck {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 40;
+    margin-block-end: var(--sp-3);
+    padding: var(--sp-1) var(--sp-2);
+    background: color-mix(in oklch, var(--bg) 92%, transparent);
+    backdrop-filter: blur(14px) saturate(1.2);
+    -webkit-backdrop-filter: blur(14px) saturate(1.2);
+    box-shadow: 0 18px 40px -28px color-mix(in oklch, var(--accent) 45%, transparent);
+    border-radius: var(--r-4);
+  }
+  /* Only the instruments stay. The pills are the long part of the band and they
+     are already at the top of the scrollback; leaving them would make the sticky
+     bar two rows tall and put it back in the way. */
+  .vault__tools.is-stuck .vf-bar__chips { display: none; }
+  .vault__tools.is-stuck .vf-bar__foot { display: none; }
+  .vault__tools.is-stuck::after { opacity: 0.35; }
 }
-
-.vault__chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.vault__right { display: flex; flex-wrap: wrap; gap: 0.8rem; align-items: center; }
-.vault__meta { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-top: 1.4rem; align-items: center; margin-block-end: 1rem; }
-
-.search-box { display: inline-flex; align-items: center; gap: 0.6rem; height: 44px; border: 1px solid var(--line-2); border-radius: var(--r-pill); background: var(--surface); padding: 0 1.15rem; flex: 1; min-width: 180px; }
-.search-box:focus-within { border-color: var(--accent); box-shadow: var(--ring); }
-.search-box svg { width: 13px; height: 13px; stroke: var(--text-3); fill: none; flex: none; }
-.search-box input { flex: 1; min-width: 120px; border: 0; outline: none; background: transparent; font-size: 0.64rem; color: var(--text); }
-
-.pricerange { display: inline-flex; align-items: center; gap: 0.7rem; font-size: 0.62rem; color: var(--text-3); }
-.pricerange input[type="range"] { -webkit-appearance: none; appearance: none; width: clamp(80px, 10vw, 130px); height: 3px; background: var(--line-2); border-radius: 100px; outline: none; }
-.pricerange input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--grad-gold); border: 2px solid var(--bg); box-shadow: 0 0 8px color-mix(in oklch, var(--accent) 50%, transparent); }
-.pricerange output { font-family: var(--mono); color: var(--accent); min-width: 96px; text-align: center; font-variant-numeric: tabular-nums; }
-
-.active-pills { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.9rem; margin-block-end: 0.8rem; }
 .shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(288px, 1fr)); gap: 1.1rem; margin-top: 1.4rem; }
+
+/* ─── List view ─────────────────────────────────────────────────────────────
+   The same eleven cards, side by side with the image on one side. Grid and list
+   are two presentations of one set, so nothing is re-rendered: the toggle only
+   adds a class to the container and the layout follows, which is why the
+   choice can be a view preference rather than a second render pass.
+
+   The columns are declared on the CARD, not on the container, so the card is
+   still a valid grid item in the other mode and the toggle is genuinely a
+   toggle. An aspect-ratio on the image is replaced with a fixed height instead
+   of removed, because a media box with no intrinsic height collapses the row —
+   and a row whose height depends on its images is a row that reflows as eleven
+   of them decode.
+
+   Below 860px the row goes back to the stacked card, because a horizontal
+   product with a 4:5 image beside its text needs about 420px to read at all,
+   and at 360px that leaves the name on four lines. */
+.shop-grid.is-list { grid-template-columns: 1fr; gap: 0.7rem; }
+
+.shop-grid.is-list .prod {
+  display: grid;
+  grid-template-columns: 132px 1fr;
+  gap: 0;
+  align-items: stretch;
+}
+.shop-grid.is-list .prod-media {
+  aspect-ratio: auto;
+  block-size: 100%;
+  min-block-size: 148px;
+}
+.shop-grid.is-list .prod-info {
+  padding: 1.1rem 1.3rem;
+  gap: 0.55rem;
+  /* The quick-add button is the last child and is `margin-top:auto` in grid
+     mode, where it is pushed to the card's foot. Here the info column is a
+     grid, so the same property would leave a gap between the swatches and the
+     button instead of pinning it. */
+  margin-top: 0;
+}
+.shop-grid.is-list .p-name { font-size: 1.24rem; }
+/* A row layout gives the price and the category room side by side, where in a
+   card they were stacked on one line's worth of width. */
+.shop-grid.is-list .p-top { align-items: center; }
+
+@media (max-width: 860px) {
+  .shop-grid.is-list .prod { grid-template-columns: 1fr; }
+  .shop-grid.is-list .prod-media { aspect-ratio: 4 / 5; block-size: auto; min-block-size: 0; }
+}
 @media (min-width: 1200px) { .shop-grid { grid-template-columns: repeat(4, 1fr); } }
 
 /* ─── What the grid is showing ─────────────────────────────────────────────
