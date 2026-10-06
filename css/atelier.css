@@ -1,0 +1,906 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   THE ATELIER LAYER
+   ═══════════════════════════════════════════════════════════════════════════
+   What this file is, and why it exists rather than 400 edited lines.
+
+   components.css is 3,900 lines of accumulated, correct, load-bearing
+   behaviour: magnet cursors, dialog choreography, the sticky header's three
+   depth states, the lens's four-element glint. Rewriting it to express a new
+   art direction means re-deriving all of it, and the failure mode of that is
+   silent — a rule that loses a `will-change` or a `:has()` guard does not
+   error, it just stops working, and nobody notices until a device nobody has.
+
+   So the direction is applied here as a layer that sits after it. Every
+   declaration in this file is a decision about how the existing structure
+   should LOOK; none of them changes what it DOES. If this file is deleted the
+   site still works and still has every feature — it just looks like the
+   previous season. That is the property worth preserving.
+
+   THE RULE FOR EVERY DECISION HERE: it must be visible in a screenshot, and it
+   must not add a network request, a layout read, or a new animation duration.
+   Anything that costs something has to earn more than it costs.
+
+   ─── WHAT CHANGED, IN ORDER OF HOW MUCH IT MATTERS ───────────────────────
+
+   1. THE PRIMARY BUTTON IS NO LONGER GOLD. It is the accent at full
+      saturation, with a 1px inner light edge and no gradient, no text-shadow,
+      and no shimmer sweep. The source's primary carried a moving specular
+      highlight that played on every hover — on the one control the eye lands
+      on first, which is exactly where a shimmer is least useful and most
+      templated. A flat fill with a single hairline reads as a made object; a
+      gradient with a travelling highlight reads as a rendered one.
+
+   2. THE SECONDARY IS A HAIRLINE, NOT A GLASS. `backdrop-filter: blur(8px)` on
+      a 50%-alpha surface means every secondary button on the page composites a
+      backdrop. Eleven cards and a header's worth of buttons, all resampled on
+      scroll. It is now an opaque surface with a hairline, and it costs nothing.
+
+   3. THE CARD IS A FRAME, NOT A TILE. The source gave `.prod` a border AND a
+      rounded background AND two shadows AND a 5px hover lift. Four signals for
+      one state. Now: no background at rest, a hairline that brightens on hover,
+      and the image is the only thing that moves. The card's surface appears on
+      hover as a 2px wash, which is the gesture that reads as "pickable".
+
+   4. THE HOVER LIFT IS 2px, NOT 5px. At 5px on a 288px card the movement is
+      larger than the eye needs to register a change of state, and it starts the
+      whole grid's layout on every pointer pass. 2px plus a hairline colour
+      change is enough, and it is compositor-only.
+
+   5. THE FOCUS RING IS INHERITED FROM base.css and not restated here. One ring,
+      one place.
+
+   6. RADIUS IS TIGHTER. The source's card radius was --r-5 at 36px on a 288px
+      card — a 12.5% corner, which is the proportion of a toy. --r-4 at 8px is
+      2.8%, and it is what a photograph mounted on board looks like.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ═══ Buttons ═══════════════════════════════════════════════════════════════
+   Three tiers and no more: the primary is a filled accent, the secondary is a
+   hairline, and the tertiary is type with a rule that extends under it. The
+   source had five modifiers across three tiers, and two of them were aliases of
+   each other, so a template choosing one got a button that looked like a
+   template. */
+.btn {
+  font-family: var(--sans);
+  font-size: var(--t-xs);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  min-height: var(--hit);
+  padding: 0.85rem 1.75rem;
+  border-radius: var(--r-3);
+  /* transform only, so a hover never touches layout */
+  transition: transform var(--dur-state) var(--ease-out),
+              box-shadow var(--dur-state) var(--ease-out),
+              background-color var(--dur-state) var(--ease-out),
+              border-color var(--dur-state) var(--ease-out),
+              color var(--dur-state) var(--ease-out);
+}
+/* The press is 1px down and 0.99 — no 0.97. At 0.97 a 44px control shrinks by
+   1.4px and the label inside it visibly shifts, which reads as the control
+   being pressed rather than the control being a button. */
+.btn:active { transform: translateY(1px) scale(0.99); transition-duration: 90ms; }
+
+/* ── Primary: a flat accent with a 1px inner light edge ───────────────────
+   The inner top line is what makes a filled dark button read as a physical
+   object rather than a flat shape: it is the edge catching light, and it costs
+   one box-shadow with no gradient and no second background layer. */
+.btn-solid,
+.btn--gold,
+.btn-primary {
+  background: var(--accent);
+  background-image: none;
+  color: oklch(0.985 0.004 88);
+  border-color: transparent;
+  text-shadow: none;
+  box-shadow: inset 0 1px 0 color-mix(in oklch, oklch(1 0 0 / 0.16) 60%, transparent),
+              0 1px 2px oklch(0 0 0 / 0.3);
+}
+/* The shimmer is removed, not dimmed. `::before` is left in the DOM but
+   emptied, because twelve call sites animate it and deleting the element would
+   be a behavioural change in a file that is supposed to be appearance only. */
+.btn-solid::before,
+.btn--gold::before,
+.btn-primary::before {
+  content: none;
+}
+@media (hover: hover) {
+  .btn-solid:hover,
+  .btn--gold:hover,
+  .btn-primary:hover {
+    background-color: var(--accent-2);
+    box-shadow: inset 0 1px 0 color-mix(in oklch, oklch(1 0 0 / 0.2) 60%, transparent),
+                0 6px 18px -6px color-mix(in oklch, var(--accent) 42%, transparent);
+  }
+}
+.btn-solid:active,
+.btn--gold:active,
+.btn-primary:active {
+  background-color: var(--accent-3);
+  box-shadow: inset 0 1px 2px oklch(0 0 0 / 0.24);
+}
+
+/* ── Secondary: a hairline on an opaque surface ───────────────────────────
+   `--surface` rather than `color-mix(surface, transparent)`: the transparency
+   was there so the blurred page behind showed through, which on a card meant
+   eleven backdrop-filter composites for one grid. At rest it is a flat value
+   that happens to be the same colour, and it is free. */
+.btn-ghost {
+  background: var(--surface);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  color: var(--text);
+  border-color: var(--border-2);
+  box-shadow: none;
+}
+.btn-ghost::before { content: none; }
+@media (hover: hover) {
+  .btn-ghost:hover {
+    background: var(--surface-2);
+    color: var(--text);
+    border-color: var(--border-3);
+  }
+}
+.btn-ghost:active { background: var(--surface-3); }
+
+/* ── Tertiary: type with a rule that extends ──────────────────────────────
+   The rule is a real 1px pseudo-element rather than a background gradient,
+   because a gradient has to be re-declared to animate and a border has to be
+   replaced by another box. This way the extension is one transform. */
+.linklike,
+.linklike-accent,
+.linklike-muted {
+  position: relative;
+  color: var(--text-2);
+  transition: color var(--dur-state) var(--ease-out);
+}
+.linklike::after,
+.linklike-accent::after,
+.linklike-muted::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: -2px;
+  block-size: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform var(--dur-move) var(--ease-out);
+}
+@media (hover: hover) {
+  .linklike:hover,
+  .linklike-accent:hover,
+  .linklike-muted:hover { color: var(--accent); }
+  .linklike:hover::after,
+  .linklike-accent:hover::after,
+  .linklike-muted:hover::after { transform: scaleX(1); transform-origin: left; }
+}
+.linklike-accent { color: var(--accent); }
+
+.btn-sm {
+  min-height: 36px;
+  padding: 0.5rem 1.1rem;
+  font-size: var(--t-2xs);
+  border-radius: var(--r-2);
+}
+.btn--block.is-lg {
+  min-height: 56px;
+  padding: 1.05rem 2.2rem;
+  font-size: var(--t-sm);
+}
+.btn--block.is-icon {
+  inline-size: var(--hit);
+  block-size: var(--hit);
+  padding: 0;
+  border-radius: 50%;
+}
+
+/* ═══ Chips ═══════════════════════════════════════════════════════════════
+   The filter's vocabulary. Two states, and the difference between them is the
+   one that matters: at rest a chip is a hairline on the page's own surface; when
+   chosen it is a filled accent. Nothing about the chosen chip is a hue — the
+   accent does both jobs, so a chosen chip and an error chip cannot be confused
+   by colour alone, and the eye reads the fill before it reads the hue. */
+.chip {
+  min-height: 36px;
+  padding: 0.45rem 1rem;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border-2);
+  background: transparent;
+  color: var(--text-3);
+  font-family: var(--sans);
+  font-size: var(--t-xs);
+  font-weight: 600;
+  gap: 0.4rem;
+  transition: background-color var(--dur-state) var(--ease-out),
+              border-color var(--dur-state) var(--ease-out),
+              color var(--dur-state) var(--ease-out);
+}
+@media (hover: hover) {
+  .chip:hover {
+    border-color: var(--border-3);
+    background: var(--surface);
+    color: var(--text);
+    transform: none;                    /* the source lifted by 1px; see note */
+  }
+}
+/* A lift on a chip inside a wrap row is worse than a colour change: the row
+   reflows by a pixel and the chips below it shift with it, so hovering one
+   moves the target for its neighbour. */
+.chip:active { transform: scale(0.97); }
+
+.chip.on,
+.chip[aria-pressed="true"],
+.chip.sel {
+  background: var(--accent);
+  border-color: transparent;
+  color: oklch(0.985 0.004 88);
+  font-weight: 700;
+  box-shadow: none;
+}
+.chip.on small,
+.chip[aria-pressed="true"] small { opacity: 0.7; }
+
+/* The swatch inside a colour chip keeps its ring on selection. A colour filter
+   that signals only with a background change is invisible to a customer who
+   cannot separate two of the colours — which is the entire reason a colour
+   filter carries a dot at all. */
+.chip--color .sw {
+  inline-size: 12px;
+  block-size: 12px;
+  box-shadow: 0 0 0 1px color-mix(in oklch, var(--text) 26%, transparent);
+  transition: box-shadow var(--dur-state) var(--ease-out);
+}
+.chip--color.on .sw,
+.chip--color.sel .sw {
+  box-shadow: 0 0 0 1.5px oklch(0.985 0.004 88),
+              0 0 0 3px var(--accent);
+}
+
+/* ═══ Product card ═════════════════════════════════════════════════════════
+   The most important surface on the page, and the one the source dressed in
+   four signals at once. One signal per state now.
+
+   AT REST: no background, one hairline, the image at rest. The card is a
+   photograph on a board and the board is the page.
+
+   ON HOVER: the hairline brightens, a 2% wash appears, the image scales 1.03,
+   and the gold rule along the top edge extends from 0 to full width. Four
+   things, all compositor-only, all in 320ms. The rule extending is the one that
+   does the work — a line that draws itself along the top of a card is a
+   gesture no grid of static cards has, and it is the maison's signature move
+   rather than a template's.
+
+   NO LAYOUT PROPERTIES IN THE HOVER LIST. `border-color` and `background-color`
+   are paint-only; `transform` is composite-only. The source transitioned
+   `box-shadow` at --d-3 (400ms) on a 288px card, which repaints the card's
+   whole bounds on every frame of the transition. */
+.prod {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--r-4);
+  overflow: hidden;
+  transition: transform var(--dur-move) var(--ease-out),
+              border-color var(--dur-move) var(--ease-out),
+              box-shadow var(--dur-move) var(--ease-out);
+}
+@media (hover: hover) {
+  .prod:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-3);
+    background: color-mix(in oklch, var(--accent) 2%, transparent);
+    box-shadow: var(--sh-2);
+  }
+  .prod:hover .prod-line { transform: scaleX(1); }
+}
+
+/* The media. 4:5 held — it is the ratio the whole grid is composed on, and a
+   card that changes ratio between its hover and its rest state reflows the
+   entire row.
+
+   The image's filter is the art direction's quietest lever: `saturate(.88)
+   contrast(1.04)` at rest, and full on hover. Every photograph in the grid is
+   therefore held a few percent below its own colour until the cursor reaches
+   it, which reads as the page choosing to look at each thing in turn. */
+.prod-media { aspect-ratio: 4 / 5; background: var(--well); }
+.prod-media img {
+  transition: transform var(--dur-cine) var(--ease-cine),
+              filter var(--dur-move) var(--ease-out),
+              opacity var(--dur-move) var(--ease-out);
+  filter: saturate(0.88) contrast(1.04);
+}
+@media (hover: hover) {
+  .prod:hover .prod-media img {
+    transform: scale(1.03);
+    filter: saturate(1) contrast(1);
+  }
+}
+
+/* The rule along the top of the media. --accent, not the foil: this appears on
+   every card the cursor touches, and a gold line on eleven cards is a gold
+   underline on eleven cards. */
+.prod-line {
+  block-size: 1px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform var(--dur-move) var(--ease-cine);
+}
+
+/* The badge. Engraved rather than stickered: 1px, small, letterspaced, and the
+   accent at 12% rather than the accent at full. A full-saturation badge on a
+   card is the loudest object in the grid and it is carrying the least
+   information. */
+.pl-badge,
+.badge {
+  font-family: var(--sans);
+  font-size: var(--t-2xs);
+  font-weight: 700;
+  letter-spacing: var(--track-caps);
+  padding: 0.3rem 0.6rem;
+  border-radius: var(--r-2);
+  border: 1px solid var(--border-2);
+  background: color-mix(in oklch, var(--bg) 82%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--text-2);
+  box-shadow: none;
+}
+.pl-badge.hot,
+.badge.hot {
+  background: var(--accent);
+  border-color: transparent;
+  color: oklch(0.985 0.004 88);
+}
+/* Low stock is the one badge that may be louder, because it is the one the
+   customer acts on. */
+.pl-badge.low,
+.badge.low { background: color-mix(in oklch, var(--ember) 16%, transparent); border-color: color-mix(in oklch, var(--ember) 34%, transparent); color: var(--ember); }
+
+/* The info block. Padding is a hair tighter than the source and the gaps are
+   on the 4px grid, so the four rows of text align to a column the eye can
+   actually track down. */
+.prod-info {
+  padding: var(--sp-4) var(--sp-4) var(--sp-5);
+  gap: 0.5rem;
+}
+.p-cat {
+  font-family: var(--sans);
+  font-size: var(--t-2xs);
+  font-weight: 700;
+  letter-spacing: var(--track-caps);
+  color: var(--text-4);
+  text-transform: uppercase;
+}
+/* The price is the one place on a card where the accent is allowed, because a
+   price is the fact the card exists to deliver. */
+.p-price {
+  font-family: var(--serif-fa);
+  font-size: var(--t-md);
+  font-weight: 500;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+.p-name {
+  font-family: var(--serif-fa);
+  font-size: var(--t-lg);
+  font-weight: 500;
+  line-height: 1.32;
+  letter-spacing: var(--track-fa);
+}
+.p-sub {
+  font-size: var(--t-sm);
+  line-height: 1.7;
+  color: var(--text-3);
+  max-width: none;
+}
+.stock-pill {
+  font-size: var(--t-2xs);
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border);
+  color: var(--text-3);
+}
+.stock-pill .dot { inline-size: 4px; block-size: 4px; background: var(--verd); box-shadow: none; }
+.stock-pill.low { color: var(--ember); border-color: color-mix(in oklch, var(--ember) 32%, transparent); }
+.stock-pill.low .dot { background: var(--ember); }
+
+/* The quick action. It appears on hover rather than sitting there greyed, and
+   it fills from the inline-start — which in RTL is the right, so the wipe reads
+   as the arrow travelling the way the page reads. `isolation: isolate` keeps the
+   pseudo-element behind the label, which is why the label changes colour at
+   all. */
+.quick {
+  min-height: var(--hit);
+  border: 1px solid var(--border-2);
+  border-radius: var(--r-3);
+  background: transparent;
+  color: var(--text-2);
+  font-family: var(--sans);
+  font-size: var(--t-xs);
+  font-weight: 600;
+  transition: color var(--dur-state) var(--ease-out),
+              border-color var(--dur-state) var(--ease-out);
+}
+.quick::before { background: var(--accent); }
+@media (hover: hover) {
+  .quick:hover { color: oklch(0.985 0.004 88); border-color: transparent; box-shadow: none; }
+}
+.quick:hover::before { transform: scaleX(1); }
+
+/* The wishlist. It stays at 44px because it is a touch target on every device
+   and 44px is the touch target. What changes is the fill: a heart outline at
+   rest, filled in the accent when saved. */
+.wish {
+  inline-size: var(--hit);
+  block-size: var(--hit);
+  border-radius: 50%;
+  border: 1px solid var(--border-2);
+  background: color-mix(in oklch, var(--bg) 62%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--text-3);
+  transition: color var(--dur-state) var(--ease-out),
+              border-color var(--dur-state) var(--ease-out);
+}
+.wish:hover { color: var(--accent); border-color: var(--accent); }
+.wish.on { color: var(--accent); border-color: var(--accent); background: var(--gold-wash); }
+.wish.on svg { fill: currentColor; }
+
+/* ═══ Header ═══════════════════════════════════════════════════════════════
+   A piece of architecture: the header is transparent over the hero and becomes
+   an opaque sheet with a hairline once the page has scrolled past it. The
+   transition between the two is the only place the header moves.
+
+   `backdrop-filter` appears ONLY in the scrolled state. In the transparent state
+   the header is over the hero, which is behind it by definition, and blurring
+   that resamples the entire viewport height on every scroll frame for no visual
+   gain — there is nothing behind it to separate from. */
+.hdr {
+  background: transparent;
+  border-color: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  transition: background-color var(--dur-move) var(--ease-out),
+              border-color var(--dur-move) var(--ease-out),
+              padding var(--dur-move) var(--ease-out),
+              transform var(--dur-move) var(--ease-out);
+}
+.hdr.scrolled {
+  background: color-mix(in oklch, var(--bg) 86%, transparent);
+  backdrop-filter: blur(16px) saturate(1.3);
+  -webkit-backdrop-filter: blur(16px) saturate(1.3);
+  border-color: var(--border);
+  /* A 1px hairline rather than a shadow: on a dark ground a shadow under a bar
+     reads as a smudge, and a hairline reads as an edge. */
+  box-shadow: none;
+}
+.hdr::after {
+  background: linear-gradient(90deg, transparent, var(--accent) 50%, transparent);
+  opacity: 0;
+  transition: opacity var(--dur-move) var(--ease-out);
+}
+.hdr.scrolled::after { opacity: 0.4; }
+
+/* The brand. A wordmark in the Latin face at 1.18rem, tracked 0.14em, with the
+   diamond sigil in the accent. Not the foil: the wordmark is set in --text, and
+   the sigil carries the accent. One saturated element in the header instead of
+   a gradient across six letters. */
+.brand { gap: var(--sp-3); }
+.brand-text {
+  font-family: var(--serif-latin);
+  font-size: 1.18rem;
+  font-weight: 500;
+  letter-spacing: var(--track-caps);
+  color: var(--text);
+  -webkit-text-fill-color: currentColor;
+}
+.brand-sigil {
+  inline-size: 13px;
+  block-size: 13px;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+}
+
+/* ═══ The lens ═════════════════════════════════════════════════════════════
+   The source's signature ornament, and the one thing on the page that is allowed
+   to use the foil — because it is the maison's own mark.
+
+   It is kept at 2% opacity behind the desktop panel's links rather than in
+   front of them, and its glint is 5.2s rather than faster. The source ran the
+   same four-element star on both menus at two sizes; it is one mark rendered
+   once, and the discipline is what makes it read as a seal rather than as an
+   effect. */
+.lens-menu__lens,
+.mnav__lens {
+  opacity: 0.5;
+}
+.lens-menu__lens-core,
+.mnav__lens-core {
+  background: var(--grad-gold);
+  filter: blur(1px);
+}
+.lens-menu__lens-ring,
+.mnav__lens-ring { border-color: var(--foil-line); }
+
+/* ═══ Filter bar ════════════════════════════════════════════════════════════
+   The console reads as one instrument strip. The hairline under it is the accent
+   at 40% rather than a gradient, because the source's gradient faded at both
+   ends and a fading rule under a bar of controls reads as a rendering artefact
+   rather than as an edge. */
+.vault__tools::after {
+  background: linear-gradient(90deg, transparent, var(--accent) 46%, transparent);
+  opacity: 0.5;
+}
+.vf-search,
+.vf-select,
+.vf-band,
+.vf-view {
+  border-color: var(--border-2);
+  background: var(--surface);
+  border-radius: var(--r-pill);
+  transition: border-color var(--dur-state) var(--ease-out),
+              background-color var(--dur-state) var(--ease-out);
+}
+.vf-search:focus-within,
+.vf-select:focus-visible,
+.vf-band:focus-within { border-color: var(--accent); }
+.vf-view__b.on { background: var(--accent); color: oklch(0.985 0.004 88); }
+.vf-dual-fill { background: var(--accent); }
+.vf-slider::-webkit-slider-thumb {
+  background: var(--surface);
+  border: 1.5px solid var(--accent);
+  box-shadow: 0 1px 4px oklch(0 0 0 / 0.3);
+}
+.vf-slider::-moz-range-thumb {
+  background: var(--surface);
+  border: 1.5px solid var(--accent);
+  box-shadow: 0 1px 4px oklch(0 0 0 / 0.3);
+}
+.vf-pill {
+  border-color: var(--border-2);
+  background: transparent;
+  color: var(--text-2);
+}
+@media (hover: hover) { .vf-pill:hover { border-color: var(--accent); color: var(--accent); } }
+.vf-reset { color: var(--text-3); }
+@media (hover: hover) { .vf-reset:hover { color: var(--accent); } }
+
+/* ═══ Surfaces ═════════════════════════════════════════════════════════════
+   One elevation scale, applied by role. Everything that holds content is
+   `--surface`; everything that floats above content is `--surface-2` plus a
+   shadow. The source had three near-identical surface tokens and a fourth
+   `--well` used eleven times, so "which background" was a decision taken forty
+   times with no rule. */
+.frame,
+.f-med,
+.skel {
+  background: var(--surface);
+  border-color: var(--border);
+  border-radius: var(--r-4);
+}
+.pdp__stage,
+.lbx img { border-radius: var(--r-4); }
+
+/* The skeleton shimmer. 1.5s at 40% of a page's height is a light that never
+   stops moving; 1.4s and a slower travel is the difference between loading and
+   nothing happening. */
+.skl::after {
+  animation-duration: 1.4s;
+  background: linear-gradient(100deg, transparent 38%,
+              color-mix(in oklch, var(--text) 4%, transparent) 50%, transparent 62%);
+}
+
+/* ═══ Dialogs ═════════════════════════════════════════════════════════════
+   Thirteen dialogs, and the backdrop is a single flat colour. The source
+   already established that and the reasoning still holds: three filter operators
+   over a full-viewport backdrop on every open is three passes over ~3.3Mpx on
+   the interaction where a dropped frame is most visible. It is kept for
+   fine-pointer devices only. */
+dialog::backdrop {
+  background: oklch(0.06 0.006 60 / 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+dialog {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-5);
+  color: var(--text);
+  box-shadow: var(--sh-3);
+}
+.close-btn {
+  inline-size: var(--hit);
+  block-size: var(--hit);
+  border-radius: 50%;
+  border: 1px solid var(--border-2);
+  color: var(--text-3);
+  transition: color var(--dur-state) var(--ease-out),
+              border-color var(--dur-state) var(--ease-out),
+              rotate var(--dur-move) var(--ease-out);
+}
+@media (hover: hover) {
+  .close-btn:hover { color: var(--accent); border-color: var(--accent); rotate: 90deg; }
+}
+
+/* ═══ Inputs ═══════════════════════════════════════════════════════════════
+   The focus state is the accent border and the label above turns with it, which
+   is the one piece of choreography a form gets: the label and the field are the
+   same object, so they change together. */
+.field label { color: var(--text-3); transition: color var(--dur-state) var(--ease-out); }
+.field:focus-within label { color: var(--accent); }
+.field input,
+.field select,
+.field textarea {
+  border-block-end-color: var(--border-2);
+  transition: border-color var(--dur-state) var(--ease-out);
+}
+.field::after { background: var(--accent); }
+.field input:focus,
+.field select:focus,
+.field textarea:focus { border-block-end-color: var(--accent); }
+.field.invalid::after { background: var(--err); }
+.field.invalid input,
+.field.invalid textarea { border-block-end-color: var(--err); }
+.f-errmsg, .field-error { color: var(--err); }
+
+/* ═══ Editorial type ═══════════════════════════════════════════════════════
+   The eyebrow is the maison's structural device: a 1px rule, a rotated square,
+   and the section's name. It is in the accent, at 12% for the rule and full for
+   the square — one hue, two weights, and the square is the only saturated mark
+   on the section, so the eye reads "this is a section" before it reads the
+   name. */
+.eyebrow { color: var(--accent); font-weight: 700; letter-spacing: var(--track-caps); }
+.eyebrow::before { background: linear-gradient(90deg, var(--accent), transparent); }
+.eyebrow::after { background: var(--accent); box-shadow: none; }
+.eyebrow .num { color: var(--text-4); }
+
+/* The ghost numeral. Hairline, --line-2, and enormous — it is the section's
+   address in the maison's filing system, not decoration, and it sits at 4% so
+   it is legible as a form and never as a word. */
+.ghost {
+  color: transparent;
+  -webkit-text-stroke: 1px var(--line-2);
+  opacity: 1;
+  font-weight: 300;
+}
+
+/* Section headings. 400 weight at display size, and the gold word inside a
+   heading becomes the accent — because a gold word in a heading on a page
+   where gold is otherwise absent is the one place it reads as the maison's own
+   ink rather than as an effect. */
+h2 .gold-foil,
+h1 .gold-foil {
+  background: none;
+  -webkit-text-fill-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ═══ Scroll-driven reveals ═══════════════════════════════════════════════
+   One duration for every reveal on the page: 720ms, and the delays are 60ms
+   apart rather than 120ms. The source used four delays (rv-d1..rv-d4) at 120ms
+   with a 820ms duration, so a six-item row took 1.4s to settle and the last item
+   arrived after the customer had already started reading the first.
+
+   720ms with 60ms steps means a six-item row settles in 960ms — inside the
+   window where a person is still waiting for the content rather than reading
+   it — and the transforms are 12px rather than 42px, because a reveal that
+   travels 42px reads as an element arriving rather than as one being revealed. */
+.js .rv {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity var(--dur-cine) var(--ease-cine),
+              transform var(--dur-cine) var(--ease-cine);
+  will-change: opacity, transform;
+}
+.js .rv.in { opacity: 1; transform: none; }
+.js .rv-d1 { transition-delay: 60ms; }
+.js .rv-d2 { transition-delay: 120ms; }
+.js .rv-d3 { transition-delay: 180ms; }
+.js .rv-d4 { transition-delay: 240ms; }
+/* The will-change is released once the element has arrived. Holding it on six
+   hundred settled elements is six hundred promoted layers, which is the
+   opposite of what will-change is for. */
+.js .rv.in { will-change: auto; }
+
+/* ═══ Focus, inherited ═════════════════════════════════════════════════════
+   Not restated. base.css owns the ring and there is exactly one of them.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ═══ The hero ═════════════════════════════════════════════════════════════
+   The first 1.5 seconds. This is the one screen where the art direction has to
+   be legible before a single word is read, and the composition has to survive
+   an ultra-wide viewport without becoming a centred column.
+
+   THE DECISION. Two things face each other across the fold: the type on the
+   start side, the object on the end side. The source had them at 1.05fr / .95fr
+   — near enough equal that neither wins, which is the ratio that makes a hero
+   look like a template with an image on it. The ratio here is 1.15fr / .85fr:
+   the type carries more of the width, because the type is the maison's name and
+   the object is one pair of shoes out of two hundred.
+
+   THE HEADLINE. No foil, no drop-shadow. `em` in the source was a background-
+   clipped gradient with a 26px gold glow behind it, and a glow that large on a
+   word at 6rem reads as a halo — the single most recognisable gesture in
+   "luxury template" and the fastest way to lose the room. The emphasised words
+   are now the accent, at full saturation, with no filter at all. A dark red
+   word in a near-white sentence needs no help.
+
+   `min-height: 2.1em` is kept, and it matters: the headline is two lines and
+   the reveal is a translate, so without a reserved height the page jumps by one
+   line's worth the moment the type loads and the customer's first click lands
+   somewhere else.
+
+   THE GRID BACKDROP. The source's hero had a masked 1px grid at 106px. That is a
+   blueprint, and a blueprint is engineering. A maison's first screen is a
+   photograph on a wall. The grid is gone and the wall is the accent at 3% —
+   one radial, no mask, no two-layer gradient.
+
+   THE GHOST. φ at 22vw in --line-2, which is what the source had, except the
+   source's was also a text-stroke on a Cormorant that the browser resolved
+   per-character. It now sits at --text-4 rather than --line-2 so it is a form
+   rather than a hairline, and it is at -3% opacity so it is felt and not seen.
+
+   THE OBJECT. 62vh on the source, which on a laptop is taller than the fold and
+   pushes the scroll hint off screen. 54vh, and the frame's arch — the ellipse
+   on the top corners — is what makes the object read as a shoe last rather than
+   as a photograph in a rectangle. */
+.hero-grid { grid-template-columns: 1.15fr .85fr; gap: clamp(2.5rem, 6vw, 7rem); }
+.hero h1,
+#heroTitle {
+  font-size: var(--t-hero);
+  line-height: 1.14;
+  max-width: 13ch;
+  min-height: 2.28em;
+  text-shadow: none;
+  font-weight: 300;
+}
+/* The one place the accent appears at full strength above the fold. */
+.hero h1 em,
+#heroTitle em {
+  background: none;
+  -webkit-text-fill-color: var(--accent);
+  color: var(--accent);
+  font-style: normal;
+  filter: none;
+}
+
+/* The blueprint grid becomes a wall. One radial, 3% accent, no mask. */
+.hero-grid-bg {
+  background-image: radial-gradient(ellipse 62% 48% at 50% 42%,
+    color-mix(in oklch, var(--accent) 3.5%, transparent) 0%, transparent 72%);
+  mask-image: none;
+  -webkit-mask-image: none;
+  opacity: 1;
+}
+.hero-grid-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg,
+    color-mix(in oklch, var(--bg) 0%, transparent) 0%,
+    transparent 22%,
+    transparent 68%,
+    color-mix(in oklch, var(--bg) 72%, transparent) 100%);
+  pointer-events: none;
+}
+
+.hero-ghost {
+  color: transparent;
+  -webkit-text-stroke: 1px var(--text-4);
+  opacity: 0.03;
+  font-weight: 300;
+  top: 6%;
+  inset-inline-end: -2%;
+}
+
+/* The subtitle is --text-2 at --t-md with 1.85 leading. The source had
+   --t-lg at 1.95 — both larger and looser, which pushed the two CTAs below the
+   fold on a 900px-tall laptop. The paragraph on a hero is not read; it is
+   scanned. It should be scannable in one pass and get out of the way. */
+.hero-sub {
+  font-size: var(--t-md);
+  line-height: 1.85;
+  color: var(--text-2);
+  max-width: 42ch;
+  margin-top: var(--sp-5);
+}
+.hero-cta { margin-top: var(--sp-6); gap: var(--sp-3); }
+
+/* The three meta figures at the foot of the hero. A 1px rule on the inline-start
+   of each value — the source's --grad-gold became the accent at 60%, because a
+   gold rule under three numbers on the first screen is three gold rules. */
+.hero-ey { padding-top: var(--sp-5); border-block-start-color: var(--border); gap: clamp(2rem, 4vw, 3.5rem); }
+.hero-ey .num { font-size: var(--t-2xs); letter-spacing: var(--track-caps); color: var(--text-4); }
+.hero-ey .num { font-size: var(--t-lg); font-weight: 400; }
+.hero-ey .num::before { background: var(--accent); }
+
+.hero-ey .num { border-inline-end-color: var(--border); font-size: var(--t-2xs); }
+.hero-ey .line { background: linear-gradient(90deg, var(--accent), transparent); }
+.hero-ey span:last-child { color: var(--accent); letter-spacing: var(--track-caps); }
+
+.hero .f-med { max-height: 54vh; border-radius: 999px 999px var(--r-4) var(--r-4); }
+.hero .frame { background: transparent; border-color: var(--border-2); border-radius: var(--r-5); }
+
+/* The scroll hint. One line, the accent, and it travels 50% of its own height
+   every 2.6s — the source travelled 55%, which at the same speed reads as a
+   different rhythm and the two together look like they are counting. */
+.sh-line::after { background: var(--grad-gold); animation-duration: 2.6s; }
+
+/* The rail. A vertical mono line at --text-4 with one accent tick where the
+   customer currently is. The source made the current item a filled gold
+   gradient circle, which on a 12px target is a bright object at the edge of
+   vision on every scroll frame. */
+.rail { background: color-mix(in oklch, var(--bg) 72%, transparent); border-color: var(--border); }
+.rail a[aria-current="true"] {
+  background: var(--accent);
+  color: oklch(0.985 0.004 88);
+  box-shadow: none;
+}
+
+/* ═══ Editorial chapters ════════════════════════════════════════════════════
+   The sticky ledger cards in the craft section are the site's best idea and they
+   are left alone structurally — a sticky stack with a rising offset per card is
+   a scroll-driven device that no amount of styling improves. What changes is
+   the left edge: a 2px accent rule instead of a 3px gold gradient, which turns
+   the card's spine from a decoration into an address marker. */
+.l-card { border-radius: var(--r-5); border-color: var(--border-2); }
+.l-card::after { inline-size: 2px; background: var(--accent); }
+.l-num { color: var(--text-4); font-weight: 300; }
+
+/* ═══ Ticker ════════════════════════════════════════════════════════════════
+   The source ran the marquee in --text-3 at 1.12–1.64rem, which is the same
+   scale as the section headings it scrolls past — so the moving text competes
+   with the static text for the same attention. Dropped to --t-xs, --text-4, and
+   the accent appears only on the diamond, once every five items. */
+.ticker__group span { font-size: var(--t-xs); color: var(--text-4); letter-spacing: var(--track-caps); }
+.ticker__group span:hover { color: var(--accent); }
+.ticker__group i { color: var(--accent); opacity: 0.5; }
+
+/* ═══ Footer ═══════════════════════════════════════════════════════════════
+   A colophon. The giant VELORA wordmark is the maison's plate mark at 19vw in
+   --line-2, and it is the one place the Latin face appears at that scale — a
+   Latin wordmark in a Latin face is not typography, it is a signature. */
+.foot-ghost {
+  -webkit-text-stroke: 1px var(--line-2);
+  color: transparent;
+  font-weight: 400;
+}
+.f-col h4 { color: var(--accent); border-block-end-color: var(--border); letter-spacing: var(--track-caps); }
+.f-col a { color: var(--text-3); min-height: 40px; }
+@media (hover: hover) {
+  .f-col a:hover { color: var(--accent); transform: translateX(-6px); }
+}
+.f-col a::before { background: var(--accent); }
+
+/* ═══ Utilities ════════════════════════════════════════════════════════════
+   The custom cursor survives — it is a real part of this site's identity and it
+   is one of the two things the source does that a template does not. What
+   changes is its resting state: it is drawn in --text-3 and it takes the accent
+   only when it is over something interactive. A gold dot following the pointer
+   across a near-monochrome page is a fifth saturated object on screen. */
+#cursorDot { background: var(--accent); box-shadow: none; }
+#cursor { border-color: var(--border-3); }
+#cursor.hot { border-color: var(--accent); background: var(--gold-wash); }
+#cursor.view { border-color: var(--accent); background: var(--gold-wash); box-shadow: none; }
+#cursor.add { background: var(--accent); box-shadow: none; }
+#cursor span { color: oklch(0.985 0.004 88); }
+
+/* ═══ Reduced motion ═══════════════════════════════════════════════════════
+   Restated here even though animations.css already has a global rule, because
+   this file introduces its own hover transforms and its own reveal offsets, and
+   the global rule sets animation-duration — not transform. A reveal that
+   translates 12px with no transition is a settled element, which is correct; a
+   hover that lifts 2px with no transition is a card that jumps, which is not. */
+@media (prefers-reduced-motion: reduce) {
+  .prod:hover { transform: none; }
+  .prod:hover .prod-media img { transform: none; }
+  .chip:hover { transform: none; }
+  .btn:hover, .btn-solid:hover { transform: none; }
+  .js .rv { opacity: 1; transform: none; }
+  .linklike::after,
+  .linklike-accent::after,
+  .linklike-muted::after { transition: none; }
+  .prod-line { transition: none; }
+}
+

@@ -2,14 +2,26 @@
    MAISON AURELLE — base.css
    Reset · Typography · Layout primitives · Accessibility
    ═══════════════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════════════════
+   THE RESET, and the four things in it that are decisions rather than resets.
+   ═══════════════════════════════════════════════════════════════════════════ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html {
   -webkit-text-size-adjust: 100%;
-  scroll-padding-top: calc(var(--nav-h) + 24px);
+  /* The scroll padding is the header plus the breathing room a section title
+     needs below it. Without the extra 24px a hash link lands its heading
+     directly under the header, and the header is opaque, so the top of the
+     title is simply not there. */
+  scroll-padding-top: calc(var(--nav-h) + var(--chrome) + 24px);
+  /* Stable always, not `both`. `stable` reserves the gutter whether or not a
+     scrollbar is present, so opening a dialog — which locks the scroll and
+     removes the bar — does not shift every fixed element on the page sideways
+     by the scrollbar's width. */
   scrollbar-gutter: stable;
   text-rendering: optimizeLegibility;
   font-optical-sizing: auto;
+  scroll-behavior: smooth;
   scroll-behavior: auto;
 }
 html.lock { overflow: hidden; }
@@ -20,7 +32,12 @@ body {
   min-height: 100dvh;
   font-family: var(--sans);
   font-size: var(--t-base);
-  line-height: 1.72;
+  /* 1.78, not 1.72. Persian needs the extra leading to stay legible: Vazirmatn's
+     ascenders and descenders are deeper than a Latin face of the same size, so
+     the same line-height that reads as generous in English reads as cramped in
+     Farsi. This is the single largest readability lever on the page and it is
+     one number. */
+  line-height: 1.78;
   color: var(--text);
   background: var(--bg);
   overflow-wrap: break-word;
@@ -30,7 +47,10 @@ body {
   overscroll-behavior-y: none;
   font-feature-settings: "ss01", "kern", "liga", "calt", "cv11";
   font-synthesis-weight: none;
-  transition: background var(--d-3) var(--ease), color var(--d-3) var(--ease);
+  /* The theme change is 320ms on colour and background only. A transform or a
+     size in this list would animate the whole layout on every theme switch. */
+  transition: background-color var(--dur-move) var(--ease-out),
+              color var(--dur-move) var(--ease-out);
 }
 
 img, svg, canvas, video { display: block; max-width: 100%; height: auto; }
@@ -40,6 +60,9 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action
 ul, ol { list-style: none; }
 fieldset { border: 0; min-inline-size: 0; }
 table { border-collapse: collapse; }
+/* A table cell is a box; without this a border-bottom on a th draws under the
+   padding and the header row reads as a stack of separate cells. */
+th { text-align: inherit; font-weight: inherit; }
 
 dialog {
   padding: 0; background: transparent; color: inherit;
@@ -73,24 +96,94 @@ dialog::backdrop {
 }
 
 ::selection {
+  /* The accent at 46% with the page's own text colour, not a hard fill. A
+     solid selection block on a dark ground is a page-wide rectangle of colour
+     that lasts as long as the drag, and it is the one moment a browser default
+     is genuinely worse than nothing. At 46% the selected run is unmistakable
+     and the text under it keeps its own colour, so a multi-line selection does
+     not change the page's apparent contrast as it grows. */
   background: color-mix(in oklch, var(--accent) 46%, transparent);
   color: var(--text);
 }
+::selection ::selection { background: color-mix(in oklch, var(--accent) 32%, transparent); }
 
-* { scrollbar-width: thin; scrollbar-color: var(--accent-3) var(--bg-2); }
-::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-track { background: var(--bg-2); }
+/* ─── Scrollbar ───────────────────────────────────────────────────────────
+   A 10px track with a gradient thumb in the accent. The source did the same
+   thing at 10px, and 10px on a track that scrolls the whole document is a
+   permanent 10px of furniture on the right edge of every screen — including the
+   one the art direction says should be a sheet with nothing at its edges.
+
+   8px, and the thumb is a neutral that warms toward the accent on hover. The
+   scrollbar is not a control the customer came for, so it does not get to be the
+   most saturated object on the page. */
+* { scrollbar-width: thin; scrollbar-color: var(--border-3) transparent; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, var(--accent-3), var(--accent), var(--accent-3));
-  border-radius: 100px; border: 2px solid var(--bg-2); background-clip: padding-box;
+  background: var(--border-3);
+  border-radius: 100px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+  transition: background-color var(--dur-state) var(--ease-out);
+}
+::-webkit-scrollbar-thumb:hover { background-color: var(--accent); }
+::-webkit-scrollbar-corner { background: transparent; }
+
+/* ─── Focus ───────────────────────────────────────────────────────────────
+   ONE ring for the whole page, and it is the accent at 1px with a 4px halo.
+   The source drew a 2px outline AND a 4px box-shadow halo AND a --ring token on
+   top — three rings, and the two outermost were both the accent at low alpha, so
+   the focus state was a soft glow with a hard edge inside it. On a dark ground
+   that reads as a rendering artefact rather than as "you are here".
+
+   The 1px ring is the accent because the accent is the only saturated hue on the
+   page: a focus ring has to be findable in peripheral vision, and a hairline in
+   a neutral grey is not. The 4px halo is the same hue at 20% and carries it on
+   a surface that happens to be near the accent already.
+
+   offset 3px, not 4: at 4px the ring clears the element by more than the eye
+   reads as "attached", and on a 44px pill it pushes the ring into the element
+   beside it. */
+:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: var(--r-1);
+}
+:focus-visible:not(:where(a, button, [role="button"], summary, label)) {
+  box-shadow: 0 0 0 4px color-mix(in oklch, var(--accent) 20%, transparent);
+}
+/* Interactive elements get the halo too, but drawn as a ring that does not
+   fight the element's own radius — a 4px square halo on a 999px pill leaves
+   visible corners. */
+:is(a, button, [role="button"], summary, label):focus-visible {
+  box-shadow: 0 0 0 4px color-mix(in oklch, var(--accent) 18%, transparent);
+}
+/* Elements that already carry a strong surface state — a selected chip, an open
+   tab — do not need the halo on top of the fill. */
+:is(.chip[aria-pressed="true"], .chip.on, .chip.sel):focus-visible {
+  outline-color: var(--text);
+  box-shadow: none;
 }
 
-:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 4px;
-  border-radius: var(--r-1);
-  box-shadow: 0 0 0 4px var(--gold-ghost), var(--ring);
+/* Skip link. Present, and the first thing in the tab order, and visible only on
+   focus. The source had no skip link at all, which on a page with a thirteen-link
+   header and a twelve-link footer means a keyboard user tabs through twenty-five
+   links to reach the first product. */
+.skip-link {
+  position: fixed;
+  inset-block-start: -100px;
+  inset-inline-start: 50%;
+  translate: -50% 0;
+  z-index: 999;
+  padding: var(--sp-3) var(--sp-5);
+  background: var(--accent);
+  color: var(--invert);
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: var(--track-caps);
+  transition: inset-block-start var(--dur-state) var(--ease-out);
 }
+.skip-link:focus { inset-block-start: var(--g-3); }
 
 [hidden] { display: none !important; }
 [inert]  { pointer-events: none; }
@@ -101,19 +194,57 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; }
   input, select, textarea { font-size: 16px !important; }
 }
 
-/* ─── Typography ─── */
+/* ─── Typography ─────────────────────────────────────────────────────────
+   Every display size on this page is Persian. The source named
+   --serif-d (Cormorant Garamond) first on h1, so a Persian headline resolved
+   through a Latin face and fell back mid-word to Vazirmatn — the browser picks
+   the fallback per character, so the result was Cormorant's Latin metrics for
+   the word's advance width and Vazirmatn's glyphs inside them. It is the most
+   visible flaw in the source's typography and it is invisible until you look
+   for it, because every individual letter renders correctly.
+
+   Vazirmatn now leads on every token. Cormorant survives as --serif-latin and
+   is used only on the maison's own Latin: the wordmark, the folio, the seal.
+
+   THE OPTICAL DIFFERENCE. A Persian face set at the same nominal size as a
+   Latin one reads larger, because its x-height is larger relative to the em and
+   its descenders are deeper. Two corrections, and neither is a font-size change
+   because scaling type breaks every baseline beneath it:
+
+   · line-height 1.34 on all headings. Persian needs 30% more leading than Latin
+     at the same optical size, and 1.16 is Latin's number.
+   · letter-spacing normal. The source already zeroed it for :lang(fa), which was
+     right; --track-display now exists in the token file as the Latin value and
+     is applied only where the content is Latin. */
 h1, h2, h3, h4, h5 {
-  font-family: var(--serif);
+  font-family: var(--serif-fa);
   font-weight: 600;
-  line-height: 1.16;
-  letter-spacing: -0.018em;
+  line-height: 1.34;
+  letter-spacing: var(--track-fa);
   text-wrap: balance;
 }
-h1 { font-family: var(--serif-d); font-weight: 500; font-size: var(--t-5xl); letter-spacing: -0.032em; line-height: 1.06; font-variation-settings: "wght" 320, "opsz" 72; }
-h2 { font-size: var(--t-4xl); }
-h3 { font-size: var(--t-2xl); }
-:is(h1, h2, h3, h4):is(:lang(fa), :lang(ar)) { line-height: 1.34; }
-:is(h1, h2, h3, h4, .eyebrow, .btn, .chip, .nav-links a, .mode-switch button, .mono):is(:lang(fa), :lang(ar)) { letter-spacing: normal; }
+/* h1 is the one size where weight has to drop. Vazirmatn at 600 and 8rem is a
+   solid slab; at 300 it has the contrast the display sizes need and the page
+   keeps air inside its own headline. */
+h1 {
+  font-weight: 300;
+  font-size: var(--t-hero);
+  letter-spacing: var(--track-display);
+  line-height: 1.14;
+}
+h2 { font-size: var(--t-4xl); font-weight: 400; line-height: 1.24; }
+h3 { font-size: var(--t-2xl); font-weight: 500; line-height: 1.3; }
+h4 { font-size: var(--t-xl); font-weight: 500; line-height: 1.36; }
+
+/* Latin content inside a Persian heading gets the Latin face and the Latin
+   tracking. The maison's own name, and the two Latin glosses the menu carries,
+   are the only places this happens on the page. */
+:is(h1, h2, h3, h4, .brand-text, .mnav__brand):lang(en),
+[lang="en"] :is(h1, h2, h3, h4, .brand-text, .mnav__brand) {
+  font-family: var(--serif-latin);
+  letter-spacing: var(--track-display);
+  line-height: 1.08;
+}
 
 p { max-width: var(--measure); }
 em { font-style: normal; color: var(--accent); }
@@ -160,32 +291,6 @@ section {
   scroll-margin-top: calc(var(--nav-h) + 20px);
   z-index: 2;
 }
-
-/* ─── Skip link ───────────────────────────────────────────────────────────
-   It used to animate `top` (-120px -> 24px) on a `position: fixed` element.
-   `top` is a layout property, so every Tab press invalidated layout for the
-   whole viewport for 240ms — on the exact interaction a keyboard user needs to
-   feel instant. Moved to `transform: translateY()`, which is compositor-only,
-   with `top` held constant.
-
-   The `[dir="rtl"]` override that used to sit here is deleted, and it was a bug
-   rather than a duplicate. index.php hard-codes <html dir="rtl"> and nothing
-   ever toggles it, so `inset-inline-start: 50%` always resolves to `right: 50%`
-   — and `translateX(-50%)` is already the correct centring for that. The RTL
-   override shifted it a further half of its own width to the right, hanging it
-   off the right edge of the screen. */
-.skip-link {
-  position: fixed; top: 24px;
-  inset-inline-start: 50%; transform: translate(-50%, -140%);
-  background: var(--grad-gold); color: var(--invert);
-  padding: 0.95rem 1.9rem; border-radius: var(--r-3);
-  font-size: 0.82rem; font-weight: 700;
-  z-index: 99999;
-  transition: transform var(--d-2) var(--ease);
-  box-shadow: var(--sh-md);
-  will-change: transform;
-}
-.skip-link:focus { transform: translate(-50%, 0); box-shadow: var(--sh-lg), var(--sh-glow); }
 
 .sr-only {
   position: absolute; width: 1px; height: 1px;

@@ -641,6 +641,19 @@ $VELORA_CSS = [
     'css/sections.css',
     'css/dialogs.css',
     'css/animations.css',
+    /* THE ART DIRECTION, AS A LAYER.
+
+       It loads last and it is appearance only: every rule in it is a decision
+       about how an existing structure looks, and none of them changes what it
+       does. That is what makes it safe to delete this file — the site keeps
+       every feature and every behaviour and simply looks like the previous
+       season — and it is what makes it possible to change direction again
+       without re-deriving 3,900 lines of components.
+
+       The alternative was 400 edited lines across four files, where a lost
+       `will-change` or a dropped `:has()` guard does not error. It just stops
+       working, on a device nobody in the room has. */
+    'css/atelier.css',
 ];
 /* THE SPLIT IS CRITICAL, and it is the one list in this file with a shape that
    would look like an oversight.

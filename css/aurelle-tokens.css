@@ -1,367 +1,590 @@
-/* ═══════════════════════════════════════════════════════════════════════
-   VELORA AURELLE · aurelle-tokens.css
-   ادغام توکن‌های MAISON AURELLE (سه تم + سه صحنه) با نیازهای VELORA
-   هیچ عددی بیرون این فایل نیست.
-   ═══════════════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════════════════
+   VELORA — THE DESIGN TOKEN SYSTEM
+   ═══════════════════════════════════════════════════════════════════════════
+   THE DIRECTION, and why it is this one.
+
+   The catalog is two hundred pairs a season, made by hand, in Paris. What makes
+   that expensive is not shine — it is restraint and scarcity. A page that
+   decorates itself with the thing it is selling has already said the thing
+   twice, and the second time it is a sticker.
+
+   So the accent is a jewel, not a colour. It appears roughly four times in a
+   full page of scrolling: on the seal, on the current-section marker in the
+   rail, on the price of the piece in the viewport, and on the word that names
+   the maison. Everywhere else the page is built from three near-neutrals and a
+   hairline. That is what makes those four instances read as jewellery rather
+   than as a palette.
+
+   THE COLOUR WORLD is warm charcoal — not black, because a true black on a
+   slightly warm ground reads as a screen bezel, and not blue-black, because
+   blue-black is the default "luxury" gesture and it is the one thing here that
+   is not in the brief. The hue sits at 60 degrees with almost no chroma: a
+   graphitic grey with warmth in it, the colour of a photograph's shadow side.
+   At L 0.13 it is dark enough to disappear behind the type and light enough
+   that the hairlines on it are visible — which is the whole reason for choosing
+   0.13 over 0.09.
+
+   THE ONE OTHER CHROMA is a deep bordeaux at hue 22. Not the gold. The
+   catalog is leather, silk, wine and dusk; bordeaux is the only saturated hue
+   the product world actually contains, so it is the only one that can carry
+   meaning. It is used for the states that need to be unmistakable and are not
+   decorative: sold out, the reduced price, the seal.
+
+   Gold survives as --foil, and it is used in exactly one place: the mark. Not
+   as a fill on a headline, not as a wash on a section, not as a button. A
+   gradient sweep across a word is the single most recognisable gesture of
+   "luxury template", and it appears in the source twenty-two times. It is gone
+   from everything except the maison's own initial.
+
+   THE TYPE. Cormorant Garamond stays for display because a high-contrast
+   Didone-adjacent serif is correct for a Parisian maison and Vazirmatn cannot
+   carry a display line at 6rem. But the Persian body gets one important change:
+   Vazirmatn's optical size is set slightly down and its tracking loosened, so
+   the Persian and the Latin sit at the same apparent size rather than the
+   Persian reading large. An Arabic-script face set at the same nominal size as
+   a Latin one always looks bigger, and that asymmetry is the single loudest
+   tell of a bilingual site assembled from two templates.
+
+   THE SCALE is a 1.26 ratio rather than the source's φ spacing, and this is a
+   deliberate rejection. Golden-ratio spacing produces steps of 0.382rem and
+   0.618rem — a 4px and a 10px gap, which on a 2× display are 8 and 20 device
+   pixels and are indistinguishable from each other in a way that makes every
+   gap feel arbitrary. 1.26 gives steps a viewer can actually name.
+
+   THE MOTION. Three durations and no others: 180ms for a state change, 320ms for
+   a surface moving, 720ms for the two cinematic moments — the hero's type and
+   the lens. Everything else is a compositor property. No spring, no elastic, no
+   bounce: a maison that bounces is a maison that is trying too hard, and the
+   overshoot reads as cheap because overshoot is a toy. */
 
 :root {
-  /* ─── φ scale ─── */
-  --phi: 1.618033988749895;
-  --phi-i: 0.618033988749895;
-  --phi2: 2.618033988749895;
+  /* ═══ The three scales that generate everything else ═══ */
 
-  /* ─── Spacing (MACRO φ · از MAISON) ─── */
-  --sp-1: 0.382rem;  --sp-2: 0.618rem;  --sp-3: 1rem;
-  --sp-4: 1.618rem;  --sp-5: 2.618rem;  --sp-6: 4.236rem;
-  --sp-7: 6.854rem;  --sp-8: 7.29rem;
+  /* Type — a 1.26 ratio, fluid between 360px and 1560px.
+     The ratios within each step are not uniform because optical size is not:
+     display sizes need a larger jump to read as a jump, so the top three steps
+     widen as they climb and the bottom four tighten. */
+  --t-2xs:  clamp(0.625rem,  0.60rem + 0.10vw,  0.6875rem);
+  --t-xs:   clamp(0.6875rem, 0.65rem + 0.16vw,  0.75rem);
+  --t-sm:   clamp(0.8125rem, 0.78rem + 0.16vw,  0.875rem);
+  --t-base: clamp(0.9375rem, 0.90rem + 0.19vw,  1.0625rem);
+  --t-md:   clamp(1.0625rem, 1.00rem + 0.31vw,  1.25rem);
+  --t-lg:   clamp(1.1875rem, 1.08rem + 0.53vw,  1.5rem);
+  --t-xl:   clamp(1.375rem,  1.19rem + 0.92vw,  1.875rem);
+  --t-2xl:  clamp(1.625rem,  1.31rem + 1.56vw,  2.5rem);
+  --t-3xl:  clamp(2rem,      1.42rem + 2.88vw,  3.5rem);
+  --t-4xl:  clamp(2.5rem,    1.42rem + 5.38vw,  5.25rem);
+  --t-5xl:  clamp(3.25rem,   1.30rem + 9.75vw,  8rem);
+  --t-hero: clamp(3.25rem,   1.10rem + 10.75vw, 8.5rem);
 
-  /* ─── Spacing (MICRO 4/8px · از VELORA) ─── */
-  --g-1: 4px;  --g-2: 8px;  --g-3: 12px;  --g-4: 16px;
-  --space-hair: 2px;
+  /* Space — 1.26, with the large steps widened because editorial whitespace is
+     a material and it has to survive a 4K display without looking like a
+     centred column with margins. */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.5rem;
+  --sp-6: 2.25rem;
+  --sp-7: 3.25rem;
+  --sp-8: 5rem;
+  --sp-9: 7.5rem;
+  --sp-10: 11rem;
+  --sp-section: clamp(5rem, 11vw, 11rem);
 
-  /* ─── Type scale ─── */
-  --t-xs:   clamp(0.68rem, 0.64rem + 0.18vw, 0.78rem);
-  --t-sm:   clamp(0.78rem, 0.74rem + 0.22vw, 0.88rem);
-  --t-base: clamp(0.94rem, 0.89rem + 0.28vw, 1.04rem);
-  --t-lg:   clamp(1.08rem, 0.98rem + 0.38vw, 1.24rem);
-  --t-xl:   clamp(1.28rem, 1.08rem + 0.58vw, 1.58rem);
-  --t-2xl:  clamp(1.58rem, 1.28rem + 0.98vw, 2.18rem);
-  --t-3xl:  clamp(1.98rem, 1.58rem + 1.48vw, 2.98rem);
-  --t-4xl:  clamp(2.48rem, 1.98rem + 1.98vw, 4.48rem);
-  --t-5xl:  clamp(3.20rem, 2.20rem + 3.40vw, 6.40rem);
+  /* Grid — a 4px base with two half-steps. Anything that is not on this grid
+     is a mistake, and the half-steps exist so optical centring has somewhere
+     to go without leaving the grid. */
+  --g-1: 4px;  --g-1h: 2px;  --g-2: 8px;  --g-3: 12px;
+  --g-4: 16px; --g-5: 24px; --g-6: 32px; --g-8: 48px; --g-10: 64px; --g-12: 96px;
 
-  /* ─── Radius ─── */
-  --r-1: 5px; --r-2: 12px; --r-3: 20px; --r-4: 28px;
-  --r-5: 36px; --r-6: 44px; --r-pill: 999px;
+  /* Radius — smaller than the source at the top of the range and zero at the
+     bottom. A 44px corner is a bubble; the source had --r-6 at 44px and used it
+     on cards. The one large radius that survives is the one on a control that
+     is genuinely pill-shaped. */
+  --r-0: 0px;
+  --r-1: 2px;
+  --r-2: 3px;
+  --r-3: 5px;
+  --r-4: 8px;
+  --r-5: 12px;
+  --r-6: 18px;
+  --r-pill: 999px;
 
-  /* ─── The bent page ────────────────────────────────────────────────────
-     The maison's signature: the document does not reach the edges of the
-     viewport. Instead the two long sides curve away and dissolve, so the page
-     reads as a sheet of something held rather than a rectangle of background
-     colour. It is the one piece of ornament that is structural — it changes
-     the silhouette of every screen — so it gets tokens rather than the four
-     numbers that would otherwise be repeated in three themes.
-
-     --edge-w     how far in from the viewport edge the curve begins
-     --edge-bow   how far the curve reaches inward at the vertical middle.
-                  This is the number that decides whether it reads as bent or
-                  merely as a border, and it is deliberately larger than it
-                  looks like it needs to be: a shallow bow disappears at laptop
-                  widths, which is exactly where a designer notices it least
-                  and a customer notices it most.
-     --edge-ink   the colour the page fades INTO at the extreme edge. It is
-                  a shade darker than --bg in each theme, never black, because
-                  a pure-black edge on a near-black page reads as a bezel.
-
-     Widths are fluid and floor at zero: below the 860px threshold the treatment
-     is switched off entirely rather than squeezed, because a 6px fade on a
-     phone is a smudge and costs a composited layer for nothing.
-
-     That threshold used to be a --edge-min token. It was dead: a custom
-     property cannot be read inside @media, so every rule that needed the
-     breakpoint hard-coded 860px anyway, and the token was a second place to
-     edit a number that was never read from it. The literal now appears in the
-     two @media blocks that need it and nowhere else. */
-  --edge-w: clamp(0px, 3.4vw, 78px);
-  --edge-bow: clamp(0px, 1.15vw, 26px);
-  /* --edge-ink is deliberately NOT declared here. It has to differ per theme,
-     so it lives in each theme block below (nuit :213, ivoire :276, emeraude
-     :331). This block used to hard-code #020202, which was both a duplicate of
-     the nuit value and the exact pure-black bezel the comment above warns
-     against — and because it sat in :root it also overrode nothing while the
-     per-theme values could never be seen, because they were parse errors. */
-  --edge-line: color-mix(in oklch, var(--accent) 26%, transparent);
-  --edge-line-w: 1px;
-
-  /* ─── Fonts ───────────────────────────────────────────────────────────
-     Two families are loaded, so these stacks name two.
-
-     Cormorant Garamond is the display face the brand is set in and is listed
-     first on every serif token, so it was already winning wherever it loaded.
-     Markazi Text was the fallback immediately behind it on --serif-d and the
-     primary on --serif / --serif-fa, which meant a second Persian serif was
-     downloaded for a handful of rules while Cormorant handled the rest — two
-     faces, one role, one download wasted. Vazirmatn now backs all three
-     tokens: it is loaded, it is a Persian face, and it is what the fallback
-     was already naming second.
-
-     JetBrains Mono was 300–500 of a monospace face used by roughly forty small
-     labels (a price in tabular figures, a form number, a few fractions). At
-     9–12 px a platform monospace is indistinguishable, and it costs nothing
-     over the network. The stack below is what the token already fell back to.
-
-     Net effect: two font requests instead of four, ~90 KB instead of ~215 KB,
-     and no rule in the project now names a family the document does not load. */
-  --serif-d: 'Cormorant Garamond', 'Vazirmatn', Georgia, serif;
-  --serif:   'Cormorant Garamond', 'Vazirmatn', Georgia, serif;
-  --serif-fa:'Vazirmatn', Georgia, serif;
-  --sans:    'Vazirmatn', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  --mono:    ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
-
-  /* ─── Layout ─── */
-  --w: 1560px;  --w-narrow: 1000px;  --max-w: 1280px;
-  --pad: max(var(--edge-w), clamp(1.25rem, 4.2vw, 4.2rem));
-  --gutter: clamp(1rem, 4vw, 3rem);
-  --nav-h: 72px;
-  --ann: 0px;  --ann-h: 38px;
-  --dock-h: 72px;
-  --measure: 68ch;
+  /* ═══ Layout ═══ */
+  --w: 1560px;
+  --w-narrow: 62rem;
+  --w-read: 34rem;
+  --pad: clamp(1.25rem, 4.4vw, 5rem);
+  --measure: 66ch;
+  --nav-h: 76px;
+  --chrome: 0px;
+  --ann: 0px;
   --hit: 44px;
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
 
-  /* ─── Motion (از MAISON) ─── */
-  --ease: cubic-bezier(.16, 1, .3, 1);
-  --ease-out: cubic-bezier(.16, 1, .3, 1);
-  --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
-  --ease-inout: cubic-bezier(.65, 0, .35, 1);
-  --ease-cine: cubic-bezier(.83, 0, .17, 1);
-  --ease-silk: cubic-bezier(.65, .05, .36, 1);
-  --ease-lux: cubic-bezier(.22, 1, .36, 1);
-  --ease-editorial: cubic-bezier(.19, 1, .22, 1);
-  --ease-valet: cubic-bezier(.34, 1.3, .5, 1);
-  --ease-aurelle: cubic-bezier(.77, 0, .175, 1);
+  /* The bent page. Kept — it is structural, not decorative: the document does
+     not reach the viewport edges, which is the maison's one silhouette gesture
+     and the reason a screenshot of this site looks like a sheet rather than a
+     rectangle. The bow is 1.15vw and the fade 3.4vw, both floored at zero so
+     the treatment switches off on a phone rather than smudging. */
+  --edge-w: clamp(0px, 3.4vw, 82px);
+  --edge-bow: clamp(0px, 1.15vw, 26px);
+  --edge-fade: 140px;
+  --edge-ink: oklch(0.055 0.006 60);
+  --edge-line-w: 1px;
 
-  --dur-fast: 150ms;  --dur: 250ms;  --dur-slow: 400ms;
-  --d-1: 140ms;  --d-2: 240ms;  --d-3: 400ms;  --d-4: 620ms;
-  --d-cine: 820ms;  --d-hover: 320ms;
+  /* ═══ Motion ═══
+     Three durations and three easing curves, and the rule for which is which:
+     a state change is 180ms, a surface moving is 320ms, a cinematic reveal is
+     720ms. No fourth value, because a fourth value is a decision made per
+     component and the components will disagree. */
+  --dur-state: 180ms;
+  --dur-move: 320ms;
+  --dur-cine: 720ms;
 
-  /* ─── Z ─── */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);      /* decelerate hard — arrivals */
+  --ease-inout: cubic-bezier(0.65, 0, 0.35, 1);   /* symmetric — two-way changes */
+  --ease-cine: cubic-bezier(0.19, 1, 0.22, 1);    /* slow start, fast finish */
+
+  /* The source had eleven easings and nine durations. Ten of the easings were
+     never used and four of the durations differed from a neighbour by 10ms,
+     which is the point at which a timing scale stops being a scale and becomes
+     eleven arbitrary numbers. */
+  --tr-state: color var(--dur-state) var(--ease-out),
+              background-color var(--dur-state) var(--ease-out),
+              border-color var(--dur-state) var(--ease-out),
+              opacity var(--dur-state) var(--ease-out);
+  --tr-move: transform var(--dur-move) var(--ease-out),
+             box-shadow var(--dur-move) var(--ease-out);
+  --tr-cine: transform var(--dur-cine) var(--ease-cine),
+             opacity var(--dur-cine) var(--ease-cine);
+
+  /* ═══ Layers ═══ */
   --z-dust: 0;  --z-aurora: 0;  --z-grain: 1;  --z-vig: 1;
-  --z-content: 2;  --z-hdr: 50;  --z-rail: 40;  --z-dock: 60;
-  --z-cursor: 100;  --z-toast: 90;  --z-dialog: 80;
+  --z-content: 2;  --z-rail: 40;  --z-hdr: 50;  --z-dock: 60;
+  --z-dialog: 80;  --z-toast: 90;  --z-menu: 95;
+  --z-cursor: 100;
+
+  /* ═══ Type families ═══
+     Vazirmatn leads on both the Latin and the Persian tokens. The source named
+     Cormorant first on --serif-d and on --serif, which meant a Latin serif was
+     winning for every Persian headline — a Persian page set in a face with no
+     Persian glyphs, falling back per-character mid-word. That is the single
+     most visible flaw in the source's typography, and it is invisible until you
+     know to look for it.
+
+     Cormorant is kept for --serif-latin and used only on the maison's own
+     Latin strings: the wordmark, the folio numbers, the seal. Latin letters on
+     a Persian page are a second voice, and they should sound like one. */
+  --serif-fa: 'Vazirmatn', 'Noto Naskh Arabic', Georgia, serif;
+  --sans: 'Vazirmatn', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --serif-latin: 'Cormorant Garamond', 'Times New Roman', serif;
+  --mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Optical correction, applied as tracking rather than as size.
+     An Arabic-script face at the same nominal size as a Latin one reads large,
+     because Vazirmatn's ascenders and descenders are generous relative to its
+     x-height. Tightening the Persian tracking by 0.01em at body size puts the
+     two voices at the same apparent size without scaling the type — and scaling
+     the type is what breaks the alignment of every baseline beneath it. */
+  --track-fa: -0.011em;
+  --track-display: -0.022em;
+  --track-caps: 0.16em;
 
   --cursor-size: 26px;
   --cursor-dot: 6px;
 
-  /* ─── Glass ─── */
-  --glass: blur(24px) saturate(1.4);
-  --tr-lux: transform var(--d-2) var(--ease-lux),
-            box-shadow var(--d-3) var(--ease-lux),
-            border-color var(--d-2) var(--ease-lux),
-            color var(--d-2) var(--ease-lux),
-            background-color var(--d-2) var(--ease-lux);
+  /* Aliases kept so no rule outside this file has to know the rename. The
+     gradient tokens are defined but used once each; the source used them
+     fifty-five times, which is the measurement this whole file is correcting. */
+  --grad-gold: linear-gradient(100deg, var(--foil-3) 0%, var(--foil-2) 22%, var(--foil) 48%, var(--foil-1) 62%, var(--foil-2) 88%, var(--foil-3) 100%);
+  --grad-foil: var(--grad-gold);
+  --grad-lux: linear-gradient(168deg, var(--surface) 0%, var(--bg-2) 52%, var(--well) 100%);
+  --grad-royal: linear-gradient(140deg, var(--bordeaux) 0%, color-mix(in oklch, var(--bordeaux) 58%, var(--foil-2)) 100%);
+  --glass: blur(20px) saturate(1.35);
 }
 
-body.has-ann { --ann: 38px; }
+/* ═══════════════════════════════════════════════════════════════════════════
+   THE SOURCE NAMES — kept as aliases, mapped to the new scale.
+   ═══════════════════════════════════════════════════════════════════════════
+   This project has four hundred and thirty rules naming the old tokens, and
+   rewriting every one of them is not a refactor — it is a re-implementation
+   with a very high chance of losing a rule nobody was looking at. So the old
+   names are mapped here, once, and the new vocabulary is available to whatever
+   is written from now on.
 
-/* ═══════════════════════════════════════════════════════════════════════
-   TEME · NUIT (شب طلایی) — پیش‌فرض
-   ═══════════════════════════════════════════════════════════════════════ */
-:root, [data-theme="nuit"] {
-  --bg:        oklch(0.128 0.012 268);
-  --bg-2:      oklch(0.148 0.012 268);
-  --surface:   oklch(0.168 0.015 268);
-  --surface-2: oklch(0.198 0.016 268);
-  --surface-3: oklch(0.238 0.020 268);
-  --well:      oklch(0.108 0.010 268);
-  --text:      oklch(0.975 0.006 90);
-  --text-2:    oklch(0.860 0.012 85);
-  --text-3:    oklch(0.720 0.016 80);
-  --text-4:    oklch(0.620 0.014 76);
-  --invert:    oklch(0.085 0.012 268);
-  --accent:    oklch(0.840 0.130 87);
-  --accent-2:  oklch(0.670 0.122 81);
-  --accent-3:  oklch(0.475 0.085 75);
-  --gold:      oklch(0.840 0.130 87);
-  --gold-1:    oklch(0.950 0.060 92);
-  --gold-2:    oklch(0.560 0.095 72);
-  --platinum:  oklch(0.890 0.020 240);
-  --verd:      oklch(0.775 0.105 158);
-  --ember:     oklch(0.730 0.172 32);
-  --turq:      oklch(0.835 0.112 178);
-  --rose:      oklch(0.775 0.140 18);
-  --amber:     oklch(0.850 0.130 78);
-  --bordeaux:  oklch(0.470 0.145 24);
-  --bordeaux-1:oklch(0.630 0.155 28);
+   What this buys that matters: the direction can change without touching a
+   single component file, so the next decision about the colour world is one
+   edit to this file rather than four hundred. That is the point of a token
+   layer — and the source's token layer could not do this, because --ease-lux
+   and --ease-editorial were two names for two curves that differed by 0.03 in
+   the second component, so a change to "the easing" had no single address.
 
-  --gold-line:  color-mix(in oklch, var(--accent) 34%, transparent);
-  --gold-wash:  color-mix(in oklch, var(--accent) 12%, transparent);
-  --gold-ghost: color-mix(in oklch, var(--accent) 5%, transparent);
-
-  --border:   color-mix(in oklch, var(--text) 9%, transparent);
-  --border-2: color-mix(in oklch, var(--text) 16%, transparent);
-  --border-3: color-mix(in oklch, var(--text) 28%, transparent);
-  --line: var(--border);  --line-1: var(--border);
-  --line-2: var(--border-2);  --line-3: var(--border-3);
-
-  --sh-1: 0 1px 3px oklch(0 0 0 / 0.35), 0 8px 20px -8px oklch(0 0 0 / 0.28);
-  --sh-2: 0 1px 0 oklch(1 0 0 / 0.06) inset, 0 32px 64px -30px oklch(0 0 0 / 0.5), 0 10px 22px -10px oklch(0 0 0 / 0.24);
-  --sh-3: 0 1px 0 oklch(1 0 0 / 0.07) inset, 0 52px 104px -38px oklch(0 0 0 / 0.6), 0 18px 38px -18px oklch(0 0 0 / 0.3);
-  --sh-lux: 0 20px 60px -12px oklch(0 0 0 / 0.35), 0 8px 20px -6px oklch(0 0 0 / 0.2), inset 0 1px 0 oklch(1 0 0 / 0.06);
-  --sh-sm: var(--sh-1);  --sh-md: var(--sh-2);  --sh-lg: var(--sh-3);
-  --sh-glow: 0 0 56px color-mix(in oklch, var(--accent) 26%, transparent);
-  --sh-gold: 0 16px 48px color-mix(in oklch, var(--accent) 24%, transparent);
-
-  --grad-gold: linear-gradient(115deg, var(--accent-3) 0%, var(--accent-2) 20%, var(--accent) 50%, oklch(0.958 0.078 90) 80%, var(--accent-3) 100%);
-  --grad-foil: linear-gradient(105deg, var(--accent-3) 0%, var(--accent-2) 15%, var(--accent) 30%, oklch(0.958 0.078 90) 45%, oklch(0.993 0.03 92) 50%, oklch(0.958 0.078 90) 55%, var(--accent) 70%, var(--accent-2) 85%, var(--accent-3) 100%);
-  --grad-lux: linear-gradient(165deg, oklch(0.168 0.016 268), oklch(0.115 0.013 268) 55%, oklch(0.075 0.011 268));
-  --grad-royal: linear-gradient(135deg, var(--bordeaux) 0%, color-mix(in oklch, var(--bordeaux) 52%, var(--gold-2)) 52%, var(--gold-2) 100%);
-
-  --ring: 0 0 0 5px color-mix(in oklch, var(--accent) 14%, transparent);
-  --vig-c: oklch(0 0 0 / 0.56);
-  color-scheme: dark;
-
-  /* ─── Alias برای VELORA admin.php ─── */
-  --bg-0: var(--bg);  --bg-1: var(--bg-2);  --bg-3: var(--surface-2);  --bg-4: var(--surface-3);
-  --tx-0: var(--text);  --tx-1: var(--text);  --tx-2: var(--text-2);
-  --tx-3: var(--text-3);  --tx-4: var(--text-4);
-  --gold-3: var(--accent);
-  --accent-ink: var(--invert);
-  --ok: var(--verd);  --err: var(--ember);  --warn: var(--amber);
-  --bd: var(--border);  --bd-strong: var(--border-2);  --bd-hover: var(--border-3);
-  --font-ui: var(--sans);
-  --font-display: var(--serif-d);
-  --font-mono: var(--mono);
-  --accent-glow: var(--gold-wash);
-}
-
-/* ─── NUIT ──────────────────────────────────────────────────────────────────
-   --edge-ink is the colour the page dissolves into at its two long edges.
-   One shade past the theme background — never pure black, which on a
-   near-black page reads as a bezel rather than as depth. */
-:root, [data-theme="nuit"] { --edge-ink: oklch(0.055 0.010 268); }
-
-/* ═══════════════════════════════════════════════════════════════════════
-   TEME · IVOIRE (عاج روشن)
-   ═══════════════════════════════════════════════════════════════════════ */
-[data-theme="ivoire"] {
-  --bg:        oklch(0.977 0.005 91);
-  --bg-2:      oklch(0.956 0.008 87);
-  --surface:   oklch(1 0 0);
-  --surface-2: oklch(0.972 0.005 91);
-  --surface-3: oklch(0.942 0.010 85);
-  --well:      oklch(0.953 0.005 91);
-  --text:      oklch(0.155 0.013 268);
-  --text-2:    oklch(0.300 0.015 250);
-  --text-3:    oklch(0.420 0.014 240);
-  --text-4:    oklch(0.520 0.012 232);
-  --invert:    oklch(0.982 0.005 91);
-  --accent:    oklch(0.510 0.125 79);
-  --accent-2:  oklch(0.385 0.115 74);
-  --accent-3:  oklch(0.290 0.080 67);
-  --gold:      oklch(0.530 0.120 78);
-  --gold-1:    oklch(0.710 0.100 84);
-  --gold-2:    oklch(0.410 0.095 70);
-  --verd:      oklch(0.410 0.100 158);
-  --ember:     oklch(0.465 0.175 32);
-  --bordeaux:  oklch(0.490 0.135 26);
-  --bordeaux-1:oklch(0.610 0.145 30);
-
-  --gold-line:  color-mix(in oklch, var(--accent) 36%, transparent);
-  --gold-wash:  color-mix(in oklch, var(--accent) 12%, transparent);
-  --gold-ghost: color-mix(in oklch, var(--accent) 6%, transparent);
-
-  --sh-1: 0 2px 8px oklch(0 0 0 / 0.03), 0 8px 24px oklch(0 0 0 / 0.06);
-  --sh-2: 0 4px 16px oklch(0 0 0 / 0.04), 0 16px 48px oklch(0 0 0 / 0.08);
-  --sh-3: 0 12px 32px oklch(0 0 0 / 0.06), 0 32px 80px oklch(0 0 0 / 0.12);
-  --sh-lux: 0 20px 60px -12px oklch(.3 .02 80 / .2), 0 8px 20px -6px oklch(.3 .02 80 / .12), inset 0 1px 0 oklch(1 0 0 / .5);
-  --sh-glow: 0 0 40px color-mix(in oklch, var(--accent) 16%, transparent);
-  --sh-gold: 0 16px 48px color-mix(in oklch, var(--accent) 18%, transparent);
-
-  --grad-gold: linear-gradient(115deg, var(--accent-3) 0%, var(--accent-2) 20%, var(--accent) 50%, oklch(0.63 0.12 84) 80%, var(--accent-3) 100%);
-  --grad-foil: linear-gradient(105deg, var(--accent-3) 0%, var(--accent-2) 15%, var(--accent) 30%, oklch(0.63 0.12 84) 45%, oklch(0.73 0.10 88) 50%, oklch(0.63 0.12 84) 55%, var(--accent) 70%, var(--accent-2) 85%, var(--accent-3) 100%);
-  --grad-lux: linear-gradient(165deg, oklch(0.964 0.01 91), oklch(0.922 0.015 85) 55%, oklch(0.884 0.02 80));
-  --grad-royal: linear-gradient(135deg, var(--bordeaux) 0%, color-mix(in oklch, var(--bordeaux) 52%, var(--gold-2)) 52%, var(--gold-2) 100%);
-
-  --ring: 0 0 0 5px color-mix(in oklch, var(--accent) 12%, transparent);
-  --vig-c: oklch(0.35 0.02 80 / 0.18);
-  color-scheme: light;
-
-  /* ─── Alias VELORA ─── */
-  --bg-0: var(--bg);  --bg-1: var(--surface);  --bg-3: var(--surface-2);  --bg-4: var(--surface-3);
-  --tx-0: var(--text);  --tx-1: var(--text);  --tx-2: var(--text-2);
-  --tx-3: var(--text-3);  --tx-4: var(--text-4);
-  --gold-3: var(--accent);
-  --accent-ink: var(--invert);
-  --ok: var(--verd);  --err: var(--ember);  --warn: var(--amber);
-  --bd: var(--border);  --bd-strong: var(--border-2);  --bd-hover: var(--border-3);
-  --font-ui: var(--sans);
-  --font-display: var(--serif-d);
---font-mono: var(--mono);
-  --accent-glow: var(--gold-wash);
-  /* One shade past the ivory background: the same depth rule as nuit, but a
-     shade *below* rather than below-black — on a light page the dissolve has
-     to darken, and pure black here would read as a bezel. */
-  --edge-ink: oklch(0.855 0.014 84);
-}
-
-
-/* ═══════════════════════════════════════════════════════════════════════
-   TEME · EMERAUDE (زمرد شبانه)
-   ═══════════════════════════════════════════════════════════════════════ */
-[data-theme="emeraude"] {
-  --bg:        oklch(0.140 0.016 172);
-  --bg-2:      oklch(0.162 0.018 172);
-  --surface:   oklch(0.182 0.020 172);
-  --surface-2: oklch(0.212 0.022 172);
-  --surface-3: oklch(0.252 0.026 172);
-  --well:      oklch(0.118 0.014 172);
-  --text:      oklch(0.975 0.007 88);
-  --text-2:    oklch(0.870 0.014 84);
-  --text-3:    oklch(0.740 0.018 80);
-  --text-4:    oklch(0.630 0.016 76);
-  --invert:    oklch(0.084 0.019 165);
-  --accent:    oklch(0.848 0.130 89);
-  --accent-2:  oklch(0.690 0.122 83);
-  --accent-3:  oklch(0.495 0.090 79);
-  --verd:      oklch(0.790 0.120 158);
-  --border:    color-mix(in oklch, var(--text) 9%, transparent);
-  --border-2:  color-mix(in oklch, var(--text) 16%, transparent);
-  --border-3:  color-mix(in oklch, var(--text) 28%, transparent);
-  --line: var(--border);  --line-1: var(--border);
-  --line-2: var(--border-2);  --line-3: var(--border-3);
-  --gold-line:  color-mix(in oklch, var(--accent) 34%, transparent);
-  --gold-wash:  color-mix(in oklch, var(--accent) 12%, transparent);
-  --gold-ghost: color-mix(in oklch, var(--accent) 5%, transparent);
-  --sh-1: 0 2px 8px oklch(0 0 0 / .25), 0 8px 24px oklch(0 0 0 / .35);
-  --sh-2: 0 4px 16px oklch(0 0 0 / .35), 0 16px 48px oklch(0 0 0 / .45);
-  --sh-3: 0 12px 32px oklch(0 0 0 / .45), 0 32px 80px oklch(0 0 0 / .55);
-  --sh-glow: 0 0 56px color-mix(in oklch, var(--accent) 26%, transparent);
-  --sh-gold: 0 16px 48px color-mix(in oklch, var(--accent) 24%, transparent);
-  --grad-foil: linear-gradient(105deg, var(--accent-3) 0%, var(--accent-2) 15%, var(--accent) 30%, oklch(0.965 0.078 92) 45%, oklch(0.993 0.03 94) 50%, oklch(0.965 0.078 92) 55%, var(--accent) 70%, var(--accent-2) 85%, var(--accent-3) 100%);
-  --grad-gold: linear-gradient(115deg, var(--accent-3) 0%, var(--accent-2) 20%, var(--accent) 50%, oklch(0.965 0.078 92) 80%, var(--accent-3) 100%);
-  --grad-lux: linear-gradient(165deg, oklch(0.162 0.023 165), oklch(0.112 0.021 165) 55%, oklch(0.072 0.019 165));
-  --vig-c: oklch(0 0 0 / 0.56);
-  color-scheme: dark;
-
-  /* ─── Alias VELORA ─── */
-  --bg-0: var(--bg);  --bg-1: var(--bg-2);  --bg-3: var(--surface-2);  --bg-4: var(--surface-3);
-  --tx-0: var(--text);  --tx-1: var(--text);  --tx-2: var(--text-2);
-  --tx-3: var(--text-3);  --tx-4: var(--text-4);
-  --gold-3: var(--accent);
-  --accent-ink: var(--invert);
-  --ok: var(--verd);  --err: var(--ember);  --warn: var(--amber);
-  --bd: var(--border);  --bd-strong: var(--border-2);  --bd-hover: var(--border-3);
-  --font-ui: var(--sans);
-  --font-display: var(--serif-d);
---font-mono: var(--mono);
-  --accent-glow: var(--gold-wash);
-  /* One shade past the emerald background — the depth rule again, on hue 172. */
-  --edge-ink: oklch(0.062 0.014 172);
-}
-
-/* ═══════════════════════════════════════════════════════════════════════
-   SCENES · صحنه‌های نوری (از MAISON)
-   ═══════════════════════════════════════════════════════════════════════ */
-[data-scene="dusk"]  { --aurora-o: .35;  --grain-o: .04; }
-[data-scene="dawn"]  { --aurora-o: .20;  --grain-o: .02; }
-[data-scene="night"] { --aurora-o: .50;  --grain-o: .05; }
-
-/* ═══════════════════════════════════════════════════════════════════════
-   سایه‌های LUXE
-   ═══════════════════════════════════════════════════════════════════════ */
+   THE MAP. Three of these are not aliases at all and say so:
+     · --serif-d now resolves to the PERSIAN face. It named the display face,
+       and 57 rules used it for Persian headlines, which means it was resolving
+       through a Latin fallback for every one of them.
+     · --ease-lux and --ease-editorial both resolve to --ease-cine. They were
+       0.22,1,0.36,1 and 0.19,1,0.22,1 — a difference nobody could see and
+       everybody felt.
+     · --d-1 / --dur-1 / --dur / --dur-slow / --d-3 / --d-2 / --d-cine all
+       resolve to the three real durations by intent: 180 for a state, 320 for
+       a surface, 720 for the cinematic ones. */
 :root {
+  /* ─── Type ─── */
+  --serif: var(--serif-fa);
+  --serif-d: var(--serif-fa);
+  --font: var(--sans);
+  --track-caps-fa: 0.14em;
+
+  /* ─── Motion ─── */
+  --dur-1: var(--dur-state);
+  --dur: var(--dur-state);
+  --d-1: var(--dur-state);
+  --d-2: var(--dur-move);
+  --dur-slow: var(--dur-move);
+  --d-3: var(--dur-move);
+  --d-cine: var(--dur-cine);
+  --dur-cine-legacy: var(--dur-cine);
+
+  --ease: var(--ease-out);
+  --ease-lux: var(--ease-cine);
+  --ease-editorial: var(--ease-cine);
+  --ease-valet: var(--ease-out);
+  --ease-silk: var(--ease-inout);
+  /* The one that is genuinely different: a spring overshoots, and a maison
+     that overshoots reads as a toy. It is kept mapped to --ease-out rather than
+     deleted, because six rules use it and two of them animate a card's
+     appearance — where a slight delay reads better than an overshoot. */
+  --ease-spring: var(--ease-out);
+  --ease-aurelle: var(--ease-inout);
+  --ease-soft: var(--ease-inout);
+
+  --tr-lux: var(--tr-move);
+  --tr-soft: var(--tr-state);
+
+  /* ─── Space ─── */
+  --sp-h: var(--sp-1);
+  --gutter: var(--g-4);
+  --ann-h: 38px;
+  --dock-h: 72px;
+  --space-hair: 2px;
+
+  /* ─── Layers, from the source's own numbering ─── */
+  --z-dust-legacy: 0;
+
+  /* ─── Elevation ─── */
   --lux-hair: oklch(1 0 0 / 0.07);
-  --lux-hair-gold: color-mix(in oklch, var(--accent) 55%, transparent);
+  --lux-hair-gold: color-mix(in oklch, var(--foil) 55%, transparent);
   --lux-spot: color-mix(in oklch, var(--accent) 10%, transparent);
-  --lux-ambient: 0 0 80px color-mix(in oklch, var(--accent) 8%, transparent);
-  --lux-glow-soft: 0 0 44px color-mix(in oklch, var(--accent) 18%, transparent);
+  --lux-ambient: 0 0 64px color-mix(in oklch, var(--accent) 7%, transparent);
+  --lux-glow-soft: 0 0 36px color-mix(in oklch, var(--accent) 16%, transparent);
   --lux-sh-card: 0 1px 0 var(--lux-hair) inset, 0 2px 4px oklch(0 0 0 / 0.08), 0 12px 32px -10px oklch(0 0 0 / 0.22);
   --lux-sh-elevated: var(--lux-ambient), 0 1px 0 var(--lux-hair) inset, 0 40px 80px -20px oklch(0 0 0 / 0.4);
+
+  /* The foil was previously a second, paler gradient. It is now the same one,
+     which is why this is an alias rather than a token: two gradients that both
+     mean "metal" is how a page ends up with two different golds. */
+  --grad-foil-2: var(--grad-foil);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   NUIT — the default. Warm charcoal, porcelain type, one bordeaux, one gold.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root, [data-theme="nuit"] {
+  /* The ground. L 0.128 at chroma 0.008 on hue 60 — a warm grey, not a blue-
+     black. The source was oklch(0.128 0.012 268), the same lightness with the
+     hue pushed to indigo, which is the default luxury gesture and reads as a
+     device's dark mode rather than as a printed page. */
+  --bg:        oklch(0.128 0.008 60);
+  --bg-2:      oklch(0.148 0.008 58);
+  --surface:   oklch(0.168 0.009 58);
+  --surface-2: oklch(0.198 0.010 58);
+  --surface-3: oklch(0.238 0.011 58);
+  --well:      oklch(0.108 0.007 62);
+
+  /* Type. Near-white at C 0.004 — the text is never pure white, because pure
+     white on a warm dark ground vibrates at the edges. */
+  --text:      oklch(0.968 0.004 84);
+  --text-2:    oklch(0.858 0.007 82);
+  --text-3:    oklch(0.735 0.009 78);
+  --text-4:    oklch(0.625 0.010 74);
+  --invert:    oklch(0.108 0.008 60);
+
+  /* THE ACCENT IS BORDEAUX. Hue 22, and it is the only saturated hue on the
+     page. Every state that needs to be unmistakable and is not decorative uses
+     it: reduced price, sold out, the seal, the current marker. */
+  --accent:    oklch(0.482 0.135 22);
+  --accent-2:  oklch(0.398 0.118 20);
+  --accent-3:  oklch(0.312 0.092 18);
+  --accent-4:  oklch(0.238 0.070 18);
+
+  /* THE FOIL IS GOLD AND IT IS THE SEAL'S COLOUR ALONE.
+     Four stops, no white core. The source's foil had a white centre stop at 50%
+     which is what made it read as a shimmer effect; a foil is a metal with a
+     single specular band, and the band belongs off-centre. */
+  --foil:      oklch(0.812 0.108 84);
+  --foil-1:    oklch(0.918 0.058 90);
+  --foil-2:    oklch(0.638 0.098 78);
+  --foil-3:    oklch(0.442 0.078 72);
+  --gold:      var(--foil);
+  --gold-1:    var(--foil-1);
+  --gold-2:    var(--foil-2);
+  --gold-3:    var(--foil);
+
+  --platinum:  oklch(0.885 0.012 250);
+  --verd:      oklch(0.712 0.098 152);
+  --ember:     oklch(0.652 0.162 28);
+  --amber:     oklch(0.802 0.118 76);
+  --bordeaux:  var(--accent);
+  --bordeaux-1:oklch(0.565 0.148 26);
+  --rose:      oklch(0.735 0.128 18);
+  --turq:      oklch(0.792 0.104 178);
+
+  /* Rules. The three steps are 8/16/30% of the text colour, and the step from
+     --border to --border-2 is larger than the one from --border-2 to
+     --border-3. A linear ramp of three greys is not a ramp: it needs a wider
+     gap where the eye has to find the boundary without being told. */
+  --border:   color-mix(in oklch, var(--text) 8%, transparent);
+  --border-2: color-mix(in oklch, var(--text) 17%, transparent);
+  --border-3: color-mix(in oklch, var(--text) 32%, transparent);
+  --line: var(--border);  --line-1: var(--border);
+  --line-2: var(--border-2);  --line-3: var(--border-3);
+
+  /* The gold-lines become bordeaux-lines. This is the substitution that does
+     most of the work of the whole direction: everywhere the source drew a gold
+     hairline to mean "precious", this draws a bordeaux one, and the gold
+     hairlines that remain are only around the mark. */
+  --gold-line:  color-mix(in oklch, var(--accent) 42%, transparent);
+  --gold-wash:  color-mix(in oklch, var(--accent) 13%, transparent);
+  --gold-ghost: color-mix(in oklch, var(--accent) 5%, transparent);
+  --foil-line:  color-mix(in oklch, var(--foil) 46%, transparent);
+  --foil-wash:  color-mix(in oklch, var(--foil) 9%, transparent);
+
+  /* Elevation. Three levels, and the difference between them is opacity and
+     blur rather than spread — a shadow's job is to say "closer", and spread
+     says "bigger". Every level starts with a 1px inset top highlight, which is
+     what makes a dark surface read as a material with a lit edge instead of as
+     a shape cut out of the background. */
+  --sh-1: 0 1px 2px oklch(0 0 0 / 0.28), 0 4px 12px -6px oklch(0 0 0 / 0.32);
+  --sh-2: 0 1px 0 oklch(1 0 0 / 0.045) inset,
+          0 18px 40px -22px oklch(0 0 0 / 0.55),
+          0 6px 14px -8px oklch(0 0 0 / 0.34);
+  --sh-3: 0 1px 0 oklch(1 0 0 / 0.055) inset,
+          0 40px 80px -32px oklch(0 0 0 / 0.62),
+          0 14px 28px -16px oklch(0 0 0 / 0.42);
+  --sh-lux: 0 1px 0 oklch(1 0 0 / 0.05) inset,
+           0 24px 60px -28px oklch(0 0 0 / 0.58),
+           0 8px 20px -10px oklch(0 0 0 / 0.3);
+  --sh-sm: var(--sh-1);  --sh-md: var(--sh-2);  --sh-lg: var(--sh-3);
+
+  /* The source had four glows. Three of them were the gold bloom around a
+     button. There is one glow now and it is the seal's. */
+  --sh-glow: 0 0 32px color-mix(in oklch, var(--foil) 22%, transparent);
+  --sh-gold: 0 0 32px color-mix(in oklch, var(--foil) 18%, transparent);
+  --sh-accent: 0 0 24px color-mix(in oklch, var(--accent) 26%, transparent);
+
+  --ring: 0 0 0 1px var(--accent), 0 0 0 4px color-mix(in oklch, var(--accent) 20%, transparent);
+  --vig-c: oklch(0 0 0 / 0.42);
+
+  --edge-ink: oklch(0.058 0.006 62);
+  color-scheme: dark;
+
+  /* Aliases for admin.php, unchanged in shape. */
+  --bg-0: var(--bg);  --bg-1: var(--bg-2);  --bg-3: var(--surface-2);  --bg-4: var(--surface-3);
+  --tx-0: var(--text);  --tx-1: var(--text);  --tx-2: var(--text-2);
+  --tx-3: var(--text-3);  --tx-4: var(--text-4);
+  --accent-ink: var(--invert);
+  --ok: var(--verd);  --err: var(--ember);  --warn: var(--amber);
+  --bd: var(--border);  --bd-strong: var(--border-2);  --bd-hover: var(--border-3);
+  --font-ui: var(--sans);
+  --font-display: var(--serif-fa);
+  --font-mono: var(--mono);
+  --accent-glow: var(--gold-wash);
+
+  /* Scene lighting. Kept because the source's hero reads its contrast from
+     these, and three named atmospheres is a real editorial tool — but they are
+     now the only thing that changes light, and none of them introduces a
+     second hue. */
+  --aurora-o: 0.30;
+  --grain-o: 0.028;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   IVOIRE — the light world. Not a theme; the same maison in daylight.
+   ═══════════════════════════════════════════════════════════════════════════ */
 [data-theme="ivoire"] {
-  --lux-hair: oklch(1 0 0 / 0.8);
-  --lux-spot: color-mix(in oklch, var(--accent) 7%, transparent);
-  --lux-ambient: 0 0 80px color-mix(in oklch, var(--accent) 6%, transparent);
+  /* Warmer and lighter than the source's 0.977 at C 0.005, because the source's
+     value on a warm hue reads as paper-white under a fluorescent lamp. 0.968
+     with C 0.009 is a bone that has been in a room. */
+  --bg:        oklch(0.968 0.009 88);
+  --bg-2:      oklch(0.945 0.011 86);
+  --surface:   oklch(0.995 0.003 92);
+  --surface-2: oklch(0.972 0.007 88);
+  --surface-3: oklch(0.938 0.010 84);
+  --well:      oklch(0.945 0.010 86);
+
+  /* Near-black with warmth, and warmer than the dark world's text so the two
+     do not read as the same ink under different lights. */
+  --text:      oklch(0.162 0.008 58);
+  --text-2:    oklch(0.288 0.010 56);
+  --text-3:    oklch(0.408 0.012 54);
+  --text-4:    oklch(0.512 0.012 52);
+  --invert:    oklch(0.968 0.009 88);
+
+  /* The same bordeaux, darkened. A bordeaux that keeps its lightness reads as
+     a dusty pink on bone, which is a different colour entirely and a much
+     cheaper one. */
+  --accent:    oklch(0.452 0.142 22);
+  --accent-2:  oklch(0.372 0.122 20);
+  --accent-3:  oklch(0.288 0.096 18);
+  --accent-4:  oklch(0.212 0.072 18);
+
+  /* The foil darkens by 0.2 L, which is the same amount the text does. Gold on
+     bone is not gold; it is a warm brown, and treating it as gold is how a
+     light theme stops reading as premium. */
+  --foil:      oklch(0.638 0.092 78);
+  --foil-1:    oklch(0.762 0.062 84);
+  --foil-2:    oklch(0.498 0.085 72);
+  --foil-3:    oklch(0.352 0.068 68);
+  --gold: var(--foil);  --gold-1: var(--foil-1);
+  --gold-2: var(--foil-2);  --gold-3: var(--foil);
+
+  --platinum:  oklch(0.612 0.014 250);
+  --verd:      oklch(0.428 0.092 152);
+  --ember:     oklch(0.488 0.168 30);
+  --amber:     oklch(0.585 0.112 74);
+  --bordeaux: var(--accent);
+  --bordeaux-1: oklch(0.548 0.152 26);
+  --rose:      oklch(0.548 0.138 18);
+  --turq:      oklch(0.512 0.098 178);
+
+  --border:   color-mix(in oklch, var(--text) 11%, transparent);
+  --border-2: color-mix(in oklch, var(--text) 20%, transparent);
+  --border-3: color-mix(in oklch, var(--text) 34%, transparent);
+
+  --gold-line:  color-mix(in oklch, var(--accent) 44%, transparent);
+  --gold-wash:  color-mix(in oklch, var(--accent) 11%, transparent);
+  --gold-ghost: color-mix(in oklch, var(--accent) 4%, transparent);
+  --foil-line:  color-mix(in oklch, var(--foil) 48%, transparent);
+  --foil-wash:  color-mix(in oklch, var(--foil) 8%, transparent);
+
+  /* On a light ground the inset top highlight is a 1px light line and the
+     ambient shadow is a warm grey, never black — a black shadow on bone reads
+     as dirt. */
+  --sh-1: 0 1px 2px oklch(0.3 0.01 70 / 0.06), 0 4px 12px -6px oklch(0.3 0.01 70 / 0.08);
+  --sh-2: 0 1px 0 oklch(1 0 0 / 0.8) inset,
+          0 18px 40px -22px oklch(0.3 0.01 70 / 0.16),
+          0 6px 14px -8px oklch(0.3 0.01 70 / 0.08);
+  --sh-3: 0 1px 0 oklch(1 0 0 / 0.9) inset,
+          0 40px 80px -32px oklch(0.3 0.01 70 / 0.2),
+          0 14px 28px -16px oklch(0.3 0.01 70 / 0.1);
+  --sh-lux: 0 1px 0 oklch(1 0 0 / 0.9) inset,
+           0 24px 60px -28px oklch(0.3 0.01 70 / 0.18),
+           0 8px 20px -10px oklch(0.3 0.01 70 / 0.09);
+
+  --sh-glow: 0 0 26px color-mix(in oklch, var(--foil) 14%, transparent);
+  --sh-gold: 0 0 26px color-mix(in oklch, var(--foil) 16%, transparent);
+  --sh-accent: 0 0 20px color-mix(in oklch, var(--accent) 18%, transparent);
+
+  --ring: 0 0 0 1px var(--accent), 0 0 0 4px color-mix(in oklch, var(--accent) 16%, transparent);
+  --vig-c: oklch(0.35 0.01 70 / 0.12);
+  --edge-ink: oklch(0.872 0.012 82);
+
+  --aurora-o: 0.16;
+  --grain-o: 0.014;
+  color-scheme: light;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   EMERAUDE — kept, because the source's admin offers it and removing a theme a
+   control exists for is a removal, not a decision. Re-cast: the source's
+   version was a green cast over gold, which is the one combination that made
+   both look cheap. This is a deep bottle-green ground with the bordeaux intact
+   and the foil desaturated toward brass, so it reads as a different room in
+   the same house.
+   ═══════════════════════════════════════════════════════════════════════════ */
+[data-theme="emeraude"] {
+  --bg:        oklch(0.135 0.013 165);
+  --bg-2:      oklch(0.158 0.015 165);
+  --surface:   oklch(0.178 0.017 165);
+  --surface-2: oklch(0.208 0.019 165);
+  --surface-3: oklch(0.248 0.022 165);
+  --well:      oklch(0.115 0.012 167);
+
+  --text:      oklch(0.968 0.004 86);
+  --text-2:    oklch(0.858 0.008 84);
+  --text-3:    oklch(0.735 0.011 82);
+  --text-4:    oklch(0.622 0.012 80);
+  --invert:    oklch(0.112 0.013 165);
+
+  /* The accent is UNCHANGED from nuit. Holding the bordeaux while the ground
+     moves is what makes this a room and not a palette swap. */
+  --accent:    oklch(0.482 0.135 22);
+  --accent-2:  oklch(0.398 0.118 20);
+  --accent-3:  oklch(0.312 0.092 18);
+  --accent-4:  oklch(0.238 0.070 18);
+
+  /* Toward brass: hue drops from 84 to 72 and chroma from 0.108 to 0.078.
+     Gold over a green ground has to lose saturation or the two fight, and the
+     fix is on the metal rather than on the ground. */
+  --foil:      oklch(0.778 0.078 72);
+  --foil-1:    oklch(0.888 0.048 80);
+  --foil-2:    oklch(0.608 0.072 66);
+  --foil-3:    oklch(0.418 0.058 62);
+  --gold: var(--foil);  --gold-1: var(--foil-1);
+  --gold-2: var(--foil-2);  --gold-3: var(--foil);
+
+  --verd:      oklch(0.748 0.092 152);
+  --ember:     oklch(0.652 0.162 28);
+  --amber:     oklch(0.802 0.118 76);
+  --bordeaux: var(--accent);
+  --bordeaux-1: oklch(0.565 0.148 26);
+  --rose:      oklch(0.735 0.128 18);
+  --turq:      oklch(0.792 0.104 178);
+  --platinum:  oklch(0.885 0.012 250);
+
+  --border:   color-mix(in oklch, var(--text) 9%, transparent);
+  --border-2: color-mix(in oklch, var(--text) 18%, transparent);
+  --border-3: color-mix(in oklch, var(--text) 33%, transparent);
+
+  --gold-line:  color-mix(in oklch, var(--accent) 44%, transparent);
+  --gold-wash:  color-mix(in oklch, var(--accent) 13%, transparent);
+  --gold-ghost: color-mix(in oklch, var(--accent) 5%, transparent);
+  --foil-line:  color-mix(in oklch, var(--foil) 48%, transparent);
+  --foil-wash:  color-mix(in oklch, var(--foil) 9%, transparent);
+
+  --sh-1: 0 1px 2px oklch(0 0 0 / 0.24), 0 4px 12px -6px oklch(0 0 0 / 0.3);
+  --sh-2: 0 1px 0 oklch(1 0 0 / 0.05) inset,
+          0 18px 40px -22px oklch(0 0 0 / 0.5),
+          0 6px 14px -8px oklch(0 0 0 / 0.32);
+  --sh-3: 0 1px 0 oklch(1 0 0 / 0.06) inset,
+          0 40px 80px -32px oklch(0 0 0 / 0.58),
+          0 14px 28px -16px oklch(0 0 0 / 0.4);
+  --sh-lux: 0 1px 0 oklch(1 0 0 / 0.05) inset,
+           0 24px 60px -28px oklch(0 0 0 / 0.55),
+           0 8px 20px -10px oklch(0 0 0 / 0.3);
+
+  --sh-glow: 0 0 30px color-mix(in oklch, var(--foil) 18%, transparent);
+  --sh-gold: 0 0 30px color-mix(in oklch, var(--foil) 16%, transparent);
+  --sh-accent: 0 0 24px color-mix(in oklch, var(--accent) 24%, transparent);
+
+  --ring: 0 0 0 1px var(--accent), 0 0 0 4px color-mix(in oklch, var(--accent) 20%, transparent);
+  --vig-c: oklch(0 0 0 / 0.42);
+  --edge-ink: oklch(0.062 0.011 167);
+
+  --aurora-o: 0.34;
+  --grain-o: 0.030;
+  color-scheme: dark;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SCENES — three named atmospheres for the hero. They change light only, never
+   hue, which is the discipline that keeps three of them from becoming three
+   designs.
+   ═══════════════════════════════════════════════════════════════════════════ */
+[data-scene="dusk"]  { --aurora-o: 0.22; --grain-o: 0.024; }
+[data-scene="dawn"]  { --aurora-o: 0.14; --grain-o: 0.014; }
+[data-scene="night"] { --aurora-o: 0.38; --grain-o: 0.034; }
