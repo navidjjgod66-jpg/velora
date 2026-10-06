@@ -4,8 +4,12 @@ declare(strict_types=1);
  * VELORA · Client IP & rate limiting & logging
  *
  * Extracted verbatim from config.php during the monolith split — same code,
- * same behaviour, one home per concern. Covers rate_limit() and its sweep, admin_ip_allowed(), get_client_ip() behind trusted proxies, and the log_safe()/log_line()/log_action() trio.
- */if (!defined('VELORA_CONFIG_LOADED')) {
+ * same behaviour, one home per concern. Covers rate_limit() and its sweep,
+ * admin_ip_allowed(), get_client_ip() behind trusted proxies, and the
+ * log_safe()/log_line()/log_action() trio.
+ */
+
+if (!defined('VELORA_CONFIG_LOADED')) {
     http_response_code(500);
     exit('includes/net.php requires config.php to be loaded first.');
 }

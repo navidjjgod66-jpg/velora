@@ -5,7 +5,9 @@ declare(strict_types=1);
  *
  * Extracted verbatim from config.php during the monolith split — same code,
  * same behaviour, one home per concern. Covers jresp(), the CSP/security-header emitter, HTTPS detection, the same-origin local path used by the catalogue probe, canonical URI building, the esc() helper and the 404/410/503 error pages.
- */if (!defined('VELORA_CONFIG_LOADED')) {
+ */
+
+if (!defined('VELORA_CONFIG_LOADED')) {
     http_response_code(500);
     exit('includes/http.php requires config.php to be loaded first.');
 }
@@ -20,7 +22,8 @@ function jresp(array $data, int $code = 200, bool $cache = false): void {
     exit;
 }
 
-HTTP · security headers · HTTPS detection · canonical URI
+/* ═══════════════════════════════════════════════════════════════════════════
+RESPONSE HELPERS · HTTPS DETECTION · SECURITY HEADERS
 ═══════════════════════════════════════════════════════════════════════════ */
 function is_https(): bool {
     if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') return true;
@@ -180,10 +183,6 @@ function http_503(string $nonce = ''): void {
 <p><a href="/">بازگشت به خانه</a></p></div></body></html>
 HTML;
     exit;
-}
-
-function esc(?string $s): string {
-    return htmlspecialchars((string) $s, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5, 'UTF-8', true);
 }
 
 function esc(?string $s): string {
