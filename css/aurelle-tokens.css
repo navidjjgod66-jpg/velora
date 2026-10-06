@@ -1,0 +1,367 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   VELORA AURELLE · aurelle-tokens.css
+   ادغام توکن‌های MAISON AURELLE (سه تم + سه صحنه) با نیازهای VELORA
+   هیچ عددی بیرون این فایل نیست.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ─── φ scale ─── */
+  --phi: 1.618033988749895;
+  --phi-i: 0.618033988749895;
+  --phi2: 2.618033988749895;
+
+  /* ─── Spacing (MACRO φ · از MAISON) ─── */
+  --sp-1: 0.382rem;  --sp-2: 0.618rem;  --sp-3: 1rem;
+  --sp-4: 1.618rem;  --sp-5: 2.618rem;  --sp-6: 4.236rem;
+  --sp-7: 6.854rem;  --sp-8: 7.29rem;
+
+  /* ─── Spacing (MICRO 4/8px · از VELORA) ─── */
+  --g-1: 4px;  --g-2: 8px;  --g-3: 12px;  --g-4: 16px;
+  --space-hair: 2px;
+
+  /* ─── Type scale ─── */
+  --t-xs:   clamp(0.68rem, 0.64rem + 0.18vw, 0.78rem);
+  --t-sm:   clamp(0.78rem, 0.74rem + 0.22vw, 0.88rem);
+  --t-base: clamp(0.94rem, 0.89rem + 0.28vw, 1.04rem);
+  --t-lg:   clamp(1.08rem, 0.98rem + 0.38vw, 1.24rem);
+  --t-xl:   clamp(1.28rem, 1.08rem + 0.58vw, 1.58rem);
+  --t-2xl:  clamp(1.58rem, 1.28rem + 0.98vw, 2.18rem);
+  --t-3xl:  clamp(1.98rem, 1.58rem + 1.48vw, 2.98rem);
+  --t-4xl:  clamp(2.48rem, 1.98rem + 1.98vw, 4.48rem);
+  --t-5xl:  clamp(3.20rem, 2.20rem + 3.40vw, 6.40rem);
+
+  /* ─── Radius ─── */
+  --r-1: 5px; --r-2: 12px; --r-3: 20px; --r-4: 28px;
+  --r-5: 36px; --r-6: 44px; --r-pill: 999px;
+
+  /* ─── The bent page ────────────────────────────────────────────────────
+     The maison's signature: the document does not reach the edges of the
+     viewport. Instead the two long sides curve away and dissolve, so the page
+     reads as a sheet of something held rather than a rectangle of background
+     colour. It is the one piece of ornament that is structural — it changes
+     the silhouette of every screen — so it gets tokens rather than the four
+     numbers that would otherwise be repeated in three themes.
+
+     --edge-w     how far in from the viewport edge the curve begins
+     --edge-bow   how far the curve reaches inward at the vertical middle.
+                  This is the number that decides whether it reads as bent or
+                  merely as a border, and it is deliberately larger than it
+                  looks like it needs to be: a shallow bow disappears at laptop
+                  widths, which is exactly where a designer notices it least
+                  and a customer notices it most.
+     --edge-ink   the colour the page fades INTO at the extreme edge. It is
+                  a shade darker than --bg in each theme, never black, because
+                  a pure-black edge on a near-black page reads as a bezel.
+
+     Widths are fluid and floor at zero: below the 860px threshold the treatment
+     is switched off entirely rather than squeezed, because a 6px fade on a
+     phone is a smudge and costs a composited layer for nothing.
+
+     That threshold used to be a --edge-min token. It was dead: a custom
+     property cannot be read inside @media, so every rule that needed the
+     breakpoint hard-coded 860px anyway, and the token was a second place to
+     edit a number that was never read from it. The literal now appears in the
+     two @media blocks that need it and nowhere else. */
+  --edge-w: clamp(0px, 3.4vw, 78px);
+  --edge-bow: clamp(0px, 1.15vw, 26px);
+  /* --edge-ink is deliberately NOT declared here. It has to differ per theme,
+     so it lives in each theme block below (nuit :213, ivoire :276, emeraude
+     :331). This block used to hard-code #020202, which was both a duplicate of
+     the nuit value and the exact pure-black bezel the comment above warns
+     against — and because it sat in :root it also overrode nothing while the
+     per-theme values could never be seen, because they were parse errors. */
+  --edge-line: color-mix(in oklch, var(--accent) 26%, transparent);
+  --edge-line-w: 1px;
+
+  /* ─── Fonts ───────────────────────────────────────────────────────────
+     Two families are loaded, so these stacks name two.
+
+     Cormorant Garamond is the display face the brand is set in and is listed
+     first on every serif token, so it was already winning wherever it loaded.
+     Markazi Text was the fallback immediately behind it on --serif-d and the
+     primary on --serif / --serif-fa, which meant a second Persian serif was
+     downloaded for a handful of rules while Cormorant handled the rest — two
+     faces, one role, one download wasted. Vazirmatn now backs all three
+     tokens: it is loaded, it is a Persian face, and it is what the fallback
+     was already naming second.
+
+     JetBrains Mono was 300–500 of a monospace face used by roughly forty small
+     labels (a price in tabular figures, a form number, a few fractions). At
+     9–12 px a platform monospace is indistinguishable, and it costs nothing
+     over the network. The stack below is what the token already fell back to.
+
+     Net effect: two font requests instead of four, ~90 KB instead of ~215 KB,
+     and no rule in the project now names a family the document does not load. */
+  --serif-d: 'Cormorant Garamond', 'Vazirmatn', Georgia, serif;
+  --serif:   'Cormorant Garamond', 'Vazirmatn', Georgia, serif;
+  --serif-fa:'Vazirmatn', Georgia, serif;
+  --sans:    'Vazirmatn', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --mono:    ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+
+  /* ─── Layout ─── */
+  --w: 1560px;  --w-narrow: 1000px;  --max-w: 1280px;
+  --pad: max(var(--edge-w), clamp(1.25rem, 4.2vw, 4.2rem));
+  --gutter: clamp(1rem, 4vw, 3rem);
+  --nav-h: 72px;
+  --ann: 0px;  --ann-h: 38px;
+  --dock-h: 72px;
+  --measure: 68ch;
+  --hit: 44px;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
+
+  /* ─── Motion (از MAISON) ─── */
+  --ease: cubic-bezier(.16, 1, .3, 1);
+  --ease-out: cubic-bezier(.16, 1, .3, 1);
+  --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+  --ease-inout: cubic-bezier(.65, 0, .35, 1);
+  --ease-cine: cubic-bezier(.83, 0, .17, 1);
+  --ease-silk: cubic-bezier(.65, .05, .36, 1);
+  --ease-lux: cubic-bezier(.22, 1, .36, 1);
+  --ease-editorial: cubic-bezier(.19, 1, .22, 1);
+  --ease-valet: cubic-bezier(.34, 1.3, .5, 1);
+  --ease-aurelle: cubic-bezier(.77, 0, .175, 1);
+
+  --dur-fast: 150ms;  --dur: 250ms;  --dur-slow: 400ms;
+  --d-1: 140ms;  --d-2: 240ms;  --d-3: 400ms;  --d-4: 620ms;
+  --d-cine: 820ms;  --d-hover: 320ms;
+
+  /* ─── Z ─── */
+  --z-dust: 0;  --z-aurora: 0;  --z-grain: 1;  --z-vig: 1;
+  --z-content: 2;  --z-hdr: 50;  --z-rail: 40;  --z-dock: 60;
+  --z-cursor: 100;  --z-toast: 90;  --z-dialog: 80;
+
+  --cursor-size: 26px;
+  --cursor-dot: 6px;
+
+  /* ─── Glass ─── */
+  --glass: blur(24px) saturate(1.4);
+  --tr-lux: transform var(--d-2) var(--ease-lux),
+            box-shadow var(--d-3) var(--ease-lux),
+            border-color var(--d-2) var(--ease-lux),
+            color var(--d-2) var(--ease-lux),
+            background-color var(--d-2) var(--ease-lux);
+}
+
+body.has-ann { --ann: 38px; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   TEME · NUIT (شب طلایی) — پیش‌فرض
+   ═══════════════════════════════════════════════════════════════════════ */
+:root, [data-theme="nuit"] {
+  --bg:        oklch(0.128 0.012 268);
+  --bg-2:      oklch(0.148 0.012 268);
+  --surface:   oklch(0.168 0.015 268);
+  --surface-2: oklch(0.198 0.016 268);
+  --surface-3: oklch(0.238 0.020 268);
+  --well:      oklch(0.108 0.010 268);
+  --text:      oklch(0.975 0.006 90);
+  --text-2:    oklch(0.860 0.012 85);
+  --text-3:    oklch(0.720 0.016 80);
+  --text-4:    oklch(0.620 0.014 76);
+  --invert:    oklch(0.085 0.012 268);
+  --accent:    oklch(0.840 0.130 87);
+  --accent-2:  oklch(0.670 0.122 81);
+  --accent-3:  oklch(0.475 0.085 75);
+  --gold:      oklch(0.840 0.130 87);
+  --gold-1:    oklch(0.950 0.060 92);
+  --gold-2:    oklch(0.560 0.095 72);
+  --platinum:  oklch(0.890 0.020 240);
+  --verd:      oklch(0.775 0.105 158);
+  --ember:     oklch(0.730 0.172 32);
+  --turq:      oklch(0.835 0.112 178);
+  --rose:      oklch(0.775 0.140 18);
+  --amber:     oklch(0.850 0.130 78);
+  --bordeaux:  oklch(0.470 0.145 24);
+  --bordeaux-1:oklch(0.630 0.155 28);
+
+  --gold-line:  color-mix(in oklch, var(--accent) 34%, transparent);
+  --gold-wash:  color-mix(in oklch, var(--accent) 12%, transparent);
+  --gold-ghost: color-mix(in oklch, var(--accent) 5%, transparent);
+
+  --border:   color-mix(in oklch, var(--text) 9%, transparent);
+  --border-2: color-mix(in oklch, var(--text) 16%, transparent);
+  --border-3: color-mix(in oklch, var(--text) 28%, transparent);
+  --line: var(--border);  --line-1: var(--border);
+  --line-2: var(--border-2);  --line-3: var(--border-3);
+
+  --sh-1: 0 1px 3px oklch(0 0 0 / 0.35), 0 8px 20px -8px oklch(0 0 0 / 0.28);
+  --sh-2: 0 1px 0 oklch(1 0 0 / 0.06) inset, 0 32px 64px -30px oklch(0 0 0 / 0.5), 0 10px 22px -10px oklch(0 0 0 / 0.24);
+  --sh-3: 0 1px 0 oklch(1 0 0 / 0.07) inset, 0 52px 104px -38px oklch(0 0 0 / 0.6), 0 18px 38px -18px oklch(0 0 0 / 0.3);
+  --sh-lux: 0 20px 60px -12px oklch(0 0 0 / 0.35), 0 8px 20px -6px oklch(0 0 0 / 0.2), inset 0 1px 0 oklch(1 0 0 / 0.06);
+  --sh-sm: var(--sh-1);  --sh-md: var(--sh-2);  --sh-lg: var(--sh-3);
+  --sh-glow: 0 0 56px color-mix(in oklch, var(--accent) 26%, transparent);
+  --sh-gold: 0 16px 48px color-mix(in oklch, var(--accent) 24%, transparent);
+
+  --grad-gold: linear-gradient(115deg, var(--accent-3) 0%, var(--accent-2) 20%, var(--accent) 50%, oklch(0.958 0.078 90) 80%, var(--accent-3) 100%);
+  --grad-foil: linear-gradient(105deg, var(--accent-3) 0%, var(--accent-2) 15%, var(--accent) 30%, oklch(0.958 0.078 90) 45%, oklch(0.993 0.03 92) 50%, oklch(0.958 0.078 90) 55%, var(--accent) 70%, var(--accent-2) 85%, var(--accent-3) 100%);
+  --grad-lux: linear-gradient(165deg, oklch(0.168 0.016 268), oklch(0.115 0.013 268) 55%, oklch(0.075 0.011 268));
+  --grad-royal: linear-gradient(135deg, var(--bordeaux) 0%, color-mix(in oklch, var(--bordeaux) 52%, var(--gold-2)) 52%, var(--gold-2) 100%);
+
+  --ring: 0 0 0 5px color-mix(in oklch, var(--accent) 14%, transparent);
+  --vig-c: oklch(0 0 0 / 0.56);
+  color-scheme: dark;
+
+  /* ─── Alias برای VELORA admin.php ─── */
+  --bg-0: var(--bg);  --bg-1: var(--bg-2);  --bg-3: var(--surface-2);  --bg-4: var(--surface-3);
+  --tx-0: var(--text);  --tx-1: var(--text);  --tx-2: var(--text-2);
+  --tx-3: var(--text-3);  --tx-4: var(--text-4);
+  --gold-3: var(--accent);
+  --accent-ink: var(--invert);
+  --ok: var(--verd);  --err: var(--ember);  --warn: var(--amber);
+  --bd: var(--border);  --bd-strong: var(--border-2);  --bd-hover: var(--border-3);
+  --font-ui: var(--sans);
+  --font-display: var(--serif-d);
+  --font-mono: var(--mono);
+  --accent-glow: var(--gold-wash);
+}
+
+/* ─── NUIT ──────────────────────────────────────────────────────────────────
+   --edge-ink is the colour the page dissolves into at its two long edges.
+   One shade past the theme background — never pure black, which on a
+   near-black page reads as a bezel rather than as depth. */
+:root, [data-theme="nuit"] { --edge-ink: oklch(0.055 0.010 268); }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   TEME · IVOIRE (عاج روشن)
+   ═══════════════════════════════════════════════════════════════════════ */
+[data-theme="ivoire"] {
+  --bg:        oklch(0.977 0.005 91);
+  --bg-2:      oklch(0.956 0.008 87);
+  --surface:   oklch(1 0 0);
+  --surface-2: oklch(0.972 0.005 91);
+  --surface-3: oklch(0.942 0.010 85);
+  --well:      oklch(0.953 0.005 91);
+  --text:      oklch(0.155 0.013 268);
+  --text-2:    oklch(0.300 0.015 250);
+  --text-3:    oklch(0.420 0.014 240);
+  --text-4:    oklch(0.520 0.012 232);
+  --invert:    oklch(0.982 0.005 91);
+  --accent:    oklch(0.510 0.125 79);
+  --accent-2:  oklch(0.385 0.115 74);
+  --accent-3:  oklch(0.290 0.080 67);
+  --gold:      oklch(0.530 0.120 78);
+  --gold-1:    oklch(0.710 0.100 84);
+  --gold-2:    oklch(0.410 0.095 70);
+  --verd:      oklch(0.410 0.100 158);
+  --ember:     oklch(0.465 0.175 32);
+  --bordeaux:  oklch(0.490 0.135 26);
+  --bordeaux-1:oklch(0.610 0.145 30);
+
+  --gold-line:  color-mix(in oklch, var(--accent) 36%, transparent);
+  --gold-wash:  color-mix(in oklch, var(--accent) 12%, transparent);
+  --gold-ghost: color-mix(in oklch, var(--accent) 6%, transparent);
+
+  --sh-1: 0 2px 8px oklch(0 0 0 / 0.03), 0 8px 24px oklch(0 0 0 / 0.06);
+  --sh-2: 0 4px 16px oklch(0 0 0 / 0.04), 0 16px 48px oklch(0 0 0 / 0.08);
+  --sh-3: 0 12px 32px oklch(0 0 0 / 0.06), 0 32px 80px oklch(0 0 0 / 0.12);
+  --sh-lux: 0 20px 60px -12px oklch(.3 .02 80 / .2), 0 8px 20px -6px oklch(.3 .02 80 / .12), inset 0 1px 0 oklch(1 0 0 / .5);
+  --sh-glow: 0 0 40px color-mix(in oklch, var(--accent) 16%, transparent);
+  --sh-gold: 0 16px 48px color-mix(in oklch, var(--accent) 18%, transparent);
+
+  --grad-gold: linear-gradient(115deg, var(--accent-3) 0%, var(--accent-2) 20%, var(--accent) 50%, oklch(0.63 0.12 84) 80%, var(--accent-3) 100%);
+  --grad-foil: linear-gradient(105deg, var(--accent-3) 0%, var(--accent-2) 15%, var(--accent) 30%, oklch(0.63 0.12 84) 45%, oklch(0.73 0.10 88) 50%, oklch(0.63 0.12 84) 55%, var(--accent) 70%, var(--accent-2) 85%, var(--accent-3) 100%);
+  --grad-lux: linear-gradient(165deg, oklch(0.964 0.01 91), oklch(0.922 0.015 85) 55%, oklch(0.884 0.02 80));
+  --grad-royal: linear-gradient(135deg, var(--bordeaux) 0%, color-mix(in oklch, var(--bordeaux) 52%, var(--gold-2)) 52%, var(--gold-2) 100%);
+
+  --ring: 0 0 0 5px color-mix(in oklch, var(--accent) 12%, transparent);
+  --vig-c: oklch(0.35 0.02 80 / 0.18);
+  color-scheme: light;
+
+  /* ─── Alias VELORA ─── */
+  --bg-0: var(--bg);  --bg-1: var(--surface);  --bg-3: var(--surface-2);  --bg-4: var(--surface-3);
+  --tx-0: var(--text);  --tx-1: var(--text);  --tx-2: var(--text-2);
+  --tx-3: var(--text-3);  --tx-4: var(--text-4);
+  --gold-3: var(--accent);
+  --accent-ink: var(--invert);
+  --ok: var(--verd);  --err: var(--ember);  --warn: var(--amber);
+  --bd: var(--border);  --bd-strong: var(--border-2);  --bd-hover: var(--border-3);
+  --font-ui: var(--sans);
+  --font-display: var(--serif-d);
+--font-mono: var(--mono);
+  --accent-glow: var(--gold-wash);
+  /* One shade past the ivory background: the same depth rule as nuit, but a
+     shade *below* rather than below-black — on a light page the dissolve has
+     to darken, and pure black here would read as a bezel. */
+  --edge-ink: oklch(0.855 0.014 84);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   TEME · EMERAUDE (زمرد شبانه)
+   ═══════════════════════════════════════════════════════════════════════ */
+[data-theme="emeraude"] {
+  --bg:        oklch(0.140 0.016 172);
+  --bg-2:      oklch(0.162 0.018 172);
+  --surface:   oklch(0.182 0.020 172);
+  --surface-2: oklch(0.212 0.022 172);
+  --surface-3: oklch(0.252 0.026 172);
+  --well:      oklch(0.118 0.014 172);
+  --text:      oklch(0.975 0.007 88);
+  --text-2:    oklch(0.870 0.014 84);
+  --text-3:    oklch(0.740 0.018 80);
+  --text-4:    oklch(0.630 0.016 76);
+  --invert:    oklch(0.084 0.019 165);
+  --accent:    oklch(0.848 0.130 89);
+  --accent-2:  oklch(0.690 0.122 83);
+  --accent-3:  oklch(0.495 0.090 79);
+  --verd:      oklch(0.790 0.120 158);
+  --border:    color-mix(in oklch, var(--text) 9%, transparent);
+  --border-2:  color-mix(in oklch, var(--text) 16%, transparent);
+  --border-3:  color-mix(in oklch, var(--text) 28%, transparent);
+  --line: var(--border);  --line-1: var(--border);
+  --line-2: var(--border-2);  --line-3: var(--border-3);
+  --gold-line:  color-mix(in oklch, var(--accent) 34%, transparent);
+  --gold-wash:  color-mix(in oklch, var(--accent) 12%, transparent);
+  --gold-ghost: color-mix(in oklch, var(--accent) 5%, transparent);
+  --sh-1: 0 2px 8px oklch(0 0 0 / .25), 0 8px 24px oklch(0 0 0 / .35);
+  --sh-2: 0 4px 16px oklch(0 0 0 / .35), 0 16px 48px oklch(0 0 0 / .45);
+  --sh-3: 0 12px 32px oklch(0 0 0 / .45), 0 32px 80px oklch(0 0 0 / .55);
+  --sh-glow: 0 0 56px color-mix(in oklch, var(--accent) 26%, transparent);
+  --sh-gold: 0 16px 48px color-mix(in oklch, var(--accent) 24%, transparent);
+  --grad-foil: linear-gradient(105deg, var(--accent-3) 0%, var(--accent-2) 15%, var(--accent) 30%, oklch(0.965 0.078 92) 45%, oklch(0.993 0.03 94) 50%, oklch(0.965 0.078 92) 55%, var(--accent) 70%, var(--accent-2) 85%, var(--accent-3) 100%);
+  --grad-gold: linear-gradient(115deg, var(--accent-3) 0%, var(--accent-2) 20%, var(--accent) 50%, oklch(0.965 0.078 92) 80%, var(--accent-3) 100%);
+  --grad-lux: linear-gradient(165deg, oklch(0.162 0.023 165), oklch(0.112 0.021 165) 55%, oklch(0.072 0.019 165));
+  --vig-c: oklch(0 0 0 / 0.56);
+  color-scheme: dark;
+
+  /* ─── Alias VELORA ─── */
+  --bg-0: var(--bg);  --bg-1: var(--bg-2);  --bg-3: var(--surface-2);  --bg-4: var(--surface-3);
+  --tx-0: var(--text);  --tx-1: var(--text);  --tx-2: var(--text-2);
+  --tx-3: var(--text-3);  --tx-4: var(--text-4);
+  --gold-3: var(--accent);
+  --accent-ink: var(--invert);
+  --ok: var(--verd);  --err: var(--ember);  --warn: var(--amber);
+  --bd: var(--border);  --bd-strong: var(--border-2);  --bd-hover: var(--border-3);
+  --font-ui: var(--sans);
+  --font-display: var(--serif-d);
+--font-mono: var(--mono);
+  --accent-glow: var(--gold-wash);
+  /* One shade past the emerald background — the depth rule again, on hue 172. */
+  --edge-ink: oklch(0.062 0.014 172);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SCENES · صحنه‌های نوری (از MAISON)
+   ═══════════════════════════════════════════════════════════════════════ */
+[data-scene="dusk"]  { --aurora-o: .35;  --grain-o: .04; }
+[data-scene="dawn"]  { --aurora-o: .20;  --grain-o: .02; }
+[data-scene="night"] { --aurora-o: .50;  --grain-o: .05; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   سایه‌های LUXE
+   ═══════════════════════════════════════════════════════════════════════ */
+:root {
+  --lux-hair: oklch(1 0 0 / 0.07);
+  --lux-hair-gold: color-mix(in oklch, var(--accent) 55%, transparent);
+  --lux-spot: color-mix(in oklch, var(--accent) 10%, transparent);
+  --lux-ambient: 0 0 80px color-mix(in oklch, var(--accent) 8%, transparent);
+  --lux-glow-soft: 0 0 44px color-mix(in oklch, var(--accent) 18%, transparent);
+  --lux-sh-card: 0 1px 0 var(--lux-hair) inset, 0 2px 4px oklch(0 0 0 / 0.08), 0 12px 32px -10px oklch(0 0 0 / 0.22);
+  --lux-sh-elevated: var(--lux-ambient), 0 1px 0 var(--lux-hair) inset, 0 40px 80px -20px oklch(0 0 0 / 0.4);
+}
+[data-theme="ivoire"] {
+  --lux-hair: oklch(1 0 0 / 0.8);
+  --lux-spot: color-mix(in oklch, var(--accent) 7%, transparent);
+  --lux-ambient: 0 0 80px color-mix(in oklch, var(--accent) 6%, transparent);
+}

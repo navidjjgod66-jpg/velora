@@ -1,0 +1,88 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# VELORA · .gitignore
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# This file was EMPTY. Everything below it is something that must never enter a
+# commit, and the repository has at least one of each already on disk:
+#
+#   storage/logs/velora.log   contains client IPs and session-id prefixes
+#   .env                      does not exist yet — that is the point
+#
+# An empty .gitignore on a repository that is about to be published is not a
+# neutral default. It means the first person to run the site creates .env with
+# the database password and the admin credential hash, and every subsequent
+# `git add -A` offers to publish them.
+# ═══════════════════════════════════════════════════════════════════════════
+
+# ─── Secrets · the reason this file exists ──────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# Anything that looks like a credential dump, regardless of extension
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+credentials.json
+secrets.json
+
+# ─── Runtime state · written by the application, never source ───────────────
+# .gitkeep stays: it is what makes these directories exist in a fresh clone,
+# and product_upload_dir() depends on storage/uploads/products existing.
+#
+# The .htaccess files must ALSO stay, and `*` matches dotfiles. They are the
+# deny-execute control for the upload directory — the one layer that can stop a
+# file already on disk from being executed, which no amount of PHP validation
+# can do. Without them in the repository the security fix exists only on this
+# machine and does not deploy.
+storage/logs/*
+!storage/logs/.gitkeep
+storage/cache/*
+!storage/cache/.gitkeep
+storage/uploads/products/*
+!storage/uploads/products/.gitkeep
+!storage/uploads/products/.htaccess
+!storage/uploads/.htaccess
+!storage/.htaccess
+
+# Lock files: a stale lock in a clone is a checkout that blocks forever.
+*.lock
+products.json.lock
+
+# ─── Audit leftovers ────────────────────────────────────────────────────────
+# Created by this session's audit. Blocked by the .htaccess FilesMatch rule,
+# which is defence in depth — the real reason to ignore them is that they are
+# a 500 KB copy of the application sitting in the tree.
+*.bak
+*.orig
+*.tmp
+*.rej
+*~
+.*.swp
+
+# ─── Local tooling ──────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.sublime-workspace
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# ─── Node ───────────────────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+# vendor/ is NOT ignored on purpose: js/vendor/three.module.js is a committed,
+# pinned build the storefront loads directly, and an offline install of a shop
+# that must render on first paint cannot depend on a package manager.
+
+# ─── NOT ignored, deliberately ──────────────────────────────────────────────
+# .env.example      — the documented template, values blank by design
+# products.json     — the catalogue, the actual product data of this shop
+# db_schema.sql     — the schema, needed to install
+# js/vendor/        — pinned third-party build, shipped for offline first paint
+# .htaccess         — it carries the security policy
+#
+# If the catalogue ever holds data you would rather not publish, remove the
+# products.json line above rather than assuming it is safe by default.

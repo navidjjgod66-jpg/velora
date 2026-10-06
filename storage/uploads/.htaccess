@@ -1,0 +1,35 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# VELORA · storage/uploads/ — inherited DENY, and it stays that way
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# ../.htaccess denies this whole tree. This file re-states the denial so the
+# guarantee does not depend on a parent directory's .htaccess still being
+# read — the failure mode that matters when a control panel rewrites the root
+# .htaccess on a domain change and forgets the nested ones.
+#
+# products/ below re-admits exactly one extension for reading. Nothing here is
+# ever executed; that is inherited from ../.htaccess and repeated there in full.
+# ═══════════════════════════════════════════════════════════════════════════
+
+<IfModule mod_authz_core.c>
+  Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+  Order allow,deny
+  Deny from all
+</IfModule>
+
+Options -Indexes -MultiViews
+
+<IfModule mod_php.c>
+  php_flag engine off
+</IfModule>
+<IfModule mod_php7.c>
+  php_flag engine off
+</IfModule>
+<IfModule mod_php8.c>
+  php_flag engine off
+</IfModule>
+
+RemoveHandler .php .phtml .php3 .php4 .php5 .php7 .php8 .pht .phar
+RemoveType .php .phtml .php3 .php4 .php5 .php7 .php8 .pht .phar

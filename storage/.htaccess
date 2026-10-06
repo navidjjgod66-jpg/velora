@@ -1,0 +1,80 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# VELORA · storage/ — deny everything, then re-admit exactly one path
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# The document-root .htaccess already answers 403 for /storage/logs and
+# /storage/cache with a mod_rewrite rule. This file is the version that does
+# not depend on that rule being honoured: it applies to the directory itself,
+# so it survives AllowOverride None on the parent, a rewrite-rule typo, a
+# server that reads .htaccess but ignores mod_rewrite, and a LiteSpeed/PureFTP
+# panel that regenerates the root file on every domain change.
+#
+# Two separate protections, because they fail for different reasons:
+#
+#   1. DENY  — nothing in storage/ is served except the one image directory.
+#   2. EXECUTE OFF — nothing here is ever handed to an interpreter, whatever
+#      it is named.
+#
+# (2) is the one that cannot be done in PHP. Every other check in this project
+# — is_safe_upload_filename(), the fixed .webp suffix, the MIME allow-list,
+# the re-encode through GD — runs before the file is written. That is the right
+# place for them: a rejected upload never touches the disk. But they are all
+# *before* the moment that matters most, and none of them can protect a file
+# that has already landed. Only the web server decides what happens to a file
+# that is already there. If the extension check is ever weakened, if an
+# operator rsyncs a backup into storage/, if a future feature writes a .php
+# helper there, the execution bit is already off and the file is inert.
+# ═══════════════════════════════════════════════════════════════════════════
+
+<IfModule mod_authz_core.c>
+  # Apache 2.4
+  Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+  # Apache 2.2 / older LiteSpeed
+  Order allow,deny
+  Deny from all
+</IfModule>
+
+# --- 2. No handler, ever -----------------------------------------------------
+# RemoveHandler and SetHandler both, because a server may honour either and an
+# inherited AddHandler from a parent <Directory> is what actually executes the
+# file. `php_flag engine off` (mod_php) removes the extension's handler
+# outright. All of it is wrapped so an unsupported directive degrades to
+# "nothing" rather than to a 500 on every request below this directory.
+<IfModule mod_php.c>
+  php_flag engine off
+</IfModule>
+<IfModule mod_php7.c>
+  php_flag engine off
+</IfModule>
+<IfModule mod_php8.c>
+  php_flag engine off
+</IfModule>
+
+RemoveHandler .php .phtml .php3 .php4 .php5 .php7 .php8 .pht .phar .pl .py .cgi .rb .sh .asp .aspx .jsp
+RemoveType .php .phtml .php3 .php4 .php5 .php7 .php8 .pht .phar
+SetHandler none
+SetHandler default-handler
+
+<IfModule mod_mime.c>
+  RemoveType .php .phtml .php3 .php4 .php5 .php7 .php8 .pht .phar
+  AddType text/plain .php .phtml .php3 .php4 .php5 .php7 .php8 .pht .phar
+</IfModule>
+
+# --- Legacy CGI route --------------------------------------------------------
+# If PHP ever runs through mod_cgi rather than a handler, a phar:// wrapper or
+# a re-mapped file type can still reach it. Nothing here is CGI, so nothing
+# below this directory is either.
+<IfModule mod_cgi.c>
+  ScriptSock /dev/null
+  Options -ExecCGI
+</IfModule>
+
+# --- Directory listing -------------------------------------------------------
+Options -Indexes -MultiViews
+
+# --- No PHP code can include from here either --------------------------------
+<IfModule mod_php.c>
+  php_flag allow_url_include off
+</IfModule>

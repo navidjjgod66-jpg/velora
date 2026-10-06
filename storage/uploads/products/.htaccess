@@ -1,0 +1,124 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# VELORA · storage/uploads/products/ — the ONE public directory under storage/
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# This is the only path in storage/ the browser is allowed to read. It is where
+# the admin image pipeline writes the 1024×1024 WebP files, and it is what
+# img-src 'self' in both the storefront's and the admin panel's CSP resolves.
+#
+# ---------------------------------------------------------------------------
+# WHY THIS DIRECTORY IS THE LAST LINE OF DEFENCE
+# ---------------------------------------------------------------------------
+# Everything upstream of the write is application code, and application code is
+# the wrong layer to stop execution with:
+#
+#   · includes/uploads.php's is_safe_upload_filename() accepts only
+#     [A-Za-z0-9_-]{1,64}.webp — no slash, no dot inside the stem, no null byte.
+#   · the pipeline re-encodes the upload through GD and names the result
+#     itself, so nothing the operator sent keeps its own extension. That removes
+#     the whole .php.jpg family at the source.
+#   · getimagesize() gates on a real image type, and only JPEG/PNG/GIF/WebP are
+#     accepted for decoding.
+#
+# All of that is correct and all of it runs *before* the file exists. It decides
+# whether a file is created; it cannot decide what happens to a file that is
+# already here. So the question "what if something that is not an image is in
+# this directory" has to be answered by the server, and this file is the answer:
+#
+#   · NO EXECUTION, AT ALL, OF ANY NAME. Inherited from ../../.htaccess, and
+#     restated below so it does not depend on the chain being intact.
+#   · SERVED BY EXTENSION WHITELIST, not by blacklist. Only .webp is readable.
+#     A .png left behind by an older build, a .zip from an operator's manual
+#     backup, a .htaccess copied in by a deploy tool — all 403.
+#   · NO PHP PROCESSING. A request for x.webp/x.php cannot reach the
+#     interpreter even if path-info handling is on and the whitelist were
+#     somehow bypassed, because there is no interpreter here.
+#
+# Net effect: the worst a file in this directory can ever do is be downloaded.
+# The inventory of secrets it protects — .env, db_schema.sql, rate-limit
+# counters, client IPs, session ids — is protected by the DENY in the parents.
+# ═══════════════════════════════════════════════════════════════════════════
+
+# ─── 1. Read access: granted. Only .webp is actually served below. ───────────
+<IfModule mod_authz_core.c>
+  Require all granted
+</IfModule>
+<IfModule !mod_authz_core.c>
+  Order allow,deny
+  Allow from all
+</IfModule>
+
+Options -Indexes -MultiViews
+
+# ─── 2. Execution: off, in every handler this server might be using ─────────
+<IfModule mod_php.c>
+  php_flag engine off
+</IfModule>
+<IfModule mod_php7.c>
+  php_flag engine off
+</IfModule>
+<IfModule mod_php8.c>
+  php_flag engine off
+</IfModule>
+
+RemoveHandler .php .php3 .php4 .php5 .php7 .php8 .pht .phtm .phtml .phar .pl .py .cgi .rb .sh .asp .aspx .jsp
+RemoveType   .php .php3 .php4 .php5 .php7 .php8 .pht .phtm .phtml .phar
+SetHandler none
+SetHandler default-handler
+
+<IfModule mod_cgi.c>
+  ScriptSock /dev/null
+  Options -ExecCGI
+</IfModule>
+
+# ─── 3. Extension whitelist ─────────────────────────────────────────────────
+# `Require all granted` above opens the directory; these three lines decide
+# what may actually be handed back. A whitelist, because the only extension
+# this pipeline has ever written is .webp — the file is re-encoded, so its
+# suffix is chosen by us and not by the uploader.
+#
+# FilesMatch is matched against the request path's basename, so
+# `x.webp/.php` does NOT match `\.webp$` and falls through to the deny below.
+<FilesMatch "\.webp$">
+  <IfModule mod_authz_core.c>
+    Require all granted
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Allow from all
+  </IfModule>
+</FilesMatch>
+
+<FilesMatch "^.*$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
+
+# ─── 4. Content-Type, stated rather than sniffed ─────────────────────────────
+# X-Content-Type-Options is set globally by the document-root .htaccess as well;
+# repeating it here means the guarantee does not depend on that file. The point
+# of nosniff on an image directory is that a browser cannot be talked into
+# treating an image as HTML, which is the other half of an upload-based XSS.
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set Content-Disposition "inline"
+  <FilesMatch "\.webp$">
+    Header set Content-Type "image/webp"
+  </FilesMatch>
+</IfModule>
+
+# ─── 5. .htaccess itself must never be readable ─────────────────────────────
+<FilesMatch "^\.ht">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
