@@ -1,5 +1,6 @@
 # Environment
 .env
 
-# Logs
+# Logs and Cache
 storage/logs/
+storage/cache/
