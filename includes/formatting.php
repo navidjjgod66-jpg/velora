@@ -115,13 +115,13 @@ DIGIT NORMALIZATION
  * normalize_phone() below does this and more, because a phone number also has
  * to be told apart from +98 and 0098. This one is for the fields where the
  * only question is which glyph the digit is drawn with.
+ *
+ * The function itself lives in includes/digits.php — its single home — so that
+ * leaf helpers like includes/geo.php can load it without bootstrapping the
+ * whole application. Requiring it here keeps every existing caller working
+ * unchanged.
  */
-function normalize_digits(string $raw): string {
-    return strtr($raw, [
-        '۰'=>'0','۱'=>'1','۲'=>'2','۳'=>'3','۴'=>'4','۵'=>'5','۶'=>'6','۷'=>'7','۸'=>'8','۹'=>'9',
-        '٠'=>'0','١'=>'1','٢'=>'2','٣'=>'3','٤'=>'4','٥'=>'5','٦'=>'6','٧'=>'7','٨'=>'8','٩'=>'9',
-    ]);
-}
+require_once __DIR__ . '/digits.php';
 
 /* ═══════════════════════════════════════════════════════════════════════════
 PHONE NORMALIZATION
