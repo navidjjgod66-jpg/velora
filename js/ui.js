@@ -343,23 +343,81 @@ function setMode(m) {
 }
 
 
-/* ═══ Mobile nav ═══ */
+/* ═══ Mobile nav ═══
+   A full-screen panel, so it owes the keyboard the three things a modal owes:
+   focus moves in on open, Tab is trapped inside, and focus returns to the
+   trigger on close. Without the trap, Tab walks out of an open panel and into
+   the page behind it — which is still visibly there, and which a customer on a
+   keyboard has no way to tell apart from the panel.
+
+   The three rules of the panel that matter here:
+
+   · `inert` is what removes the closed panel from the accessibility tree. It is
+     set on the .mnav element, not on the <nav> children, so the whole subtree
+     goes at once — and it is what lets the CSS use visibility and translate for
+     the animation without needing a display:none that would break the
+     transition.
+
+   · FOCUS RETURNS TO THE TRIGGER, recorded at open time rather than looked up at
+     close time. The panel has its own close button now, so "the thing that
+     opened it" is no longer necessarily the element in focus when it closes —
+     and focusing the panel's own close button on the way out would put the
+     customer back inside the panel they just dismissed.
+
+   · THE TRIGGERS ARE ALL FOUND BY data-act, not by class. The header button and
+     the dock button are the same control at two widths, and a third copy is
+     cheap to add; a query by class name is cheap to forget. */
 const mnav = $('#mnav');
 const menuBtns = $$('[data-act="menu"]');
+const FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
+let mnavOpener = null;
+
 function setMnav(on) {
+  if (!mnav) return;
   mnav.classList.toggle('on', on);
   mnav.toggleAttribute('inert', !on);
   body.classList.toggle('mnav-on', on);
+  /* The scrollbar is on <html>, not <body>, so locking the body leaves the page
+     scrollable behind an open menu — and on iOS the rubber-band makes it worse.
+     It also stops the layout shifting sideways as that scrollbar disappears,
+     which otherwise nudges every fixed element on the page. */
   html.classList.toggle('lock', on);
   menuBtns.forEach(b => b.setAttribute('aria-expanded', String(!!on)));
+
   if (on) {
+    mnavOpener = document.activeElement;
     dlStop();
-    const first = $('a,button', mnav);
+    const first = $(FOCUSABLE, mnav);
     first && first.focus({ preventScroll:true });
-  } else dlStart();
+  } else {
+    if (mnavOpener && mnavOpener.isConnected) mnavOpener.focus({ preventScroll:true });
+    else menuBtns[0] && menuBtns[0].focus({ preventScroll:true });
+    mnavOpener = null;
+    dlStart();
+  }
 }
+
 menuBtns.forEach(b => b.setAttribute('aria-expanded', 'false'));
-$$('a', mnav).forEach(a => a.addEventListener('click', () => setMnav(false)));
+
+/* Every close affordance routes through one place: the panel's own button, the
+   Escape key, and any section link. A panel with three exits and one function
+   behind them cannot end up in a state where two of the three disagree. */
+const mnavCloses = $$('[data-act="mnav-close"], .mnav a, .mnav__act[data-act="mode"]');
+mnavCloses.forEach(el => el.addEventListener('click', () => setMnav(false)));
+
+document.addEventListener('keydown', (e) => {
+  if (!mnav || !mnav.classList.contains('on')) return;
+
+  if (e.key === 'Escape') { e.preventDefault(); setMnav(false); return; }
+  if (e.key !== 'Tab') return;
+
+  const items = $$(FOCUSABLE, mnav).filter(el => el.offsetParent !== null);
+  if (!items.length) return;
+  const first = items[0], last = items[items.length - 1];
+  /* Tab past the last, or Shift-Tab before the first, wraps inside. */
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+});
 
 /* ═══ Desktop lens menu ═══
    The wide-screen counterpart of #mnav: the same six destinations around the

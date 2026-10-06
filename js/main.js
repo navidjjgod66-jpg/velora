@@ -966,6 +966,9 @@ document.addEventListener('click', e => {
     case 'menu':
       setMnav(!body.classList.contains('mnav-on'));
       break;
+    case 'mnav-close':
+      setMnav(false);
+      break;
     case 'mode':
       setMode(t.dataset.mode || 'boutique');
       break;

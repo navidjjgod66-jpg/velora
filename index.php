@@ -1002,28 +1002,115 @@ $precacheAssets = array_merge(
    The item order in the DOM is unchanged from the flat list, so keyboard order
    still matches reading order. */
 ?>
+<?php /* ═══════════════════════════════════════════════════════════════════════════
+   THE MOBILE MENU
+   ═══════════════════════════════════════════════════════════════════════════
+   A full-height panel on the phone, in three depths — content, tools, brand —
+   with the lens sitting behind the links as the light source they are lit by.
+
+   Four things this panel owes, and each of them is a place the obvious version
+   is wrong:
+
+   · THE LENS IS BEHIND THE LINKS, NOT BETWEEN THEM. aria-hidden and empty, a
+     sibling of the <nav> rather than an ancestor of its links. Wrapping the
+     links in the focal element would interpose a presentational node between
+     <nav> and its <a>s, which changes what a screen reader announces. It is
+     also the reason the links carry no text-shadow: a gold glow behind a
+     headline plus a gold glow on the headline is a blur, and the reference
+     earns its legibility from the contrast of the panel behind, not from
+     lighting the type itself.
+
+   · THE PANEL IS A DIALOG AND SAYS SO. role=dialog + aria-modal on the stage,
+     because it covers the page and the page is no longer reachable. The trigger
+     carries aria-expanded and aria-controls, which is the contract that tells a
+     screen reader the menu now exists. Without aria-modal the underlying header
+     stays in the accessibility tree and Tab walks into a page the customer
+     cannot see.
+
+   · THE TRIGGER IS A BUTTON WITH THREE RULES, NOT A GLYPH. aria-haspopup,
+     aria-expanded, aria-controls. It morphs into a cross by transforming its
+     own rules, which keeps it legible at every size and readable in any
+     writing direction, rather than swapping one icon for another.
+
+   · SCROLL LOCK IS ON <html>, NOT ON <body>. The scrollbar lives on the
+     document element, so locking the body leaves the page scrollable behind an
+     open menu — and on iOS the rubber-band makes it worse, not better. This
+     block also stops the layout shifting sideways when that scrollbar
+     disappears, which otherwise nudges every fixed element on the page. */
+?>
 <nav class="mnav" id="mnav" aria-label="منوی موبایل" inert>
-  <div class="mnav__lens" aria-hidden="true">
-    <span class="mnav__lens-ring"></span>
-    <span class="mnav__lens-core"></span>
-    <span class="mnav__lens-glint"></span>
-  </div>
 
+  <?php /* The three depths. `1fr auto auto` rather than a fixed padding stack,
+           so the links sit in the optical centre of whatever height the phone
+           has — a 667px iPhone SE and a 932px Pro Max both get the same
+           composition instead of one of them having all its content crammed at
+     the top with a void beneath. */ ?>
   <div class="mnav__stage">
-    <a href="#top"     class="mn mn--ul"><span class="mn-no">۰۱</span><span class="mn-t">خانه</span><span class="lat">HOME</span></a>
-    <a href="#boutique" class="mn mn--ur"><span class="mn-no">۰۲</span><span class="mn-t">مجموعه</span><span class="lat">VAULT</span></a>
+    <div class="mnav__lens" aria-hidden="true">
+      <span class="mnav__lens-ring"></span>
+      <span class="mnav__lens-core"></span>
+      <span class="mnav__lens-glint"></span>
+    </div>
 
-    <a href="#craft"    class="mn mn--ll"><span class="mn-no">۰۳</span><span class="mn-t">صناعت</span><span class="lat">CRAFT</span></a>
-    <a href="#lookbook" class="mn mn--lr"><span class="mn-no">۰۴</span><span class="mn-t">نگارخانه</span><span class="lat">LOOKBOOK</span></a>
+    <?php /* Brand row. Not the page's <h1> and not a duplicate of the header's
+             wordmark: it is the one place inside the panel that says what the
+             panel is, and it carries the panel's own close control, because the
+             trigger is behind the panel it opened. */ ?>    <div class="mnav__top">
+      <span class="mnav__brand" aria-hidden="true">VELORA</span>
+      <button class="mnav__close" type="button" data-act="mnav-close" aria-label="بستن منو">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+             stroke-width="1.5" aria-hidden="true">
+          <path d="M5 5l14 14M19 5L5 19" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
 
-    <a href="#archive"  class="mn mn--dl"><span class="mn-no">۰۵</span><span class="mn-t">تاریخچه</span><span class="lat">ARCHIVE</span></a>
-    <a href="#appoint"  class="mn mn--dr"><span class="mn-no">۰۶</span><span class="mn-t">تماس</span><span class="lat">CONTACT</span></a>
-  </div>
+    <?php /* The six sections, in catalogue order rather than in rail order: the
+             rail counts from the home page, and the panel is reached from a
+             header that sits at the top of the document, so the home page is
+             its own first destination and the rest follow the page.
 
-  <div class="mnav-foot">
-    <button class="btn btn--ghost btn--sm" data-act="cart-open" type="button">سبد <span class="mono" id="mnavCartN">۰</span></button>
-    <button class="btn btn--ghost btn--sm" data-act="wish-open" type="button">علاقه‌مندی</button>
-    <button class="btn btn--ghost btn--sm" data-act="mode" data-mode="atelier" type="button">آتلیه</button>
+             Each link is a row of three: the index on the outer edge, the
+             Persian name, and a Latin gloss on the inner edge — the same
+             arrangement as the desktop panel, so the two read as one object at
+             two scales. The gloss is aria-hidden because it is a translation of
+             the name beside it and reading both would say every section twice. */ ?>    <div class="mnav__links">
+      <a href="#top"      class="mn mn--1"><span class="mn-no">۰۱</span><span class="mn-t">خانه</span><span class="mn-lat" aria-hidden="true">HOME</span></a>
+      <a href="#boutique" class="mn mn--2"><span class="mn-no">۰۲</span><span class="mn-t">مجموعه</span><span class="mn-lat" aria-hidden="true">VAULT</span></a>
+      <a href="#craft"    class="mn mn--3"><span class="mn-no">۰۳</span><span class="mn-t">صناعت</span><span class="mn-lat" aria-hidden="true">CRAFT</span></a>
+      <a href="#lookbook" class="mn mn--4"><span class="mn-no">۰۴</span><span class="mn-t">نگارخانه</span><span class="mn-lat" aria-hidden="true">LOOKBOOK</span></a>
+      <a href="#archive"  class="mn mn--5"><span class="mn-no">۰۵</span><span class="mn-t">تاریخچه</span><span class="mn-lat" aria-hidden="true">ARCHIVE</span></a>
+      <a href="#appoint"  class="mn mn--6"><span class="mn-no">۰۶</span><span class="mn-t">تماس</span><span class="mn-lat" aria-hidden="true">CONTACT</span></a>
+    </div>
+
+    <?php /* The tools row. data-act on all three, so main.js's one delegated
+             click handler routes them exactly as it routes the header's — and
+             closeNavLayers() closes this panel for any of them. The cart and
+             wishlist buttons used to be duplicated here with their own ids,
+             which is how a badge ends up written into whichever copy happens to
+             be first in the document. */ ?>    <div class="mnav__foot">
+      <button class="mnav__act" type="button" data-act="wish-open">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+             stroke-width="1.5" aria-hidden="true">
+          <path d="M12 21s-7.5-4.7-10-9.3C.4 8.6 2.4 5 6 5c2.2 0 3.6 1.2 4.4 2.6h1.2C12.4 6.2 13.8 5 16 5c3.6 0 5.6 3.6 4 7.2C19.5 16.3 12 21 12 21z"/>
+        </svg>
+        <span>علاقه‌مندی‌ها</span>
+      </button>
+      <button class="mnav__act" type="button" data-act="cart-open">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+             stroke-width="1.5" aria-hidden="true">
+          <path d="M6 7h12l1.5 13.5a1 1 0 0 1-1 1.1H5.5a1 1 0 0 1-1-1.1L6 7z"/><path d="M9 10V6a3 3 0 0 1 6 0v4"/>
+        </svg>
+        <span>سبد</span>
+      </button>
+      <button class="mnav__act" type="button" data-act="mode" data-mode="atelier">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+             stroke-width="1.5" aria-hidden="true">
+          <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/>
+        </svg>
+        <span>آتلیه</span>
+      </button>
+    </div>
   </div>
 </nav>
 

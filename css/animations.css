@@ -195,36 +195,144 @@ html.scrolling .mirror__ring { animation-play-state: paused; }
    components.css so it also outranks that file's own .hdr rule. */
 
 /* ─── High contrast ───
-   The :focus-visible arm keeps only the width override. The four
-   :focus-visible declarations across the project used to be split between
-   base.css (outline-offset: 4px) and animations.css (offset 3px, plus a
-   separate forced-colors variant). animations.css loads last, so its 3px won
-   everywhere and the 4px in base.css was unreachable; and because animations.css
-   never reset the border-radius and two-layer box-shadow base.css adds, the two
-   rules merged into a combination neither author wrote. base.css:72-77 is now
-   the single source for the ring's shape and offset. */
+   prefers-contrast: more is a request, not a demand. The browser keeps every
+   colour the page asked for and only raises the contrast floor, so what has to
+   be done here is to stop the page's own soft edges from making that pointless:
+   the hairlines are alpha-blended whites at 7.5–28%, which are *lower* contrast
+   than the tokens they are drawn from, and the muted text colours sit at
+   L 0.53–0.67 — below the 4.5:1 that body text needs against this background.
+
+   So the fix is on the two things the extra contrast cannot reach: the borders
+   get an alpha floor the eye can actually resolve, and the muted text steps up
+   until it clears the ratio. Everything decorative is left alone, because the
+   point of the preference is legibility, not a flatter picture.
+
+   The focus ring keeps only its width override. The :focus-visible
+   declarations across the project used to be split between base.css
+   (outline-offset: 4px) and this file (offset 3px, plus a separate
+   forced-colors variant). animations.css loads last, so its 3px won everywhere
+   and the 4px in base.css was unreachable; and because this file never reset the
+   border-radius and two-layer box-shadow base.css adds, the two rules merged
+   into a combination neither author wrote. base.css:72-77 is now the single
+   source for the ring's shape and offset. */
 @media (prefers-contrast: more) {
   :root, [data-theme] {
-    --line-1: oklch(1 0 0 / 0.2);
-    --line-2: oklch(1 0 0 / 0.3);
-    --line-3: oklch(1 0 0 / 0.5);
-    --border: color-mix(in oklch, var(--text) 22%, transparent);
-    --border-2: color-mix(in oklch, var(--text) 34%, transparent);
-    --border-3: color-mix(in oklch, var(--text) 52%, transparent);
-    --gold-line: color-mix(in oklch, var(--accent) 60%, transparent);
+    --line-1: oklch(1 0 0 / 0.28);
+    --line-2: oklch(1 0 0 / 0.44);
+    --line-3: oklch(1 0 0 / 0.66);
+    --border: color-mix(in oklch, var(--text) 34%, transparent);
+    --border-2: color-mix(in oklch, var(--text) 52%, transparent);
+    --border-3: color-mix(in oklch, var(--text) 74%, transparent);
+    --gold-line: color-mix(in oklch, var(--accent) 78%, transparent);
+
+    /* The muted ramp was the real failure. --text-4 at L 0.53 against a L 0.098
+       ground is about 3.4:1, which is below 4.5:1 for the body sizes it is used
+       at, and --text-3 at L 0.67 is only just over it. Stepping the whole ramp
+       up keeps the hierarchy — there is still a visible difference between
+       adjacent steps — while putting every step over the line. */
+    --text-2: oklch(0.90 0.012 86);
+    --text-3: oklch(0.80 0.012 84);
+    --text-4: oklch(0.70 0.011 82);
   }
+
+  /* Light theme inverts the ramp's lightness, so it needs its own values or the
+     dark set above would darken a white page. */
+  [data-theme="light"] {
+    --text-2: oklch(0.26 0.02 68);
+    --text-3: oklch(0.34 0.018 66);
+    --text-4: oklch(0.42 0.016 64);
+    --line-1: oklch(0 0 0 / 0.3);
+    --line-2: oklch(0 0 0 / 0.46);
+    --line-3: oklch(0 0 0 / 0.68);
+    --border: color-mix(in oklch, var(--text) 38%, transparent);
+    --border-2: color-mix(in oklch, var(--text) 56%, transparent);
+    --border-3: color-mix(in oklch, var(--text) 78%, transparent);
+  }
+
   :focus-visible { outline-width: 3px; }
+
+  /* A selected chip is the one place on the page that communicates state by fill
+     alone. In this mode the fill is a gradient the eye cannot resolve reliably,
+     so the selection gains a ring the browser can draw — and the × inside the
+     summary pills, which are gold-on-gold at 3% alpha and effectively invisible
+     otherwise. */
+  .chip[aria-pressed="true"], .chip.on, .chip.sel {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+  .vf-pill, .vf-pill b { color: var(--text); }
+
+  /* The lens is a decoration behind text. Raising its opacity would compete with
+     the words it sits behind, which is the opposite of what was asked for. */
+  .mnav__lens, .lens-menu__lens { opacity: 0.28; }
   .gold-foil, .plat-foil { filter: none; text-shadow: none; }
 }
 
-/* ─── Forced colors ─── */
+/* ─── Forced colors ────────────────────────────────────────────────────────
+   Windows High Contrast replaces the entire colour palette: every colour the
+   page asked for is discarded and re-painted from a fixed set of system colours.
+   That makes two classes of rule actively harmful, and both are handled here.
+
+   1. BACKGROUND-CLIPPED TEXT BECOMES INVISIBLE. The maison's foil headings are
+      `background-clip: text` with a transparent fill colour. The clipping is a
+      paint operation the system palette does not participate in, so the glyph is
+      drawn with the fill colour the page set — which is `transparent` — on a
+      background the system also repainted. The rule is background: none; color:
+      CanvasText, and the list is exhaustive rather than illustrative.
+
+   2. DECORATION THAT USES PAGE COLOURS BECOMES A BLOCK. The aurora, the grain
+      and the lens are all painted with translucent brand colours; the system
+      paints them solid, so a decorative layer that is a soft glow in normal
+      operation becomes an opaque panel over the content beneath it. They are
+      display: none rather than toned down, because there is no partial setting
+      for "a little less decorative".
+
+   Everything else is left to the browser, which already does the right thing
+   with borders and focus rings — overriding those by hand is how a forced-colors
+   block ends up worse than none. */
 @media (forced-colors: active) {
-  .gold-foil, .plat-foil, .brand-text, .stat-v, .bag__row-v,
-  .cpw-result .v, .rec-stats b, .kpi .v, .ring-center b, .lg-c .v em {
-    background: none; -webkit-text-fill-color: currentColor; color: CanvasText;
+  /* 1. Clipped and gradient text. */
+  .gold-foil, .plat-foil, .brand-text, .stat-v, .bag__row-v, .l-num, .hero-ghost,
+  .mn .mn-t, .mnav__brand, .lens-menu__lbl, .cpw-result .v, .rec-stats b,
+  .kpi .v, .ring-center b, .lg-c .v em, .foot-mark b {
+    background: none !important;
+    -webkit-text-fill-color: currentColor;
+    color: CanvasText;
   }
-  .aurora, .grain, .vig, .motes, .cursor, .cursor-dot, #dust { display: none; }
-  body, button, input, select, textarea { cursor: auto; }
+
+  /* -webkit-text-stroke is a separate paint pass the system palette does not
+     touch, so a stroked ghost glyph keeps its invisible fill and draws its
+     outline in the page's own colour — a wordmark rendered as a coloured
+     outline that may not clear the background. */
+  .ghost, .foot-ghost, .hero-ghost, .f-giant {
+    -webkit-text-stroke: 0;
+    color: CanvasText;
+    opacity: 1;
+  }
+
+  /* 2. Decoration that becomes an opaque block. */
+  .aurora, .grain, .vig, .motes, .cursor, .cursor-dot, #dust,
+  .mnav__lens, .lens-menu__lens, .lens-menu__scrim,
+  .vault__tools::after, .lens-menu__lens-glint, .mnav__lens-glint {
+    display: none !important;
+  }
+
+  /* 3. The custom cursor. The page hides the system cursor on fine pointers when
+     motion is allowed, in favour of two drawn ones — neither of which exists
+     here, so the customer is left with no pointer at all. */
+  @media (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    body, a, button, input, select, textarea, label, summary { cursor: auto; }
+  }
+  body, button, input, select, textarea, label { forced-color-adjust: none; }
+
+  /* 4. A selected chip communicates state by fill, which the system repaints.
+     The ring below is the only thing left that distinguishes it, so it is the
+     one place a border has to be drawn explicitly. */
+  .chip[aria-pressed="true"], .chip.on, .chip.sel, .size.sel, .size.custom.sel {
+    border: 2px solid Highlight;
+    outline: 1px solid Highlight;
+  }
+
   :focus-visible { outline-color: Highlight; }
 }
 

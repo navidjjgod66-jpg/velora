@@ -1,1537 +1,3034 @@
 /* ═══════════════════════════════════════════════════════════════════════
+
    MAISON AURELLE — components.css  (unified · velora + maison)
+
    Buttons · Chips · Cards · Forms · Accordion · Chrome
+
    ═══════════════════════════════════════════════════════════════════════ */
 
+
+
 /* ─── Buttons ─── */
+
 .btn {
+
   position: relative;
+
   display: inline-flex; align-items: center; justify-content: center;
+
   gap: 1rem;
+
   font-size: var(--t-xs); font-weight: 700;
+
   padding: 1.2rem 2.4rem;
+
   min-height: 50px;
+
   border: 1px solid transparent;
+
   border-radius: var(--r-2);
+
   isolation: isolate; overflow: hidden;
+
   transition: transform var(--d-2) var(--ease-lux),
+
               box-shadow var(--d-3) var(--ease-lux),
+
               color var(--d-3) var(--ease-lux),
+
               border-color var(--d-3) var(--ease-lux);
+
   white-space: nowrap;
+
   letter-spacing: 0.015em;
+
   cursor: pointer;
+
   font-family: var(--sans);
+
 }
+
 .btn svg { transition: transform var(--d-2) var(--ease-lux); flex: none; }
+
 .btn .arr { transition: transform var(--dur) var(--ease-out); }
+
 [dir="rtl"] .btn svg.arr { transform: scaleX(-1); }
+
 /* The arrow points right in LTR and is mirrored in RTL, which is correct. The
+
    nudge on hover was not: `scaleX(-1) translateX(6px)` composes to a net
+
    translation of −6px, so the mirrored arrow slid LEFT — against the direction
+
    of travel on an RTL page, where a forward arrow should lead to the right.
+
    Flipping the sign after the mirror is what makes it follow the arrow. */
+
 @media (hover: hover) {
+
   [dir="rtl"] .btn:hover svg.arr { transform: scaleX(-1) translateX(-6px); }
+
   [dir="ltr"] .btn:hover svg.arr { transform: translateX(6px); }
+
 }
+
 .btn:active { transform: translateY(2px) scale(0.97); transition-duration: 90ms; }
+
 .btn:disabled { opacity: 0.5; pointer-events: none; }
+
 .btn .spin { opacity: 0.6; display: none; animation: spin 1s linear infinite; }
+
 .btn.loading .spin { display: block; opacity: 1; }
+
 .btn.loading .arr { display: none; }
 
+
+
 /* Solid / Gold — canonical + VELORA aliases */
+
 .btn-solid,
+
 .btn--gold,
+
 .btn-primary {
+
   background:
+
     linear-gradient(180deg, oklch(1 0 0 / 0.18), oklch(1 0 0 / 0) 38%, oklch(0 0 0 / 0.12) 100%),
+
     var(--grad-foil-2, var(--grad-gold));
+
   background-size: 100% 100%, 300% 100%;
+
   color: var(--invert);
+
   border-color: var(--accent-3);
+
   text-shadow: 0 1px 2px oklch(0 0 0 / 0.3);
+
   box-shadow: var(--sh-gold), inset 0 1px 0 oklch(1 0 0 / 0.45), inset 0 -1px 0 oklch(0 0 0 / 0.25);
+
 }
+
 .btn-solid::before,
+
 .btn--gold::before,
+
 .btn-primary::before {
+
   content: ''; position: absolute; inset: 0;
+
   background: linear-gradient(120deg, transparent 27%, oklch(1 0 0 / 0.36) 50%, transparent 73%);
+
   transform: translateX(-113%);
+
   transition: transform 1.25s var(--ease-lux);
+
   pointer-events: none;
+
 }
+
 @media (hover: hover) {
+
   .btn-solid:hover,
+
   .btn--gold:hover,
+
   .btn-primary:hover {
+
     box-shadow: var(--sh-lg), 0 18px 44px -14px color-mix(in oklch, var(--accent) 52%, transparent);
+
     transform: translateY(-3px) scale(1.01);
+
     background-position: 0 0, 100% 0;
+
   }
+
   .btn-solid:hover::before,
+
   .btn--gold:hover::before,
+
   .btn-primary:hover::before { transform: translateX(113%); }
+
 }
+
+
 
 /* Ghost — canonical + VELORA alias */
+
 .btn-ghost,
+
 .btn--ghost {
+
   border: 1px solid var(--border-2);
+
   color: var(--text);
+
   background: color-mix(in oklch, var(--bg) 52%, transparent);
+
 }
+
 .btn-ghost::before,
+
 .btn--ghost::before {
+
   content: ''; position: absolute; inset: 0;
+
   background: var(--grad-gold);
+
   transform: scaleX(0); transform-origin: right;
+
   transition: transform 0.8s var(--ease-lux);
+
   z-index: -1; border-radius: inherit;
+
 }
+
 [dir="ltr"] .btn-ghost::before,
+
 [dir="ltr"] .btn--ghost::before { transform-origin: left; }
+
 @media (hover: hover) {
+
   .btn-ghost:hover,
+
   .btn--ghost:hover {
+
     color: var(--invert);
+
     border-color: color-mix(in oklch, var(--accent) 40%, var(--line));
+
     box-shadow: var(--sh-glow);
+
   }
+
   .btn-ghost:hover::before,
+
   .btn--ghost:hover::before { transform: scaleX(1); }
+
 }
+
+
 
 /* Royal — canonical + VELORA alias */
+
 .btn-royal,
+
 .btn--royal {
+
   background: var(--grad-royal);
+
   color: oklch(0.97 0.02 92);
+
   border-color: transparent;
+
   box-shadow: 0 16px 40px -14px color-mix(in oklch, var(--bordeaux) 55%, transparent),
+
               inset 0 1px 0 oklch(1 0 0 / 0.2);
+
 }
+
 .btn-royal:hover,
+
 .btn--royal:hover {
+
   box-shadow: 0 22px 64px color-mix(in oklch, var(--bordeaux) 42%, transparent);
+
   transform: translateY(-2px);
+
 }
+
+
 
 /* Sizes — canonical + VELORA aliases */
+
 .btn-sm,
+
 .btn--sm { padding: 0.72rem 1.4rem; font-size: 0.74rem; min-height: 46px; }
 
+
+
 .btn-lg,
+
 .btn--lg { padding: 1.35rem 2.95rem; font-size: 0.9rem; min-height: 64px; }
 
+
+
 .btn-full,
+
 .btn-block,
+
 .btn--block { width: 100%; }
 
+
+
 .btn-icon,
+
 .btn--icon {
+
   padding: 0;
+
   width: 50px; height: 50px;
+
   min-width: 50px; min-height: 50px;
+
 }
+
+
 
 .linklike { font-size: 0.68rem; font-weight: 700; color: var(--text-4); border-bottom: 1px solid var(--border-3); padding-bottom: 2px; transition: color 0.3s var(--ease-lux), border-color 0.3s var(--ease-lux); background: none; }
+
 .linklike:hover { color: var(--accent); border-color: var(--accent); }
+
 .linklike-accent { font-size: var(--t-xs); font-weight: 600; color: var(--accent); border: none; background: none; border-block-end: 1px solid var(--gold-line); padding: 2px; cursor: pointer; min-height: 44px; display: inline-flex; align-items: center; }
+
 .linklike-muted { font-size: var(--t-xs); color: var(--text-3); background: none; border: none; cursor: pointer; min-height: 44px; display: inline-flex; align-items: center; }
 
+
+
 /* ─── Chips ─── */
+
 .chip {
+
   min-height: 44px;
+
   padding: 0.55rem 1.15rem;
+
   border-radius: var(--r-pill);
+
   background: transparent;
+
   border: 1px solid var(--border-2);
+
   color: var(--text-3);
+
   font-size: 0.72rem; font-weight: 700;
+
   display: inline-flex; align-items: center; gap: 0.5rem;
+
   transition: transform var(--d-1) var(--ease-valet),
+
               border-color var(--d-1),
+
               color var(--d-1),
+
               background-color var(--d-1);
+
   white-space: nowrap;
+
   cursor: pointer;
+
 }
+
 @media (hover: hover) {
+
   .chip:hover {
+
     border-color: var(--gold-line);
+
     color: var(--text);
+
     background: color-mix(in oklch, var(--accent) 4.5%, transparent);
+
     transform: translateY(-1px);
+
   }
+
 }
+
 .chip:active { transform: scale(0.94); }
+
 .chip.on,
+
 .chip[aria-pressed="true"] {
+
   background: var(--grad-gold);
+
   color: var(--invert);
+
   border-color: transparent;
+
   box-shadow: 0 6px 18px -6px color-mix(in oklch, var(--accent) 46%, transparent);
+
 }
+
 .chip small { font-family: var(--mono); font-size: 0.62rem; opacity: 0.7; }
+
 .chip--gold { color: var(--accent); background: var(--gold-ghost); border-color: var(--gold-line); }
 
+
+
 /* ─── Stars ─── */
+
 .stars { display: inline-flex; gap: 2px; color: var(--accent); line-height: 1; }
+
 .stars svg { width: 11px; height: 11px; fill: currentColor; }
+
 .stars .off { opacity: 0.22; }
+
 .rate-row { display: inline-flex; align-items: center; gap: 0.55rem; font-size: 0.58rem; color: var(--text-3); }
+
 .rate-row b { color: var(--accent); font-weight: 500; }
 
+
+
 /* ─── Eyebrow / Section head ─── */
+
 .eyebrow {
+
   display: flex; align-items: center; gap: 1.1rem;
+
   margin-bottom: 2.3rem;
+
   font-size: var(--t-xs); font-weight: 600;
+
   color: var(--accent);
+
 }
+
 .eyebrow::before { content: ''; width: 54px; height: 1px; background: linear-gradient(90deg, var(--accent), transparent); }
+
 .eyebrow::after { content: ''; width: 4px; height: 4px; background: var(--accent); transform: rotate(45deg); box-shadow: 0 0 8px var(--accent); }
+
 .eyebrow .num { color: var(--text-4); margin-inline-end: auto; }
+
 .eyebrow.center { justify-content: center; }
+
 .eyebrow.center::before, .eyebrow.center::after { display: none; }
 
+
+
 .shead {
+
   display: grid; grid-template-columns: 1fr auto;
+
   gap: clamp(2rem, 6vw, 6rem);
+
   align-items: end;
+
   margin-bottom: clamp(3.2rem, 7vw, 5.8rem);
+
   padding-bottom: clamp(1.8rem, 3.5vw, 2.4rem);
+
   border-bottom: 1px solid var(--line);
+
 }
+
 .shead .l { max-width: 64ch; }
+
 .shead .r { max-width: 44ch; text-align: end; display: flex; flex-direction: column; align-items: flex-end; gap: 1.4rem; }
+
 .shead h2 { font-size: var(--t-3xl); font-weight: 600; margin-top: 0.5rem; }
+
 .shead-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+
 .shead--center { justify-items: center; text-align: center; }
+
 @media (max-width: 900px) {
+
   .shead { grid-template-columns: 1fr; gap: 1.8rem; }
+
   .shead .r { text-align: start; align-items: flex-start; }
+
 }
+
+
 
 /* ─── Frames / image containers ─── */
+
 .frame {
+
   position: relative;
+
   border: 1px solid var(--line-2);
+
   border-radius: var(--r-5);
+
   padding: clamp(0.85rem, 1.2vw, 1.25rem);
+
   background: color-mix(in oklch, var(--surface) 62%, transparent);
+
   box-shadow: var(--lux-sh-card, var(--sh-3));
+
   transition: transform var(--d-2) var(--ease-lux), box-shadow var(--d-3) var(--ease-lux), border-color var(--d-2) var(--ease-aurelle);
+
   overflow: hidden;
+
 }
+
 .frame::before, .frame::after {
+
   content: ''; position: absolute; width: 7px; height: 7px;
+
   border: 1px solid var(--gold-line); transform: rotate(45deg);
+
   background: var(--bg);
+
 }
+
 .frame::before { top: -4px; inset-inline-start: -4px; }
+
 .frame::after  { bottom: -4px; inset-inline-end: -4px; }
+
 .frame:hover { box-shadow: var(--lux-sh-elevated, var(--sh-lux)); border-color: color-mix(in oklch, var(--accent) 38%, var(--line-2)); transform: translateY(-2px); }
 
+
+
 .f-med {
+
   position: relative; overflow: hidden;
+
   border-radius: var(--r-4);
+
   aspect-ratio: 4/5;
+
   background: var(--surface-2);
+
 }
+
 .f-med.arch { border-radius: 999px 999px var(--r-4) var(--r-4); }
+
 .f-med::after {
+
   content: ''; position: absolute; inset: 12px;
+
   border: 1px solid color-mix(in oklch, var(--text) 13%, transparent);
+
   pointer-events: none; z-index: 2;
+
   transition: inset 0.6s var(--ease-lux);
+
 }
+
 .frame:hover .f-med::after { inset: 18px; }
+
 .f-med img {
+
   width: 100%; height: 100%; object-fit: cover;
+
   filter: saturate(0.92) contrast(1.06);
+
   opacity: 0;
+
   transition: opacity 0.9s var(--ease-lux), transform 1.4s var(--ease-lux);
+
 }
+
 .f-med img.ld { opacity: 1; }
+
 .frame:hover .f-med img { transform: scale(1.05); }
+
 .f-med img:not(.ld) { transform: scale(1.06); opacity: .55; }
 
+
+
 .f-cap {
+
   display: flex; justify-content: space-between; align-items: center;
+
   gap: 1rem; padding-top: 1rem;
+
   font-size: 0.62rem; color: var(--text-3);
+
   border-block-start: 1px solid var(--line-1);
+
 }
+
 .f-cap b { color: var(--accent); font-weight: 600; }
 
+
+
 /* ─── Product card ───
+
    `overflow: clip` rather than `hidden`: an identical clipping box, but it does
+
    not create a scroll container, so the card is not a potential scroll target
+
    and the compositor treats the clipped subtree more cheaply. Safe here because
+
    nothing inside `.prod` scrolls. */
+
 .prod,
+
 .prod-card,
+
 .pcard {
+
   position: relative;
+
   display: flex; flex-direction: column;
+
   background: var(--surface);
+
   border: 1px solid color-mix(in oklch, var(--accent) 14%, var(--line));
+
   border-radius: var(--r-5);
+
   overflow: clip;
+
   transition: transform 240ms var(--ease-lux), border-color 200ms var(--ease-lux);
+
   box-shadow: var(--lux-sh-card, var(--sh-2));
+
 }
+
 /* The elevated hover shadow. `--lux-sh-elevated` is
+
    `0 0 80px accent@8%, 0 1px 0 hair inset, 0 40px 80px -20px black@40%` —
+
    two 80px Gaussians over a ~288×500 card, ~200k px of blur, rasterised on
+
    first hover. And because `.prod` clips, the outer glow is clipped away by its
+
    own card and never reaches the screen: half the blur budget was being spent
+
    on pixels that cannot be seen. Replaced with one 48px shadow that still reads
+
    as elevation, and gated behind `hover: hover` so touch never rasterises it.
 
+
+
    The `.prod-card` / `.pcard` arms were removed: neither class exists in any
+
    markup or script, so they were two extra selectors evaluated on every card in
+
    the grid for a rule that never applied to anything. */
+
 .prod::before {
+
   content: ''; position: absolute; inset: 0;
+
   border-radius: inherit;
+
   box-shadow: 0 24px 48px -24px oklch(0 0 0 / 0.55), 0 1px 0 var(--lux-hair, oklch(1 0 0 / 0.07)) inset;
+
   opacity: 0; pointer-events: none;
+
   transition: opacity 240ms var(--ease-lux);
+
 }
+
 /* Every card `:hover` sits inside `hover: hover`. Unguarded, a tap on a phone
+
    leaves the card permanently :hover once the PDP closes — so it stays lifted,
+
    de-grayscaled at scale(1.09) with a live filter layer, and every later scroll
+
    keeps paying for it. */
+
 @media (hover: hover) {
+
   .prod:hover::before { opacity: 1; }
+
   .prod:hover { border-color: color-mix(in oklch, var(--accent) 38%, var(--line-2)); transform: translateY(-5px); }
+
 }
+
 .prod[hidden] { display: none; }
 
+
+
 .prod-media {
+
   position: relative; aspect-ratio: 4/5; overflow: clip;
+
   background: var(--surface-2); display: block;
+
 }
+
 /* ── Why the `filter` transition is gated ──────────────────────────────────
+
    `filter: grayscale(0.5) brightness(0.84) contrast(1.06)` is not compositor
+
    animatable. Interpolating it re-filters and re-uploads the image EVERY FRAME
+
    for 400ms — at dpr 3 a 4:5 card is a ~1080×1440 destination, so ~37 Mpx of
+
    shader work per hover, on top of the ten filtered layers already resident.
 
+
+
    So the filter transition now lives inside `@media (hover: hover)`, where at
+
    most one card is hovered at a time under a mouse. On touch there is no hover
+
    state to transition from: the static resting filter rasterises once at first
+
    paint and nothing re-filters on tap. `transform` and `opacity` — the two
+
    properties that ARE composited — stay unconditional, so the card still grows
+
    smoothly on every device. */
+
 .prod-media img {
+
   position: absolute; inset: 0; width: 100%; height: 100%;
+
   object-fit: cover;
+
   filter: grayscale(0.5) brightness(0.84) contrast(1.06);
+
   transform: scale(1.03);
+
   transition: transform var(--d-cine) var(--ease-lux), opacity 0.7s var(--ease-lux);
+
   opacity: 0;
+
 }
+
 .prod-media img.ld { opacity: 1; }
+
 @media (hover: hover) {
+
   .prod-media img { transition: filter var(--d-3) var(--ease-lux), transform var(--d-cine) var(--ease-lux), opacity 0.7s var(--ease-lux); }
+
   .prod:hover .prod-media img { filter: grayscale(0) brightness(0.97) contrast(1); transform: scale(1.09); }
+
 }
+
 .prod-media::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 58%, oklch(0 0 0 / 0.52)); pointer-events: none; }
+
 /* Cursor spotlight. `--mx`/`--my` are written by main.js's per-card
+
    pointermove handler, so this is live — but that handler read
+
    getBoundingClientRect() once per card per mousemove, i.e. up to 11 forced
+
    synchronous reflows while the pointer crossed the grid. It is now rAF-batched
+
    with one rect read per frame. */
+
 .prod-media::before {
+
   content: ''; position: absolute; inset: 0;
+
   background: radial-gradient(120% 80% at var(--mx, 50%) var(--my, 40%), color-mix(in oklch, var(--accent) 17%, transparent), transparent 64%);
+
   opacity: 0; transition: opacity 0.5s var(--ease-lux); pointer-events: none;
+
 }
+
 @media (hover: hover) { .prod:hover .prod-media::before { opacity: 1; } }
 
+
+
 /* Gold underline — already compositor-only (scaleX, with transform-origin: right
+
    for RTL). Only the hover trigger needed the guard. */
+
 .prod-line { position: absolute; top: 0; inset-inline-start: 0; height: 2px; width: 100%; background: var(--grad-gold); transform: scaleX(0); transform-origin: right; transition: transform 0.9s var(--ease-lux); z-index: 3; }
+
 [dir="ltr"] .prod-line { transform-origin: left; }
+
 @media (hover: hover) { .prod:hover .prod-line { transform: scaleX(1); } }
 
+
+
 .pl-num { position: absolute; bottom: 0.9rem; inset-inline-start: 1.1rem; z-index: 3; font-family: var(--mono); font-size: 0.58rem; color: oklch(0.95 0.01 88 / 0.88); }
+
 .pl-badge, .prod-badge {
+
   position: absolute; top: 1.1rem; inset-inline-start: 1.1rem; z-index: 3;
+
   font-size: 0.58rem; font-weight: 600; color: var(--accent);
+
   background: color-mix(in oklch, var(--bg) 88%, var(--surface));
+
   border: 1px solid var(--gold-line);
+
   border-radius: var(--r-2);
+
   padding: 0.52rem 0.92rem;
+
 }
+
 .pl-badge.hot { color: var(--invert); background: var(--grad-gold); border-color: transparent; box-shadow: var(--sh-glow); }
+
 .pl-badge.low { color: oklch(0.97 0.02 92); background: var(--grad-royal); border-color: transparent; top: 3.4rem; }
 
+
+
 .wish, .cmp-toggle {
+
   position: absolute; z-index: 4;
+
   width: var(--hit); height: var(--hit); border-radius: 50%;
+
   border: 1px solid var(--line-2);
+
   background: color-mix(in oklch, var(--bg) 82%, var(--surface));
+
   display: flex; align-items: center; justify-content: center;
+
   color: var(--text-2);
+
   /* `transition: var(--d-2) var(--ease-lux)` meant transition-property: all. These are
+
      44x44 buttons and there are twenty of them on the grid, so `all` made the
+
      engine diff every animatable property on each one on hover-in, including
+
      the layout properties the rule never touches. Named explicitly instead. */
+
   transition: color var(--d-2) var(--ease-lux), background-color var(--d-2) var(--ease-lux), border-color var(--d-2) var(--ease-lux), transform var(--d-2) var(--ease-lux), box-shadow var(--d-3) var(--ease-lux);
+
 }
+
 .wish { top: 1rem; inset-inline-end: 1rem; }
+
 .cmp-toggle { top: calc(1rem + var(--hit) + 0.5rem); inset-inline-end: 1rem; }
+
 .wish:hover, .cmp-toggle:hover { border-color: var(--gold-line); color: var(--accent); }
+
 .wish.on { color: var(--accent); border-color: var(--gold-line); background: var(--gold-wash); }
+
 .wish.on svg { fill: currentColor; }
+
 .cmp-toggle.on { color: var(--invert); background: var(--grad-gold); border-color: transparent; box-shadow: var(--sh-glow); }
+
 .cmp-toggle svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.5; }
 
+
+
 .prod-info { display: flex; flex-direction: column; gap: 0.8rem; padding: clamp(1.25rem, 2vw, 1.55rem); flex: 1; }
+
 .p-top { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+
 .p-cat { font-size: 0.58rem; font-weight: 600; color: var(--accent); font-family: var(--mono); letter-spacing: 0.12em; text-transform: uppercase; }
+
 .p-price { font-family: var(--serif-d); font-size: 0.92rem; font-variant-numeric: tabular-nums; }
+
 .p-name { font-size: clamp(1.32rem, 2vw, 1.64rem); line-height: 1.14; font-family: var(--serif-d); font-weight: 500; margin-top: 0.2rem; }
+
 .p-sub { font-size: var(--t-sm); color: var(--text-3); line-height: 1.8; }
+
 .p-meta { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; flex-wrap: wrap; }
+
 .p-row { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
+
 .p-sw { display: flex; gap: 0.45rem; }
+
 .p-sw .sw { width: 15px; height: 15px; pointer-events: none; }
 
+
+
 .quick {
+
   margin-top: auto;
+
   display: inline-flex; align-items: center; justify-content: center;
+
   gap: 0.9rem; width: 100%;
+
   padding: 1.05rem 1.35rem; min-height: 50px;
+
   border: 1px solid var(--line-2); border-radius: var(--r-2);
+
   font-size: 0.64rem; font-weight: 600; color: var(--text);
+
   position: relative; overflow: hidden; isolation: isolate;
+
   transition: color 0.7s var(--ease-lux), border-color 0.7s var(--ease-lux), box-shadow 0.7s var(--ease-lux);
+
 }
+
 .quick::before { content: ''; position: absolute; inset: 0; background: var(--grad-gold); transform: scaleX(0); transform-origin: right; transition: transform 0.8s var(--ease-lux); z-index: -1; }
+
 [dir="ltr"] .quick::before { transform-origin: left; }
+
 .quick:hover { color: var(--invert); border-color: transparent; box-shadow: var(--sh-glow); }
+
 .quick:hover::before { transform: scaleX(1); }
 
+
+
 /* ─── Product card action pair ───
+
    Two controls side by side under every card: the primary quick-buy and a
+
    quieter "مشاهده" link to the PDP. Grid keeps them an exact half each at
+
    every breakpoint, and `margin-top:auto` preserves the old bottom-pinned
+
    rhythm of the single button it replaced. */
+
 .p-acts {
+
   margin-top: auto;
+
   display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;
+
 }
+
 .p-acts .quick { margin-top: 0; padding: 0.85rem 0.7rem; font-size: 0.62rem; letter-spacing: 0.04em; }
+
 .p-acts .quick svg { flex: none; opacity: 0.85; }
+
 .quick.qs { border-color: var(--gold-line); color: var(--accent); background: var(--gold-ghost); }
+
 .quick.view {
+
   border-style: dashed; color: var(--text-3); text-decoration: none;
+
   transition: color 0.7s var(--ease-lux), border-color 0.7s var(--ease-lux), background-color 0.7s var(--ease-lux);
+
 }
+
 .quick.view::before { display: none; }
+
 .quick.view:hover { color: var(--text); border-color: var(--line-3); background: var(--surface-2); box-shadow: none; }
+
 .quick.in-bag { color: var(--invert); border-color: transparent; background: var(--grad-gold); }
+
 .quick.in-bag::before { display: none; }
 
+
+
 /* ─── Stock pill (card badge) ───
+
    Availability as a whisper, not a shout: dark glass chip with a live gold
+
    dot that breathes a halo — the "in stock right now" signal, rendered in
+
    the maison's metal. Scarce stock flips the dot to ember so the pulse reads
+
    as urgency rather than reassurance. */
+
 .stock-pill {
+
   display: inline-flex; align-items: center; gap: 0.45rem;
+
   padding: 0.28rem 0.62rem;
+
   border: 1px solid var(--line-1); border-radius: 999px;
+
   background: var(--surface-2);
+
   font-size: 0.62rem; font-weight: 600; letter-spacing: 0.05em;
+
   color: var(--text-3);
+
 }
+
 .stock-pill .dot {
+
   width: 7px; height: 7px; border-radius: 50%; flex: none;
+
   background: var(--accent);
+
   box-shadow: 0 0 6px color-mix(in oklch, var(--accent) 70%, transparent);
+
   animation: haloDot 2.4s var(--ease-silk, ease-in-out) infinite;
+
 }
+
 .stock-pill.low .dot { background: var(--ember, #e2673f); box-shadow: 0 0 6px color-mix(in oklch, var(--ember, #e2673f) 70%, transparent); }
+
 @keyframes haloDot {
+
   0%   { box-shadow: 0 0 0 0 color-mix(in oklch, var(--accent) 45%, transparent); }
+
   70%  { box-shadow: 0 0 0 7px oklch(0 0 0 / 0); }
+
   100% { box-shadow: 0 0 0 0 oklch(0 0 0 / 0); }
+
 }
+
 .stock-pill.low .dot { animation-name: haloDotLow; }
+
 @keyframes haloDotLow {
+
   0%   { box-shadow: 0 0 0 0 color-mix(in oklch, var(--ember, #e2673f) 45%, transparent); }
+
   70%  { box-shadow: 0 0 0 7px oklch(0 0 0 / 0); }
+
   100% { box-shadow: 0 0 0 0 oklch(0 0 0 / 0); }
+
 }
+
 @media (prefers-reduced-motion: reduce) {
+
   .stock-pill .dot { animation: none; }
+
 }
+
 @media (pointer: coarse) {
+
   /* Touch cards: slightly larger target for the view link. */
+
   .p-acts .quick { min-height: 46px; }
+
 }
+
+
 
 /* ─── Swatches / sizes ─── */
+
 .sw {
+
   width: 26px; height: 26px; border-radius: 50%;
+
   background: var(--c, #c8a24a);
+
   border: 1px solid var(--line-3);
+
   transition: transform var(--d-1) var(--ease-spring);
+
   box-shadow: inset 0 0 4px oklch(0 0 0 / 0.3);
+
   flex: none; padding: 0; cursor: pointer;
+
 }
+
 .sw:hover { transform: scale(1.18); }
+
 .sw.sel { outline: 1.8px solid var(--accent); outline-offset: 3px; box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 22%, transparent); }
 
+
+
 .sizes { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
 .size {
+
   min-width: 50px; min-height: var(--hit);
+
   padding: 0.72rem;
+
   border: 1px solid var(--line-2); border-radius: var(--r-2);
+
   font-family: var(--mono); font-size: 0.72rem;
+
   color: var(--text-3);
+
   transition: color var(--d-1) var(--ease-lux), background-color var(--d-1) var(--ease-lux), border-color var(--d-1) var(--ease-lux);
+
   text-align: center;
+
   background: var(--surface);
+
   display: grid; place-items: center;
+
   cursor: pointer;
+
 }
+
 .size:hover { border-color: var(--line-3); color: var(--text); }
+
 .size.sel, .size[aria-checked="true"] {
+
   background: var(--grad-gold); color: var(--invert);
+
   border-color: transparent; font-weight: 600;
+
   box-shadow: 0 6px 16px -6px color-mix(in oklch, var(--accent) 55%, transparent);
+
 }
+
 .size[disabled] { opacity: 0.3; text-decoration: line-through; cursor: not-allowed; }
+
 .size.custom { border-style: dashed; border-color: var(--gold-line); color: var(--accent); }
+
 .size.custom.sel { background: var(--grad-gold); color: var(--invert); border-style: solid; }
+
 .sizes.err { animation: shake 0.5s var(--ease); }
+
+
 
 /* Sold out, in the quick-size sheet.
 
+
+
    The strike-through and the fade were already here for .size[disabled], and
+
    they are the right reading — a size you cannot have should not look
+
    available. What was missing is the reason. A rail of five struck-through
+
    numbers says "not these" and nothing about "these, instead": the customer
+
    has to guess which of the remaining numbers the maison would actually make
+
    for them, on a product page whose whole argument is fit.
 
+
+
    So an available size now advertises its depth, and only in the sheet — the
+
    PDP has the size guide for the deliberating case, and two competing numbers
+
    on one control is one too many. The depth is a hint, not a promise: it
+
    counts pairs in stock, and a size with two left is still a size the atelier
+
    will build to order. */
 
+
+
 .size .siz-stock {
+
   display: block;
+
   margin-top: 0.18rem;
+
   font-family: var(--font);
+
   font-size: 0.5rem;
+
   line-height: 1;
+
   letter-spacing: 0.02em;
+
   color: var(--text-4);
+
   transition: color var(--d-1) var(--ease-lux);
+
 }
+
 .size:hover .siz-stock { color: var(--text-3); }
+
 .size.sel .siz-stock, .size[aria-checked="true"] .siz-stock { color: color-mix(in oklch, var(--invert) 72%, transparent); }
 
+
+
 /* A genuinely scarce size gets the maison's own signal rather than a number
+
    nobody can act on. Four pairs is a "last few" in a hand-made maison; it is
+
    not a warning. */
+
 .size[data-scarce="1"] .siz-stock { color: var(--accent); }
+
 .size[data-scarce="1"]:hover .siz-stock { color: var(--accent); }
 
+
+
 /* The whole rail is unavailable. openSheet() renders this instead of five dead
+
    buttons, because a radiogroup where nothing can be selected is a control the
+
    customer has to discover is broken. */
+
 .sheet-empty {
+
   margin: 0;
+
   padding: 1.4rem 0.5rem;
+
   font-size: 0.78rem;
+
   line-height: 1.9;
+
   text-align: center;
+
   color: var(--text-3);
+
 }
+
+
 
 /* ─── Form fields ─── */
+
 .field { position: relative; display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 2rem; }
+
 .field label { display: flex; align-items: center; gap: 0.6rem; font-size: 0.6rem; font-weight: 600; color: var(--text-3); margin-bottom: 0.9rem; }
+
 .field label::before { content: ''; width: 3px; height: 3px; background: var(--accent); transform: rotate(45deg); }
+
 .field input, .field select, .field textarea, .select {
+
   width: 100%; background: transparent;
+
   border: 0; border-bottom: 1px solid var(--border-2);
+
   padding: 1rem 0; min-height: 50px;
+
   font-family: var(--serif-d); font-size: 1.1rem; color: var(--text);
+
   transition: border-color var(--d-2) var(--ease-lux), color var(--d-2) var(--ease-lux);
+
   border-radius: 0; appearance: none; outline: none;
+
 }
+
 .field textarea { resize: vertical; min-height: 124px; font-size: 1rem; line-height: 1.8; font-family: var(--sans); }
+
 .field select, .select {
+
   cursor: pointer;
+
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23d4af37' stroke-width='1.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+
   background-repeat: no-repeat;
+
   background-position: left 0 center;
+
   padding-inline-end: 1.6rem;
+
 }
+
 .field select option { background: var(--bg); color: var(--text); }
+
 .field::after {
+
   content: ''; position: absolute;
+
   bottom: 0; inset-inline-start: 0;
+
   height: 1px; width: 100%;
+
   background: var(--grad-gold);
+
   transform: scaleX(0); transform-origin: right;
+
   transition: transform var(--d-3) var(--ease-lux);
+
 }
+
 .field:focus-within::after { transform: scaleX(1); }
+
 .field.invalid input, .field.invalid textarea, .field.invalid select { border-bottom-color: var(--ember); }
+
 .field.invalid::after { background: var(--ember); transform: scaleX(1); }
+
 .f-errmsg, .field-error { display: none; font-size: 0.6rem; color: var(--ember); margin-top: 0.5rem; }
+
 .field.invalid .f-errmsg { display: block; }
 
+
+
 /* A select that has not been chosen from yet must not read as filled in, or the
+
    form looks answered when it is not. :placeholder-shown is defined for <input>
+
    only, so the marker is set by the script that fills the options and removed
+
    when a real value is chosen — which also covers the reverse case, restoring the
+
    normal text colour. */
+
 .field select[data-unset] { color: var(--text-4); }
+
 .field select:disabled { opacity: 0.45; cursor: not-allowed; }
 
+
+
 /* A live counter (the postal-code length) starts visible, before any validation
+
    has run. [hidden] has to be re-asserted here because the UA rule for it is a
+
    bare attribute selector, and any author `display` declaration beats it — so
+
    without this, hiding the message with `hidden` would have no effect at all. */
+
 .field-error { display: block; }
+
 .field-error[hidden] { display: none; }
 
+
+
 .field input::placeholder, .field textarea::placeholder { color: var(--text-4); }
+
 .input-center { text-align: center; letter-spacing: 0.06em; }
+
 .field--flush { margin-bottom: 0; }
 
+
+
 .select-wrap { position: relative; display: inline-flex; }
+
 .select-wrap svg { position: absolute; inset-inline-end: 12px; top: 50%; translate: 0 -50%; width: 12px; height: 12px; stroke: var(--accent); fill: none; pointer-events: none; }
+
 .select-wrap .select { appearance: none; padding-inline-end: 2.2rem; }
+
 .select--full { width: 100%; }
 
+
+
 /* ─── Accordion ─── */
+
 .acc {
+
   display: flex; flex-direction: column; gap: 1px;
+
   background: var(--line-1); border-radius: var(--r-3);
+
   overflow: hidden; margin-top: 1.2rem;
+
   border-top: 1px solid var(--line);
+
 }
+
 .acc-i { background: var(--surface); border-bottom: 1px solid var(--line); }
+
 .acc-q {
+
   width: 100%; display: flex; justify-content: space-between; align-items: center;
+
   gap: 1.4rem; padding: 1.6rem 0; min-height: var(--hit);
+
   background: none; border: none;
+
   font-family: var(--serif-d); font-size: 1.16rem; font-weight: 700;
+
   color: var(--text); text-align: start;
+
   transition: color var(--d-2) var(--ease-lux);
+
   cursor: pointer;
+
 }
+
 .acc-q:hover { color: var(--accent); }
+
 .acc-ico { width: 32px; height: 32px; flex: none; border-radius: 50%; border: 1px solid var(--line-2); display: grid; place-items: center; transition: transform var(--d-2) var(--ease-lux), border-color var(--d-2); font-size: 1rem; color: var(--accent); }
+
 .acc-i.open .acc-ico { transform: rotate(45deg); border-color: var(--accent); }
+
 .acc-b { display: grid; grid-template-rows: 0fr; transition: grid-template-rows var(--d-3) var(--ease-lux); }
+
 .acc-i.open .acc-b { grid-template-rows: 1fr; }
+
 .acc-b > div { overflow: hidden; }
+
 .acc-b p { padding: 0 1.2rem 1.7rem; font-size: var(--t-sm); color: var(--text-2); line-height: 2; max-width: 58ch; }
 
+
+
 /* ─── Live dot ─── */
+
 .live-dot {
+
   display: inline-block; width: 5px; height: 5px;
+
   background: var(--verd); border-radius: 50%;
+
   position: relative;
+
   animation: pulse 3s infinite;
+
 }
+
 .live-dot::after {
+
   content: ''; position: absolute; inset: -4px; border-radius: 50%;
+
   border: 1px solid var(--accent); opacity: .5;
+
   animation: pulse 3s var(--ease-out) infinite;
+
 }
+
+
 
 /* ─── Trust mini ─── */
+
 .trust-mini { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.8rem; }
+
 .trust-mini span { display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.54rem; font-weight: 500; color: var(--text-3); border: 1px solid var(--line); border-radius: var(--r-pill); padding: 0.4rem 0.72rem; }
+
 .trust-mini svg { width: 11px; height: 11px; stroke: var(--accent); fill: none; }
 
+
+
 /* ─── Close btn / Icon btn / Badge ─── */
+
 .close-btn,
+
 .xbtn {
+
   inline-size: var(--hit); block-size: var(--hit);
+
   display: grid; place-items: center;
+
   border: 1px solid var(--line-1); border-radius: 50%;
+
   background: var(--surface); color: var(--text-3);
+
   transition: color var(--d-2) var(--ease-lux), background-color var(--d-2) var(--ease-lux), border-color var(--d-2) var(--ease-lux);
+
   flex-shrink: 0; cursor: pointer;
+
 }
+
 .close-btn:hover,
+
 .xbtn:hover { border-color: var(--accent); color: var(--accent); transform: rotate(90deg); }
 
+
+
 .icon-btn,
+
 .ibtn {
+
   position: relative;
+
   width: 44px; height: 44px; border-radius: 50%;
+
   border: 1px solid var(--border); background: var(--surface);
+
   display: grid; place-items: center;
+
   transition: var(--tr-lux);
+
   color: var(--text-2);
+
   cursor: pointer;
+
 }
+
 @media (hover: hover) {
+
   .icon-btn:hover,
+
   .ibtn:hover { border-color: var(--gold-line); transform: translateY(-2px); box-shadow: var(--sh-sm); color: var(--accent); }
+
 }
+
 .icon-btn:active,
+
 .ibtn:active { transform: scale(0.92); }
+
 .icon-btn svg,
+
 .ibtn svg { width: 19px; height: 19px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 
+
+
 /* Badge — header notification position (canonical) */
+
 .badge {
+
   position: absolute; top: 2px; inset-inline-end: -2px;
+
   min-width: 18px; height: 18px; padding: 0 5px;
+
   background: var(--grad-gold); color: var(--invert);
+
   font-size: 9.5px; font-weight: 800; border-radius: 9px;
+
   text-align: center; display: none; line-height: 18px;
+
 }
+
 .badge:not(.none) { display: block; }
+
 .badge.pop { animation: pop 0.5s var(--ease-spring); }
 
+
+
 /* Inline pill (VELORA alias — non-positioned) */
+
 .pill {
+
   display: inline-flex; align-items: center; justify-content: center;
+
   min-width: 18px; height: 18px; padding: 0 6px;
+
   background: var(--grad-gold); color: var(--invert);
+
   font-size: 9.5px; font-weight: 800; border-radius: var(--r-pill);
+
   line-height: 1;
+
 }
+
+
 
 /* ─── Skeletons ─── */
+
 .skl, .lux-skeleton {
+
   position: relative; overflow: hidden;
+
   background: var(--surface-2);
+
 }
+
 .skl::after, .lux-skeleton::after {
+
   content: ''; position: absolute; inset: 0;
+
   background: linear-gradient(100deg, transparent 35%, color-mix(in oklch, var(--text) 5.5%, transparent) 50%, transparent 65%);
+
   background-size: 220% 100%;
+
   animation: shimmer 1.8s var(--ease-cine) infinite;
+
 }
+
 .skl img { opacity: 0; }
+
 .skl img.ld { opacity: 1; }
 
+
+
 .img-err { display: grid; place-items: center; background: linear-gradient(160deg, var(--surface), var(--surface-2)); }
+
 .img-err::after { content: 'اُ'; font-family: var(--serif-d); color: var(--accent); font-size: 2.6rem; opacity: 0.4; }
 
+
+
 /* ─── Certificate ─── */
+
 .cert {
+
   display: flex; gap: 1.1rem; align-items: center;
+
   margin-top: 1.2rem; padding: 1.05rem 1.25rem;
+
   border: 1px solid var(--gold-line); border-radius: var(--r-4);
+
   background: linear-gradient(120deg, var(--gold-ghost), transparent 65%);
+
   position: relative; overflow: hidden;
+
   box-shadow: var(--lux-sh-card, var(--sh-2));
+
 }
+
 .cert--gold { background: linear-gradient(135deg, var(--gold-ghost), transparent 62%); }
+
 .cert__seal {
+
   width: 48px; height: 48px; flex: none; border-radius: 50%;
+
   border: 1.4px solid var(--accent);
+
   display: grid; place-items: center;
+
   font-family: var(--serif-d); font-size: 1.18rem; color: var(--accent);
+
   box-shadow: 0 0 20px color-mix(in oklch, var(--accent) 32%, transparent);
+
 }
+
 .cert__body { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+
 .cert__t { font-size: 0.56rem; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 0.12em; }
+
 .cert__row { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.6rem; color: var(--text-3); }
+
 .cert__row b { color: var(--text); font-weight: 500; font-variant-numeric: tabular-nums; }
 
+
+
 /* ═══════════════════════════════════════════════════════════════════════
+
    Chrome — Atmosphere · Progress · Cursor · Announcement · Preloader ·
+
    Header · Theme menu · Mobile nav · Rail · Dock · Toaster · FAB · Footer ·
+
    Compare bar · Concierge · Ripple / Spark
+
    ═══════════════════════════════════════════════════════════════════════ */
 
+
+
 /* ─── Atmosphere layers ─── */
+
 #dust { position: fixed; inset: 0; z-index: var(--z-dust); pointer-events: none; opacity: 0.92; contain: layout paint; }
+
 [data-theme="ivoire"] #dust { opacity: 0.48; }
+
 .aurora { position: fixed; inset: 0; z-index: var(--z-aurora); pointer-events: none; overflow: hidden; opacity: var(--aurora-o, 0.5); }
+
 /* ─── Aurora ───────────────────────────────────────────────────────────────
+
    `will-change: transform` used to sit unconditionally on all four blobs, so
+
    four composited layers were allocated at parse time and held for the whole
+
    session whether or not the aurora was ever visible: each is 74–108vw ×
+
    52–96vh of radial-gradient, roughly 4 × 1.3 Mpx × 4 bytes ≈ 5 MB of GPU
+
    texture pinned for nothing.
 
+
+
    will-change is now applied only to a running aurora, and the blobs that are
+
    hidden on coarse pointers (nth-child(n+3), below) cannot promote because they
+
    are display:none. Promoting just before the animation needs it is the correct
+
    use: the hint lasts as long as the layer is real. */
+
 .aurora i { position: absolute; border-radius: 50%; opacity: 0.115; }
+
 .aurora:not([hidden]) i { will-change: transform; }
+
 .aurora i:nth-child(1) { width: 108vw; height: 96vh; top: -42%; inset-inline-start: -28%; background: radial-gradient(closest-side, color-mix(in oklch, var(--accent) 24%, transparent), transparent 72%); animation: aur 77s ease-in-out infinite alternate; }
+
 .aurora i:nth-child(2) { width: 92vw; height: 84vh; bottom: -40%; inset-inline-end: -26%; background: radial-gradient(closest-side, color-mix(in oklch, var(--bordeaux) 58%, transparent), transparent 72%); animation: aur 89s ease-in-out infinite alternate-reverse; }
+
 .aurora i:nth-child(3) { width: 74vw; height: 66vh; top: 34%; inset-inline-start: 34%; background: radial-gradient(closest-side, color-mix(in oklch, var(--accent) 11%, transparent), transparent 72%); animation: aur 99s ease-in-out infinite alternate; animation-delay: -29s; }
+
 .aurora i:nth-child(4) { width: 58vw; height: 52vh; top: 64%; inset-inline-end: 24%; background: radial-gradient(closest-side, color-mix(in oklch, var(--platinum) 14%, transparent), transparent 72%); animation: aur 107s ease-in-out infinite alternate-reverse; animation-delay: -43s; }
+
 [data-scene="dusk"] .aurora i { opacity: .15; }
+
 [data-scene="dawn"] .aurora i { opacity: .085; }
+
 @media (pointer: coarse) { .aurora i:nth-child(n+3) { display: none; } }
 
+
+
 .grain {
+
   position: fixed; inset: -20%; z-index: 96; pointer-events: none;
+
   opacity: calc(var(--grain-o, 0.028) * 1.6);
+
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+
 }
+
 [data-theme="ivoire"] .grain { opacity: calc(0.042 * 1.5); }
 
+
+
 .vig {
+
   position: fixed; inset: 0; z-index: var(--z-vig); pointer-events: none;
+
   background: radial-gradient(ellipse 119% 101% at 50% 42%, transparent 59%, var(--vig-c) 100%);
+
 }
+
 [data-theme="ivoire"] .vig { opacity: 0.135; }
 
+
+
 .motes { position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+
 .motes i {
+
   position: absolute; width: 3px; height: 3px; border-radius: 50%;
+
   background: var(--accent); opacity: 0;
+
   animation: mote linear infinite;
+
 }
+
 .motes i::after {
+
   content: ''; position: absolute; left: 50%; top: 50%;
+
   width: 24px; height: 24px; transform: translate(-50%, -50%);
+
   border-radius: 50%; pointer-events: none;
+
   background: radial-gradient(circle, color-mix(in oklch, var(--accent) 62%, transparent) 0%, transparent 68%);
+
 }
+
 @media (pointer: coarse) { .motes i:nth-child(n+6) { display: none; } }
 
+
+
 /* ─── Progress bar ─── */
+
 .prog-wrap { position: fixed; inset-block-start: 0; inset-inline: 0; height: 2px; z-index: 10001; background: var(--border); overflow: hidden; }
+
 .prog { position: absolute; inset: 0; background: var(--grad-gold); transform: scaleX(0); transform-origin: right; box-shadow: 0 0 12px var(--accent); }
+
 [dir="ltr"] .prog { transform-origin: left; }
 
+
+
 /* ─── Cursor ─── */
+
 .cursor, .cursor-dot { display: none; }
+
 .fine .cursor, .fine .cursor-dot { display: block; }
+
 /* ─── Custom cursor ────────────────────────────────────────────────────────
+
    Two things were wrong here, and both cost a frame.
 
+
+
    1. `mix-blend-mode: difference` cannot be composited. It forces the engine to
+
       read back the destination behind the element and re-blend on every frame
+
       it moves — a render-pass break at the cursor's position, which lands in
+
       the middle of whatever the user is pointing at. Combined with a `width`/
+
       `height` transition (layout properties) the blend REGION also changed size
+
       over 300ms, so the read-back area grew mid-interaction.
 
+
+
    2. `width`/`height` are layout. Growing a fixed element from 24px to 92px is
+
       a layout pass, and there are four target states, so it fired constantly.
 
+
+
    Both are now transform-only: the element is pinned at its largest size and
+
    scaled, which is compositor-only and needs no layout at all. `difference` is
+
    kept — it is a genuine part of the maison's look on desktop, and on desktop
+
    there is one cursor and a real GPU. It is dropped on coarse pointers, where
+
    the element is display:none anyway.
 
+
+
    core.js also gets a matching early-return: once the lerp has converged it
+
    stops adding itself back to the rAF queue instead of running a permanent
+
    two-job loop for the life of the session. */
+
 .cursor {
+
   position: fixed; top: 0; left: 0;
+
   inline-size: 92px; block-size: 92px;
+
   border: 1.5px solid var(--accent); border-radius: 50%;
+
   pointer-events: none; z-index: 99999;
+
   transform: translate(-50%, -50%) scale(calc(var(--cursor-size) / 92));
+
   transition: transform .3s var(--ease-lux), border-color .3s var(--ease), background .3s var(--ease);
+
   mix-blend-mode: difference;
+
   display: grid; place-items: center;
+
   will-change: transform;
+
 }
+
 .cursor.hover { transform: translate(-50%, -50%) scale(52 / 92); background: color-mix(in oklch, var(--accent) 20%, transparent); border-color: var(--accent-2); }
+
 .cursor.view  { transform: translate(-50%, -50%) scale(1); border-color: var(--accent); background: color-mix(in oklch, var(--accent) 15%, transparent); box-shadow: var(--sh-glow); }
+
 .cursor.add   { transform: translate(-50%, -50%) scale(86 / 92); background: var(--grad-gold); border-color: transparent; }
+
 .cursor .lbl { font-family: var(--sans); font-size: 11px; font-weight: 700; color: var(--invert); opacity: 0; transition: opacity 0.2s; }
+
 .cursor.view .lbl, .cursor.add .lbl { opacity: 1; }
+
 .cursor-dot { position: fixed; top: 0; left: 0; width: var(--cursor-dot); height: var(--cursor-dot); background: var(--accent); border-radius: 50%; pointer-events: none; z-index: 99999; transform: translate(-50%, -50%); will-change: transform; }
+
 @media (max-width: 768px), (pointer: coarse) { .cursor, .cursor-dot { display: none; } }
+
 /* The label sits inside a 92px box that is now scaled down, so it needs the
+
    inverse scale to stay legible at the resting cursor size. */
+
 .cursor .lbl { transform: scale(92 / var(--cursor-size)); }
 
+
+
 .spark {
+
   position: fixed; top: 0; left: 0; width: 4px; height: 4px; border-radius: 50%;
+
   background: var(--accent); pointer-events: none; z-index: 99998;
+
   box-shadow: 0 0 8px var(--accent);
+
   animation: sparkFly 0.7s var(--ease) forwards;
+
 }
+
+
 
 /* ─── Announcement ─── */
+
 .annonce {
+
   position: fixed; top: 0; inset-inline: 0; z-index: 1200;
+
   height: var(--ann-h);
+
   background: var(--bg-2);
+
   border-block-end: 1px solid var(--line);
+
   transform: translateY(-100%);
+
   transition: transform var(--d-3) var(--ease-lux);
+
   overflow: hidden;
+
 }
+
 .annonce[data-open] { transform: none; }
+
 html.ann-off .annonce { display: none !important; }
+
 html.ann-off { --ann: 0px; }
+
 .annonce-in { max-width: calc(var(--w) + var(--pad) * 2); margin-inline: auto; padding-inline: var(--pad); height: 100%; display: flex; align-items: center; gap: 1rem; }
+
 .annonce-glyph { color: var(--accent); font-size: 0.55rem; flex: none; animation: pulse 5s ease-in-out infinite; }
+
 .annonce-vp { flex: 1; display: grid; place-items: center; overflow: hidden; height: 100%; }
+
 .annonce-msg { grid-area: 1/1; font-size: var(--t-xs); color: var(--text-2); opacity: 0; transform: translateY(8px); transition: opacity 0.8s var(--ease-lux), transform 0.8s var(--ease-lux); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
+
 .annonce-msg.is-live { opacity: 1; transform: none; }
+
 .annonce-msg b { color: var(--accent); font-weight: 600; }
+
 .annonce-x { flex: none; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; color: var(--text-3); transition: color var(--d-1), background-color var(--d-1); }
+
 .annonce-x:hover { color: var(--accent); background: var(--gold-ghost); }
 
+
+
 /* ─── Preloader ─── */
+
 #pl {
+
   position: fixed; inset: 0; z-index: 10000;
+
   background: radial-gradient(ellipse 92% 72% at 50% 40%, var(--bg-2), var(--bg));
+
   display: flex; align-items: center; justify-content: center;
+
   transition: clip-path 1.4s var(--ease-cine) 0.2s, visibility 1.4s;
+
   clip-path: inset(0 0 0 0);
+
 }
+
 #pl.done { clip-path: inset(100% 0 0 0); visibility: hidden; }
+
 html:not(.js) #pl { display: none; }
+
 #pl::before, #pl::after { content: ''; position: absolute; pointer-events: none; }
+
 #pl::before { inset: clamp(16px, 2.5vw, 28px); border: 1px solid var(--border); }
+
 #pl::after { inset: clamp(24px, 3.5vw, 40px); border: 1px solid var(--gold-line); opacity: 0.5; }
+
 .pl-in { text-align: center; transition: transform var(--d-cine) var(--ease-lux), opacity var(--d-3); padding: 4rem; }
+
 #pl.done .pl-in { transform: translateY(-60px) scale(0.92); opacity: 0; }
+
 .pl-seal { width: 140px; height: 140px; margin: 0 auto 3rem; position: relative; animation: spin 32s linear infinite; }
+
 .pl-seal::before, .pl-seal::after { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 1px solid var(--gold-line); }
+
 .pl-seal::before { inset: 12px; border: 1px dashed var(--gold-wash); animation: spin 22s linear infinite reverse; }
+
 .pl-seal::after { inset: 26px; border: 1.5px solid var(--accent); box-shadow: 0 0 52px color-mix(in oklch, var(--accent) 32%, transparent); }
+
 .pl-seal .core, .pl-core { position: absolute; inset: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; background: var(--grad-gold); border-radius: 50%; box-shadow: 0 0 30px var(--accent); animation: pulse 2.6s ease-in-out infinite; }
+
 .pl-seal svg { width: 100%; height: 100%; }
+
 .pl-seal-txt { font-family: var(--mono); font-size: 9px; letter-spacing: 0.2em; fill: var(--accent); }
+
 .pl-brand {
+
   font-family: var(--serif-d); font-weight: 400;
+
   font-size: clamp(2.6rem, 6vw, 4.4rem);
+
   letter-spacing: -0.02em;
+
   background: var(--grad-foil); background-size: 200% 100%;
+
   -webkit-background-clip: text; background-clip: text;
+
   -webkit-text-fill-color: transparent;
+
   animation: fadeUp 1.4s var(--ease-lux) 0.3s both;
+
 }
+
 .pl-tag { font-size: 0.82rem; color: var(--text-3); margin-top: 1.1rem; animation: fadeUp 1.2s var(--ease-lux) 0.9s both; letter-spacing: 0.05em; }
+
 .pl-bar { width: min(360px, 62vw); height: 2px; background: var(--border-2); margin: 2.6rem auto 1.2rem; position: relative; overflow: hidden; border-radius: 1px; }
+
 .pl-bar i { position: absolute; inset: 0; background: var(--grad-gold); transform: scaleX(0); transform-origin: right; box-shadow: 0 0 16px var(--accent); transition: transform 0.1s linear; border-radius: 1px; }
+
 [dir="ltr"] .pl-bar i { transform-origin: left; }
+
 .pl-row { display: flex; justify-content: space-between; width: min(360px, 62vw); margin: 0 auto; font-size: 0.74rem; color: var(--text-3); font-variant-numeric: tabular-nums; }
 
+
+
 /* ─── Header ───
+
    The header is fixed, full-width and ~110px tall. Three rules govern its cost:
 
+
+
    1. `.hdr` itself is only ever moved with `transform` — never top/height —
+
       so hiding it is a compositor translation, not a layout.
+
    2. `backdrop-filter` cannot be composited. It re-samples the destination
+
       every frame, so it is (a) switched off entirely while a scroll is in
+
       progress (`html.scrolling`, which ui.js toggles on the rAF-gated scroll
+
       handler), and (b) dropped entirely on devices that cannot afford it —
+
       `.perf-low` covers ��2GB RAM / ≤3 cores / save-data, and `.coarse` covers
+
       every phone. Both hooks already exist and are set before first paint by
+
       the inline pre-paint block in index.php.
+
    3. The 14px "cheaper on mobile" override used to live in a
+
       `@media (max-width:760px)` block with `.hdr` (specificity 0,1,0), which
+
       `body.scrolled .hdr` (0,2,1) always beat — so it never applied and
+
       phones paid the 18px version anyway. The media query is gone; the
+
       capability hooks below replace it with something that actually works. */
+
 .hdr {
+
   position: fixed; top: var(--ann); inset-inline: 0; z-index: 50;
+
   transition: transform .5s var(--ease-lux), border-color .3s var(--ease-lux), background-color .35s var(--ease-lux);
+
   border-bottom: 1px solid transparent;
+
   padding-top: env(safe-area-inset-top, 0px);
+
   will-change: transform;
+
 }
+
 body:not(.scrolled) .hdr { background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; border-bottom-color: transparent; box-shadow: none; }
+
 body.scrolled .hdr {
+
   background: color-mix(in oklch, var(--bg) 82%, transparent);
+
   backdrop-filter: blur(18px) saturate(1.3);
+
   -webkit-backdrop-filter: blur(18px) saturate(1.3);
+
   border-bottom-color: var(--border);
+
   box-shadow: 0 18px 40px -30px oklch(0 0 0 / 0.45);
+
 }
+
 body.hdr-hide .hdr { transform: translateY(-115%); }
+
 html.scrolling .hdr { backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: none; }
 
+
+
 /* Weak devices: no backdrop-filter. `color-mix` at 96% is visually
+
    indistinguishable from 82% behind an 18px blur, so the luxury look survives
+
    the downgrade intact — only the refraction is lost, which on a phone nobody
+
    reads as a downgrade at all. */
+
 .perf-low .hdr, .coarse .hdr {
+
   backdrop-filter: none !important;
+
   -webkit-backdrop-filter: none !important;
+
 }
+
 .perf-low body.scrolled .hdr, .coarse body.scrolled .hdr {
+
   background: color-mix(in oklch, var(--bg) 96%, transparent);
+
 }
+
+
 
 /* ─── Ticker ───────────────────────────────────────────────────────────────
+
    This used to be `transition: height 0.5s` with `body.scrolled .ticker
+
    { height: 0 }` — a guaranteed layout animation of the entire fixed header
+
    subtree on every scroll, for 500ms, competing with `.bar-in`'s height
+
    transition below. Two concurrent layout animations, on the one code path that
+
    runs on every frame the user moves.
 
+
+
    `grid-template-rows: 1fr -> 0fr` is still a layout animation but it is the
+
    correct one: the `1fr` track resolves against the item's intrinsic height, so
+
    collapsing it does not force the item to re-measure its children, and it is
+
    the accordion idiom already in this file (components.css:488). The item needs
+
    `min-height: 0` (grid items default to `min-height: auto`, which would refuse
+
    to shrink below content) and `overflow: clip` — clip, not hidden, because
+
    `hidden` would make it a scroll container.
 
+
+
    The 38px resting height moved from `.ticker`'s `height` onto `.tk` as
+
    vertical padding, because a grid track sized by `1fr` cannot derive from a
+
    fixed `height` on the container. 13.5px × 2 + the 11px/1 `.tk-t` line = 38px,
+
    so the resting box is pixel-identical to what it was. */
+
 .ticker { background: linear-gradient(90deg, var(--bg-2), var(--surface), var(--bg-2)); overflow: clip; display: grid; grid-template-rows: 1fr; transition: grid-template-rows .5s var(--ease-lux); border-bottom: 1px solid var(--border); }
+
 .ticker > .tk { min-height: 0; overflow: clip; padding-block: 13.5px; }
+
 body.scrolled .ticker { grid-template-rows: 0fr; }
+
 .tk { display: flex; width: max-content; direction: ltr; align-items: center; animation: mq 44s linear infinite; }
+
 .ticker:hover .tk { animation-play-state: paused; }
+
 [dir="rtl"] .tk { animation-name: mq-rtl; }
+
 .tk-g { display: flex; align-items: center; gap: 36px; padding-inline-end: 36px; }
+
 .tk-t { font-size: 11px; font-weight: 600; line-height: 1; color: var(--text-3); white-space: nowrap; letter-spacing: 0.045em; }
+
 .dm { width: 5px; height: 5px; background: var(--accent); transform: rotate(45deg); flex: none; box-shadow: 0 0 8px var(--accent); }
 
+
+
 .bar { border-block-end: 1px solid var(--line-1); }
+
 .bar-in {
+
   display: grid; grid-template-columns: auto 1fr auto;
+
   align-items: center; height: var(--nav-h); gap: 20px;
+
   transition: height 0.4s var(--ease-lux);
+
   max-width: calc(var(--w) + var(--pad) * 2);
+
   margin-inline: auto; padding-inline: var(--pad);
+
 }
+
 body.scrolled .bar-in { height: 62px; }
 
+
+
 .brand { font-family: var(--serif-d); font-size: 1.62rem; font-weight: 500; color: var(--text); display: flex; align-items: center; gap: 11px; justify-self: start; letter-spacing: -0.012em; flex-shrink: 0; }
+
 .brand-sigil { width: 26px; height: 26px; border: 1.2px solid var(--accent); background: transparent; transform: rotate(45deg); display: grid; place-items: center; }
+
 .brand-sigil::after { content: 'اُ'; transform: rotate(-45deg); font-family: var(--serif-d); font-size: 0.7rem; color: var(--accent); }
+
 .brand-text { background: var(--grad-foil); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 
+
+
 .mode-switch { display: flex; justify-self: center; background: var(--surface); border: 1px solid var(--border-2); border-radius: var(--r-pill); padding: 4px; position: relative; isolation: isolate; box-shadow: inset 0 1px 2px oklch(0 0 0 / 0.22); }
+
 .mode-switch::before { content: ''; position: absolute; top: 4px; bottom: 4px; width: calc(50% - 4px); background: var(--grad-gold); border-radius: var(--r-pill); transition: transform 0.6s var(--ease-spring); box-shadow: 0 4px 16px color-mix(in oklch, var(--accent) 42%, transparent); z-index: -1; }
+
 [data-mode="boutique"] .mode-switch::before { transform: translateX(0); }
+
 [data-mode="atelier"] .mode-switch::before { transform: translateX(-100%); }
+
 [dir="ltr"][data-mode="atelier"] .mode-switch::before { transform: translateX(100%); }
+
 .mode-switch button { display: flex; align-items: center; gap: 0.6rem; padding: 0.6rem 1.35rem; font-size: 0.74rem; font-weight: 700; color: var(--text-3); border-radius: var(--r-pill); transition: color 0.4s var(--ease-lux); min-height: 40px; }
+
 .mode-switch button.on { color: var(--invert); }
+
 .mode-switch button svg { width: 15px; height: 15px; }
 
+
+
 /* ═══════════════════════════════════════════════════════════════════════════
+
    THE DESKTOP LENS MENU
+
    ═══════════════════════════════════════════════════════════════════════════
+
    The inline .nav-links bar could not hold six Persian words at the display
+
    size without starving everything else in the header — which is why it
+
    rendered four links and the other two existed only on mobile. A navigation
+
    that is incomplete on the widest screen is a navigation nobody can audit,
+
    because a missing item simply is not there to look at.
 
+
+
    So from 1180px up the header carries three things — brand, menu control,
+
    tools — and the six sections live inside a panel that opens over the page,
+
    arranged around the same vertical gold lens the mobile menu uses.
+
+
 
    Four properties this block refuses to trade away:
 
+
+
    · THE LENS IS A SIBLING OF THE <nav>, NOT ITS ANCESTOR. aria-hidden, empty,
+
      decorative. Wrapping the links in the focal element would interpose a
+
      presentational node between <nav> and its <a>s, which changes what a
+
      screen reader announces about the menu's contents.
 
+
+
    · FOCUS IS TRAPPED AND RESTORED. The panel is modal, so Tab must not walk
+
      into the page behind it, and the control that opened it must get focus
+
      back on close — otherwise a keyboard user is dropped at the top of the
+
      document every time they close a menu.
 
+
+
    · NOTHING IS EVER display:none ON A LINK. The mid-range .nav-links bar and
+
      this panel are the same six destinations in two presentations; hiding the
+
      wrong one hides navigation, not decoration.
 
+
+
    · THE ANIMATION IS A COMPOSITOR PROPERTY. translate + opacity only, so the
+
      panel costs nothing per frame on the machine that can least afford it —
+
      and @media (prefers-reduced-motion) removes it outright below. */
 
+
+
 .lens-btn {
+
   display: none;
+
   align-items: center;
+
   gap: 0.6rem;
+
   min-block-size: 40px;
+
   padding: 0.4rem 0.95rem 0.4rem 0.75rem;
+
   border: 1px solid var(--line-2);
+
   border-radius: var(--r-pill);
+
   background: transparent;
+
   color: var(--text-2);
+
   cursor: pointer;
+
   transition: var(--tr-lux);
+
 }
+
 .lens-btn:hover { border-color: var(--gold-line); color: var(--text); }
+
 .lens-btn:focus-visible { outline: 2px solid var(--gold-line); outline-offset: 3px; }
 
+
+
 /* Two rules, not a glyph: they stay legible at every size and they can morph
+
    into a cross when the panel is open, which a text glyph cannot. */
+
 .lens-btn__mark { display: grid; gap: 4px; inline-size: 15px; }
+
 .lens-btn__mark i {
+
   display: block;
+
   block-size: 1.5px;
+
   inline-size: 100%;
+
   background: currentColor;
+
   transition: transform var(--dur) var(--ease-lux), opacity var(--dur) var(--ease-lux);
+
 }
+
 body.lens-on .lens-btn { color: var(--accent); border-color: var(--gold-line); }
+
 body.lens-on .lens-btn__mark i:first-child { transform: translateY(2.75px) rotate(45deg); }
+
 body.lens-on .lens-btn__mark i:last-child  { transform: translateY(-2.75px) rotate(-45deg); }
 
+
+
 .lens-btn__label {
+
   font-family: var(--mono);
+
   font-size: 0.6rem;
+
   font-weight: 700;
+
   letter-spacing: 0.2em;
+
   text-transform: uppercase;
+
 }
+
+
 
 /* ─── The panel ─────────────────────────────────────────────────────────── */
+
 .lens-menu { position: fixed; inset: 0; z-index: 200; }
+
 .lens-menu[hidden] { display: none; }
 
+
+
 .lens-menu__scrim {
+
   position: absolute;
+
   inset: 0;
+
   background: oklch(6% 0.01 80 / 0.86);
+
   backdrop-filter: blur(18px) saturate(1.15);
+
   -webkit-backdrop-filter: blur(18px) saturate(1.15);
+
   opacity: 0;
+
   transition: opacity var(--dur-slow) var(--ease-lux);
+
 }
+
 .lens-menu.on .lens-menu__scrim { opacity: 1; }
 
+
+
 .lens-menu__stage {
+
   position: absolute;
+
   inset-block: 0;
+
   inset-inline-end: 0;
+
   inline-size: min(46rem, 100%);
+
   display: grid;
+
   grid-template-rows: 1fr auto;
+
   align-content: center;
+
   gap: var(--sp-3);
+
   padding: var(--sp-4) var(--sp-5) calc(var(--sp-4) + var(--safe-b));
+
   overflow-y: auto;
+
   background:
+
     radial-gradient(90% 55% at 50% 40%,
+
       color-mix(in oklch, var(--accent) 8%, transparent) 0%, transparent 60%),
+
     color-mix(in oklch, var(--bg) 96%, transparent);
+
   border-inline-start: 1px solid var(--line-2);
+
   transform: translateX(-100%);
+
   transition: transform var(--dur-slow) var(--ease-lux);
+
 }
+
 /* This document is RTL, so `inset-inline-end` is the physical LEFT edge and the
+
    panel occupies the left portion of the viewport.
 
+
+
    The transform is therefore written physically, not logically: a transform is
+
    never logical, so `translateX(-100%)` always means "leftwards" in both
+
    writing directions. The panel sits on the left, so -100% moves it off-screen
+
    to the left — the correct hiding direction.
 
+
+
    `translateX(-100%)` on a panel anchored with `inset-inline-START` would be
+
    the classic RTL bug: the panel would slide out past the RIGHT edge while
+
    sitting on the right, and open() would appear to do nothing at all. */
+
 .lens-menu.on .lens-menu__stage { transform: none; }
 
+
+
 .lens-menu__close {
+
   position: absolute;
+
   inset-block-start: var(--sp-3);
+
   inset-inline-start: var(--sp-3);
+
   display: grid;
+
   place-items: center;
+
   inline-size: 44px;
+
   block-size: 44px;
+
   border-radius: 50%;
+
   border: 1px solid var(--line-2);
+
   background: transparent;
+
   color: var(--text-2);
+
   cursor: pointer;
+
   transition: var(--tr-lux);
+
 }
+
 .lens-menu__close:hover { border-color: var(--accent); color: var(--accent); rotate: 90deg; }
+
 .lens-menu__close:focus-visible { outline: 2px solid var(--gold-line); outline-offset: 3px; }
 
+
+
 /* ─── The lens ──────────────────────────────────────────────────────────── */
+
 /* Identical construction to the mobile lens, sized for a panel rather than a
+
    phone — and deliberately so: one focal form, two scales, which is what makes
+
    the mobile menu read as the same object rather than as a smaller cousin. */
+
 .lens-menu__lens {
+
   position: absolute;
+
   inset-block-start: 50%;
+
   inset-inline-start: 50%;
+
   translate: -50% -50%;
+
   inline-size: min(30vw, 210px);
+
   aspect-ratio: 1 / 2.4;
+
   pointer-events: none;
+
   z-index: 0;
+
 }
+
 .lens-menu__lens-ring {
+
   position: absolute;
+
   inset: 0;
+
   border-radius: 50%;
+
   border: 1px solid var(--gold-line);
+
   box-shadow:
+
     0 0 0 1px color-mix(in oklch, var(--bg) 70%, transparent),
+
     0 0 90px -14px color-mix(in oklch, var(--accent) 45%, transparent);
+
 }
+
 .lens-menu__lens-core {
+
   position: absolute;
+
   inset-block: 7% 12%;
+
   inset-inline: 17%;
+
   border-radius: 50%;
+
   background: var(--grad-gold);
+
   opacity: 0.88;
+
   filter: blur(0.4px);
+
   box-shadow:
+
     0 14px 60px -16px color-mix(in oklch, var(--accent) 72%, transparent),
+
     inset -2px 0 6px color-mix(in oklch, oklch(0.2 0.05 80) 55%, transparent),
+
     inset 2px 0 5px color-mix(in oklch, oklch(0.98 0.05 92) 40%, transparent);
+
   transition: opacity var(--dur-slow) var(--ease-lux), scale var(--dur-slow) var(--ease-lux);
+
 }
+
 .lens-menu.on .lens-menu__lens-core { opacity: 1; scale: 1.03; }
 
+
+
 /* The four-point star. Two gradients crossed: a conic gives the spikes, a
+
    radial gives the core. One radial alone produces a circle, and the difference
+
    between "a lens" and "a lens catching light" is exactly that. */
+
 .lens-menu__lens-glint {
+
+  position: absolute;
+
+  inset-block-start: 46%;
+
+  inset-inline-start: 50%;
+
+  translate: -50% -50%;
+
+  inline-size: 40%;
+
+  aspect-ratio: 1;
+
+  background:
+
+    radial-gradient(closest-side, oklch(0.99 0.02 95) 0%, transparent 72%),
+
+    conic-gradient(from 0deg, transparent 0deg, oklch(0.99 0.02 95) 22deg, transparent 46deg,
+
+                   transparent 180deg, oklch(0.99 0.02 95) 202deg, transparent 226deg);
+
+  filter: blur(1.1px);
+
+  opacity: 0;
+
+}
+
+.lens-menu.on .lens-menu__lens-glint { animation: lensGlint 5.2s var(--ease-lux) 0.5s infinite; }
+
+
+
+@keyframes lensGlint {
+
+  0%, 62%, 100% { opacity: 0.3; scale: 0.94; }
+
+  70%           { opacity: 1;   scale: 1.06; }
+
+  78%           { opacity: 0.55; scale: 1; }
+
+}
+
+
+
+/* ─── The eyebrow ───────────────────────────────────────────────────────── */
+
+.lens-menu__eyebrow {
+
+  position: relative;
+
+  z-index: 1;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: var(--sp-2);
+
+  font-size: var(--t-xs);
+
+  font-weight: 700;
+
+  letter-spacing: 0.26em;
+
+  color: var(--text-3);
+
+  text-align: center;
+
+  margin: 0;
+
+}
+
+.lens-menu__rule {
+
+  flex: 1;
+
+  block-size: 1px;
+
+  background: linear-gradient(90deg, transparent, var(--gold-line), transparent);
+
+}
+
+
+
+/* ─── The six sections ──────────────────────────────────────────────────── */
+
+/* Two columns with the lens down the middle. The centre track is a real grid
+
+   track rather than a margin, so the items stay clear of the glass at every
+
+   width instead of relying on a padding value somebody will retune. */
+
+.lens-menu__nav {
+
+  position: relative;
+
+  z-index: 1;
+
+  display: grid;
+
+  grid-template-columns: 1fr auto 1fr;
+
+  grid-template-areas:
+
+    "ul . ur"
+
+    "ll . lr"
+
+    "u2 . c2";
+
+  gap: 0.2rem clamp(1.4rem, 3vw, 2.6rem);
+
+  align-content: center;
+
+  inline-size: min(100%, 34rem);
+
+  margin-inline: auto;
+
+}
+
+
+
+.lm {
+
+  display: flex;
+
+  align-items: baseline;
+
+  gap: 0.7rem;
+
+  min-block-size: 46px;              /* never smaller, at any width */
+
+  padding: 0.5rem 0;
+
+  font-family: var(--serif-d);
+
+  font-weight: 500;
+
+  color: var(--text);
+
+  transition: color var(--dur) var(--ease-lux);
+
+}
+
+.lm--ul  { grid-area: ul; justify-content: flex-end;   text-align: end; }
+
+.lm--ur  { grid-area: ur; justify-content: flex-start; text-align: start; }
+
+.lm--ll  { grid-area: ll; justify-content: flex-end;   text-align: end; }
+
+.lm--lr  { grid-area: lr; justify-content: flex-start; text-align: start; }
+
+.lm--ul2 { grid-area: u2; justify-content: flex-end;   text-align: end; }
+
+.lm--ur2 { grid-area: c2; justify-content: flex-start; text-align: start; }
+
+
+
+.lm .lm-t { font-size: clamp(1.35rem, 2.3vw, 1.95rem); line-height: 1.18; }
+
+
+
+/* The number on the OUTER edge so the two columns mirror each other and the
+
+   row reads symmetrically around the lens. */
+
+.lm .lm-no {
+
+  order: -1;
+
+  font-family: var(--mono);
+
+  font-size: 0.6rem;
+
+  font-weight: 700;
+
+  letter-spacing: 0.14em;
+
+  color: var(--accent);
+
+  opacity: 0.7;
+
+  flex: none;
+
+}
+
+.lm--ur .lm-no, .lm--lr .lm-no, .lm--ur2 .lm-no { order: 1; }
+
+
+
+/* The Latin gloss on the INNER edge — smallest type in the menu, a whisper
+
+   beside the Persian rather than a second headline. */
+
+.lm .lm-lat {
+
+  order: 2;
+
+  font-family: var(--mono);
+
+  font-size: 0.55rem;
+
+  font-weight: 600;
+
+  letter-spacing: 0.22em;
+
+  text-transform: uppercase;
+
+  color: var(--text-4);
+
+  direction: ltr;
+
+  unicode-bidi: isolate;
+
+  flex: none;
+
+  transition: color var(--dur) var(--ease-lux);
+
+}
+
+.lm--ur .lm-lat, .lm--lr .lm-lat, .lm--ur2 .lm-lat { order: -1; }
+
+
+
+.lm:hover, .lm:focus-visible { color: var(--accent); }
+
+.lm:hover .lm-lat, .lm:focus-visible .lm-lat { color: var(--accent-2); }
+
+.lm:focus-visible { outline: 2px solid var(--gold-line); outline-offset: 4px; border-radius: 3px; }
+
+
+
+/* ─── Foot ──────────────────────────────────────────────────────────────── */
+
+.lens-menu__foot {
+
+  position: relative;
+
+  z-index: 1;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: var(--sp-3);
+
+  flex-wrap: wrap;
+
+  padding-block-start: var(--sp-2);
+
+  border-block-start: 1px solid var(--line);
+
+}
+
+.lens-menu__act {
+
+  font-size: var(--t-xs);
+
+  font-weight: 600;
+
+  letter-spacing: 0.1em;
+
+  color: var(--text-3);
+
+  min-block-size: 40px;
+
+  display: inline-flex;
+
+  align-items: center;
+
+  transition: color var(--dur) var(--ease-lux);
+
+}
+
+.lens-menu__act:hover { color: var(--accent); }
+
+.lens-menu__folio { margin-inline-start: auto; color: var(--text-4); letter-spacing: 0.24em; }
+
+
+
+/* ─── Where it appears ──────────────────────────────────────────────────── */
+
+/* Above this width the inline .nav-links bar is hidden, because that is the
+
+   width at which it stopped being able to hold six items. Below it, the lens
+
+   button is display:none and the bar is the navigation — never both, and never
+
+   neither, which is how a header ends up with an unopenable menu on exactly
+
+   one screen size. */
+
+@media (min-width: 1180px) {
+
+  .lens-btn { display: inline-flex; }
+
+  .nav-links { display: none !important; }
+
+}
+
+@media (max-width: 1179.98px) {
+
+  .lens-btn { display: none !important; }
+
+}
+
+
+
+@media (max-width: 1400px) {
+
+  .lens-menu__lens { inline-size: min(26vw, 180px); }
+
+}
+
+
+
+@media (prefers-reduced-motion: reduce) {
+
+  .lens-menu__scrim,
+
+  .lens-menu__stage,
+
+  .lens-menu__lens-core { transition-duration: 1ms; }
+
+  .lens-menu.on .lens-menu__lens-glint { animation: none; opacity: 0.8; }
+
+  .lens-menu__close:hover { rotate: none; }
+
+}
+
+
+
+.nav-links { display: none; gap: 2.3rem; justify-self: center; margin-inline-start: auto; }
+
+[data-mode="atelier"] .nav-links { display: none; }
+
+.nav-links a { position: relative; font-size: 0.8rem; font-weight: 700; color: var(--text-2); padding: 0.6em 0; transition: color var(--d-2) var(--ease-lux); }
+
+/* `inset-inline-end: 100% -> 0` is a layout property, on four links, on every
+
+   hover. Same result, compositor-only, using the scaleX idiom this stylesheet
+
+   already uses for `.prod-line`, `.quick::before` and `.prog`: the underline is
+
+   pinned at full length and scaled from the inline-end origin, which on this
+
+   RTL document is the right edge — so it still wipes right-to-left. */
+
+.nav-links a::after { content: ''; position: absolute; inset-inline: 0; bottom: 0; height: 1.5px; background: var(--grad-gold); transform: scaleX(0); transform-origin: right; transition: transform 0.4s var(--ease-lux); }
+
+[dir="ltr"] .nav-links a::after { transform-origin: left; }
+
+@media (hover: hover) { .nav-links a:hover::after { transform: scaleX(1); } }
+
+.nav-links a[aria-current="page"]::after { transform: scaleX(1); }
+
+.nav-links a:hover, .nav-links a[aria-current="page"] { color: var(--text); }
+
+
+
+.hdr-r { display: flex; gap: 8px; justify-self: end; align-items: center; }
+
+
+
+.menu-btn { display: none; flex-direction: column; gap: 5px; place-content: center; }
+
+.menu-btn i { display: block; width: 18px; height: 1.8px; background: currentColor; transition: transform 0.4s var(--ease-lux); border-radius: 1px; }
+
+body.mnav-on .menu-btn i:first-child { transform: translateY(3.5px) rotate(45deg); }
+
+body.mnav-on .menu-btn i:last-child { transform: translateY(-3.5px) rotate(-45deg); }
+
+
+
+/* ── Search reveal ────────────────────────────────────────────────────
+
+   `width: 0 -> min(300px,44vw)` AND `padding: 0 -> 1.25rem`, both transitioned,
+
+   for 500ms. That is two layout properties on a flex item inside the fixed
+
+   header: the row reflows, every sibling shifts, and the header's own
+
+   `backdrop-filter` region has to be re-sampled while it moves. Padding is the
+
+   worse of the two because it changes the element's own content box even when
+
+   its width is held.
+
+
+
+   Replaced with `clip-path: inset(...)`, which is paint-only: the box is always
+
+   the full 300px, the padding is always final, and the reveal is a wipe from the
+
+   inline-end edge — which is also what the eye expects on an RTL page, where a
+
+   search field growing out of the header should open toward the text, not from
+
+   the left. `border-radius` is preserved by the rounded variant of clip-path,
+
+   so the pill still looks like a pill while opening.
+
+
+
+   opacity is kept alongside so the unfocused state is fully transparent either
+
+   way. */
+
+.hdr-search {
+
+  display: none; align-items: center; gap: 0.6rem; height: 44px;
+
+  padding-inline: 1.25rem;
+
+  border: 1px solid var(--border-2); border-radius: var(--r-pill);
+
+  background: color-mix(in oklch, var(--surface) 60%, transparent);
+
+  inline-size: min(300px, 44vw);
+
+  opacity: 0;
+
+  clip-path: inset(0 100% 0 0 round var(--r-pill));
+
+  transition: opacity .3s var(--ease-lux), clip-path .5s var(--ease-lux);
+
+}
+
+[dir="rtl"] .hdr-search { clip-path: inset(0 0 0 100% round var(--r-pill)); }
+
+.hdr-search.open { opacity: 1; clip-path: inset(0 0 0 0 round var(--r-pill)); border-color: var(--gold-line); box-shadow: var(--sh-glow); }
+
+.hdr-search svg { color: var(--text-4); flex: none; }
+
+.hdr-search input { width: 100%; min-width: 0; border: 0; background: none; outline: 0; font-size: 0.86rem; padding: 0.5rem 0; }
+
+
+
+.dna-chip { display: none; align-items: center; gap: 0.5rem; height: 44px; padding: 0 1rem; border: 1px solid var(--gold-line); border-radius: var(--r-pill); background: var(--gold-ghost); font-size: 0.68rem; font-weight: 700; color: var(--accent); transition: var(--tr-lux); white-space: nowrap; }
+
+@media (hover: hover) { .dna-chip:hover { background: var(--gold-wash); box-shadow: var(--sh-glow); } }
+
+.dna-chip .radar-mini { width: 22px; height: 22px; flex: none; }
+
+
+
+@media (min-width: 768px) {
+
+  .nav-links { display: flex; }
+
+  .hdr-search { display: flex; }
+
+  .dna-chip { display: flex; }
+
+}
+
+
+
+/* ─── Theme menu ─── */
+
+.theme-menu {
+
+  position: fixed; top: calc(var(--nav-h) + var(--ann) + 12px);
+
+  inset-inline-end: 16px; z-index: 55;
+
+  background: var(--surface); border: 1px solid var(--gold-line);
+
+  border-radius: var(--r-3); padding: 8px;
+
+  display: flex; flex-direction: column; gap: 4px;
+
+  box-shadow: var(--lux-sh-elevated, var(--sh-lg));
+
+  opacity: 0; visibility: hidden;
+
+  transform: translateY(-10px) scale(0.96);
+
+  transition: opacity 0.35s var(--ease-spring), transform 0.35s var(--ease-spring), visibility 0.35s;
+
+  transform-origin: top right;
+
+  min-width: 190px;
+
+}
+
+[dir="rtl"] .theme-menu { transform-origin: top left; }
+
+.theme-menu.on, .theme-menu.open { opacity: 1; visibility: visible; transform: none; }
+
+.theme-opt { display: flex; align-items: center; gap: 0.8rem; padding: 0.75rem 1rem; border-radius: var(--r-2); font-size: 0.78rem; font-weight: 700; color: var(--text-2); transition: color 0.3s var(--ease-lux), background-color 0.3s var(--ease-lux); min-width: 184px; text-align: start; }
+
+.theme-opt:hover { background: var(--gold-ghost); color: var(--text); }
+
+.theme-opt.on { background: var(--gold-wash); color: var(--accent); }
+
+.theme-swatch { width: 26px; height: 26px; border-radius: 50%; flex: none; border: 2px solid var(--border-2); position: relative; overflow: hidden; }
+
+.swatch-nuit { background: linear-gradient(135deg, #2a2c3a 40%, #c8a24a 100%); }
+
+.swatch-ivoire { background: linear-gradient(135deg, #f7f3ea 40%, #8b6914 100%); }
+
+.swatch-emeraude { background: linear-gradient(135deg, #1a3a30 40%, #e0c070 100%); }
+
+.menu-sep { height: 1px; background: var(--border); margin: 4px 2px; }
+
+.menu-lbl { font-size: 0.62rem; font-weight: 800; color: var(--text-4); padding: 0.4rem 1rem 0.2rem; letter-spacing: 0.1em; text-transform: uppercase; }
+
+.scene-row { display: flex; gap: 4px; padding: 0.4rem 0.6rem; }
+
+.scene-btn { flex: 1; display: flex; align-items: center; justify-content: center; padding: 0.55rem 0.6rem; border-radius: var(--r-2); font-size: 0.7rem; font-weight: 700; color: var(--text-3); border: 1px solid var(--border-2); transition: color 0.3s var(--ease-lux), background-color 0.3s var(--ease-lux), border-color 0.3s var(--ease-lux); }
+
+.scene-btn.on { border-color: var(--accent); background: var(--gold-wash); color: var(--accent); }
+
+
+
+/* ─── Mobile nav ─── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   THE MOBILE MENU
+   ═══════════════════════════════════════════════════════════════════════════
+   A full-height panel in three depths — brand, links, tools — with the gold lens
+   sitting BEHIND the links as the light they are read against.
+
+   The lens was previously the reason the six items were placed in two mirrored
+   columns around it, which meant every row had to clear the glass and the middle
+   of the screen had nothing on it. On a phone that is the wrong trade: the panel
+   is 100dvh, the six sections are one tap from anywhere on the page, and a
+   composition built on setting items against a focal object spends the vertical
+   axis on a symmetry a phone cannot afford.
+
+   So the lens is now a background element at low opacity and the links are a
+   single column. One focal form, two treatments: the desktop panel sets the
+   items around it, the phone sets them in front of it.
+
+   Four properties this block refuses to trade away:
+
+   · THE LENS IS A SIBLING OF THE LINKS, NOT AN ANCESTOR. aria-hidden, empty,
+     decorative. Wrapping the links in it would interpose a presentational node
+     between the container and its <a>s, and change what a screen reader
+     announces about the menu's contents.
+
+   · THE LINKS CARRY NO TEXT-SHADOW. A gold glow behind a headline plus a gold
+     glow on the headline is a blur, not a glow. Legibility comes from the
+     contrast of the panel behind, which is where the reference earns it from.
+
+   · NOTHING IS EVER display:none ON AN ITEM. The panel is `inert` when closed,
+     which removes it from the accessibility tree and from Tab without hiding
+     anything and without needing a second copy of the markup.
+
+   · THE ANIMATION IS A COMPOSITOR PROPERTY. opacity and translate only, so the
+     panel costs nothing per frame on the machine that can least afford it, and
+     @media (prefers-reduced-motion) removes it outright below. */
+
+.mnav {
+  position: fixed;
+  inset: 0;
+  z-index: 98;
+  /* translate rather than top, so the reveal never triggers a layout pass. The
+     direction is physical: this document is RTL and the panel is anchored
+     inline-start, which is the RIGHT edge in Persian, so it must slide in from
+     the right. translateX(100%) always means "rightwards" in both writing
+     directions, which is the correct hiding direction here — the same trap the
+     desktop panel documents at its own transform, in the opposite direction. */
+  translate: 100% 0;
+  visibility: hidden;
+  transition: translate 0.62s var(--ease-lux), visibility 0.62s;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.mnav.on { translate: 0 0; visibility: visible; }
+
+/* auto 1fr auto so the links take the optical centre of whatever height the
+   phone has. A fixed padding stack crams the content to the top on a tall screen
+   and overflows on a short one. */
+.mnav__stage {
+  position: relative;
+  z-index: 1;
+  min-block-size: 100dvh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: var(--sp-3);
+  padding:
+    calc(var(--chrome) + var(--sp-4))
+    var(--pad)
+    calc(var(--sp-4) + var(--safe-b));
+  /* An opaque ground rather than a translucent sheet: the lens sits behind the
+     text, and a backdrop-filter would sample whatever happened to be scrolled
+     past it and shift the gold accordingly. */
+  background:
+    radial-gradient(78% 44% at 50% 42%,
+      color-mix(in oklch, var(--accent) 9%, transparent) 0%, transparent 70%),
+    var(--bg);
+}
+
+/* 1 / 2.2 rather than the desktop panel's 1 / 2.4, and smaller, because it is
+   read as a glow behind the text rather than as an object the text is set
+   around. The opacity is well below the desktop value for the same reason. */
+.mnav__lens {
   position: absolute;
   inset-block-start: 46%;
   inset-inline-start: 50%;
   translate: -50% -50%;
-  inline-size: 40%;
-  aspect-ratio: 1;
-  background:
-    radial-gradient(closest-side, oklch(0.99 0.02 95) 0%, transparent 72%),
-    conic-gradient(from 0deg, transparent 0deg, oklch(0.99 0.02 95) 22deg, transparent 46deg,
-                   transparent 180deg, oklch(0.99 0.02 95) 202deg, transparent 226deg);
-  filter: blur(1.1px);
-  opacity: 0;
-}
-.lens-menu.on .lens-menu__lens-glint { animation: lensGlint 5.2s var(--ease-lux) 0.5s infinite; }
-
-@keyframes lensGlint {
-  0%, 62%, 100% { opacity: 0.3; scale: 0.94; }
-  70%           { opacity: 1;   scale: 1.06; }
-  78%           { opacity: 0.55; scale: 1; }
-}
-
-/* ─── The eyebrow ───────────────────────────────────────────────────────── */
-.lens-menu__eyebrow {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  font-size: var(--t-xs);
-  font-weight: 700;
-  letter-spacing: 0.26em;
-  color: var(--text-3);
-  text-align: center;
-  margin: 0;
-}
-.lens-menu__rule {
-  flex: 1;
-  block-size: 1px;
-  background: linear-gradient(90deg, transparent, var(--gold-line), transparent);
-}
-
-/* ─── The six sections ──────────────────────────────────────────────────── */
-/* Two columns with the lens down the middle. The centre track is a real grid
-   track rather than a margin, so the items stay clear of the glass at every
-   width instead of relying on a padding value somebody will retune. */
-.lens-menu__nav {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  grid-template-areas:
-    "ul . ur"
-    "ll . lr"
-    "u2 . c2";
-  gap: 0.2rem clamp(1.4rem, 3vw, 2.6rem);
-  align-content: center;
-  inline-size: min(100%, 34rem);
-  margin-inline: auto;
-}
-
-.lm {
-  display: flex;
-  align-items: baseline;
-  gap: 0.7rem;
-  min-block-size: 46px;              /* never smaller, at any width */
-  padding: 0.5rem 0;
-  font-family: var(--serif-d);
-  font-weight: 500;
-  color: var(--text);
-  transition: color var(--dur) var(--ease-lux);
-}
-.lm--ul  { grid-area: ul; justify-content: flex-end;   text-align: end; }
-.lm--ur  { grid-area: ur; justify-content: flex-start; text-align: start; }
-.lm--ll  { grid-area: ll; justify-content: flex-end;   text-align: end; }
-.lm--lr  { grid-area: lr; justify-content: flex-start; text-align: start; }
-.lm--ul2 { grid-area: u2; justify-content: flex-end;   text-align: end; }
-.lm--ur2 { grid-area: c2; justify-content: flex-start; text-align: start; }
-
-.lm .lm-t { font-size: clamp(1.35rem, 2.3vw, 1.95rem); line-height: 1.18; }
-
-/* The number on the OUTER edge so the two columns mirror each other and the
-   row reads symmetrically around the lens. */
-.lm .lm-no {
-  order: -1;
-  font-family: var(--mono);
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  color: var(--accent);
-  opacity: 0.7;
-  flex: none;
-}
-.lm--ur .lm-no, .lm--lr .lm-no, .lm--ur2 .lm-no { order: 1; }
-
-/* The Latin gloss on the INNER edge — smallest type in the menu, a whisper
-   beside the Persian rather than a second headline. */
-.lm .lm-lat {
-  order: 2;
-  font-family: var(--mono);
-  font-size: 0.55rem;
-  font-weight: 600;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--text-4);
-  direction: ltr;
-  unicode-bidi: isolate;
-  flex: none;
-  transition: color var(--dur) var(--ease-lux);
-}
-.lm--ur .lm-lat, .lm--lr .lm-lat, .lm--ur2 .lm-lat { order: -1; }
-
-.lm:hover, .lm:focus-visible { color: var(--accent); }
-.lm:hover .lm-lat, .lm:focus-visible .lm-lat { color: var(--accent-2); }
-.lm:focus-visible { outline: 2px solid var(--gold-line); outline-offset: 4px; border-radius: 3px; }
-
-/* ─── Foot ──────────────────────────────────────────────────────────────── */
-.lens-menu__foot {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  flex-wrap: wrap;
-  padding-block-start: var(--sp-2);
-  border-block-start: 1px solid var(--line);
-}
-.lens-menu__act {
-  font-size: var(--t-xs);
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  color: var(--text-3);
-  min-block-size: 40px;
-  display: inline-flex;
-  align-items: center;
-  transition: color var(--dur) var(--ease-lux);
-}
-.lens-menu__act:hover { color: var(--accent); }
-.lens-menu__folio { margin-inline-start: auto; color: var(--text-4); letter-spacing: 0.24em; }
-
-/* ─── Where it appears ──────────────────────────────────────────────────── */
-/* Above this width the inline .nav-links bar is hidden, because that is the
-   width at which it stopped being able to hold six items. Below it, the lens
-   button is display:none and the bar is the navigation — never both, and never
-   neither, which is how a header ends up with an unopenable menu on exactly
-   one screen size. */
-@media (min-width: 1180px) {
-  .lens-btn { display: inline-flex; }
-  .nav-links { display: none !important; }
-}
-@media (max-width: 1179.98px) {
-  .lens-btn { display: none !important; }
-}
-
-@media (max-width: 1400px) {
-  .lens-menu__lens { inline-size: min(26vw, 180px); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .lens-menu__scrim,
-  .lens-menu__stage,
-  .lens-menu__lens-core { transition-duration: 1ms; }
-  .lens-menu.on .lens-menu__lens-glint { animation: none; opacity: 0.8; }
-  .lens-menu__close:hover { rotate: none; }
-}
-
-.nav-links { display: none; gap: 2.3rem; justify-self: center; margin-inline-start: auto; }
-[data-mode="atelier"] .nav-links { display: none; }
-.nav-links a { position: relative; font-size: 0.8rem; font-weight: 700; color: var(--text-2); padding: 0.6em 0; transition: color var(--d-2) var(--ease-lux); }
-/* `inset-inline-end: 100% -> 0` is a layout property, on four links, on every
-   hover. Same result, compositor-only, using the scaleX idiom this stylesheet
-   already uses for `.prod-line`, `.quick::before` and `.prog`: the underline is
-   pinned at full length and scaled from the inline-end origin, which on this
-   RTL document is the right edge — so it still wipes right-to-left. */
-.nav-links a::after { content: ''; position: absolute; inset-inline: 0; bottom: 0; height: 1.5px; background: var(--grad-gold); transform: scaleX(0); transform-origin: right; transition: transform 0.4s var(--ease-lux); }
-[dir="ltr"] .nav-links a::after { transform-origin: left; }
-@media (hover: hover) { .nav-links a:hover::after { transform: scaleX(1); } }
-.nav-links a[aria-current="page"]::after { transform: scaleX(1); }
-.nav-links a:hover, .nav-links a[aria-current="page"] { color: var(--text); }
-
-.hdr-r { display: flex; gap: 8px; justify-self: end; align-items: center; }
-
-.menu-btn { display: none; flex-direction: column; gap: 5px; place-content: center; }
-.menu-btn i { display: block; width: 18px; height: 1.8px; background: currentColor; transition: transform 0.4s var(--ease-lux); border-radius: 1px; }
-body.mnav-on .menu-btn i:first-child { transform: translateY(3.5px) rotate(45deg); }
-body.mnav-on .menu-btn i:last-child { transform: translateY(-3.5px) rotate(-45deg); }
-
-/* ── Search reveal ────────────────────────────────────────────────────
-   `width: 0 -> min(300px,44vw)` AND `padding: 0 -> 1.25rem`, both transitioned,
-   for 500ms. That is two layout properties on a flex item inside the fixed
-   header: the row reflows, every sibling shifts, and the header's own
-   `backdrop-filter` region has to be re-sampled while it moves. Padding is the
-   worse of the two because it changes the element's own content box even when
-   its width is held.
-
-   Replaced with `clip-path: inset(...)`, which is paint-only: the box is always
-   the full 300px, the padding is always final, and the reveal is a wipe from the
-   inline-end edge — which is also what the eye expects on an RTL page, where a
-   search field growing out of the header should open toward the text, not from
-   the left. `border-radius` is preserved by the rounded variant of clip-path,
-   so the pill still looks like a pill while opening.
-
-   opacity is kept alongside so the unfocused state is fully transparent either
-   way. */
-.hdr-search {
-  display: none; align-items: center; gap: 0.6rem; height: 44px;
-  padding-inline: 1.25rem;
-  border: 1px solid var(--border-2); border-radius: var(--r-pill);
-  background: color-mix(in oklch, var(--surface) 60%, transparent);
-  inline-size: min(300px, 44vw);
-  opacity: 0;
-  clip-path: inset(0 100% 0 0 round var(--r-pill));
-  transition: opacity .3s var(--ease-lux), clip-path .5s var(--ease-lux);
-}
-[dir="rtl"] .hdr-search { clip-path: inset(0 0 0 100% round var(--r-pill)); }
-.hdr-search.open { opacity: 1; clip-path: inset(0 0 0 0 round var(--r-pill)); border-color: var(--gold-line); box-shadow: var(--sh-glow); }
-.hdr-search svg { color: var(--text-4); flex: none; }
-.hdr-search input { width: 100%; min-width: 0; border: 0; background: none; outline: 0; font-size: 0.86rem; padding: 0.5rem 0; }
-
-.dna-chip { display: none; align-items: center; gap: 0.5rem; height: 44px; padding: 0 1rem; border: 1px solid var(--gold-line); border-radius: var(--r-pill); background: var(--gold-ghost); font-size: 0.68rem; font-weight: 700; color: var(--accent); transition: var(--tr-lux); white-space: nowrap; }
-@media (hover: hover) { .dna-chip:hover { background: var(--gold-wash); box-shadow: var(--sh-glow); } }
-.dna-chip .radar-mini { width: 22px; height: 22px; flex: none; }
-
-@media (min-width: 768px) {
-  .nav-links { display: flex; }
-  .hdr-search { display: flex; }
-  .dna-chip { display: flex; }
-}
-
-/* ─── Theme menu ─── */
-.theme-menu {
-  position: fixed; top: calc(var(--nav-h) + var(--ann) + 12px);
-  inset-inline-end: 16px; z-index: 55;
-  background: var(--surface); border: 1px solid var(--gold-line);
-  border-radius: var(--r-3); padding: 8px;
-  display: flex; flex-direction: column; gap: 4px;
-  box-shadow: var(--lux-sh-elevated, var(--sh-lg));
-  opacity: 0; visibility: hidden;
-  transform: translateY(-10px) scale(0.96);
-  transition: opacity 0.35s var(--ease-spring), transform 0.35s var(--ease-spring), visibility 0.35s;
-  transform-origin: top right;
-  min-width: 190px;
-}
-[dir="rtl"] .theme-menu { transform-origin: top left; }
-.theme-menu.on, .theme-menu.open { opacity: 1; visibility: visible; transform: none; }
-.theme-opt { display: flex; align-items: center; gap: 0.8rem; padding: 0.75rem 1rem; border-radius: var(--r-2); font-size: 0.78rem; font-weight: 700; color: var(--text-2); transition: color 0.3s var(--ease-lux), background-color 0.3s var(--ease-lux); min-width: 184px; text-align: start; }
-.theme-opt:hover { background: var(--gold-ghost); color: var(--text); }
-.theme-opt.on { background: var(--gold-wash); color: var(--accent); }
-.theme-swatch { width: 26px; height: 26px; border-radius: 50%; flex: none; border: 2px solid var(--border-2); position: relative; overflow: hidden; }
-.swatch-nuit { background: linear-gradient(135deg, #2a2c3a 40%, #c8a24a 100%); }
-.swatch-ivoire { background: linear-gradient(135deg, #f7f3ea 40%, #8b6914 100%); }
-.swatch-emeraude { background: linear-gradient(135deg, #1a3a30 40%, #e0c070 100%); }
-.menu-sep { height: 1px; background: var(--border); margin: 4px 2px; }
-.menu-lbl { font-size: 0.62rem; font-weight: 800; color: var(--text-4); padding: 0.4rem 1rem 0.2rem; letter-spacing: 0.1em; text-transform: uppercase; }
-.scene-row { display: flex; gap: 4px; padding: 0.4rem 0.6rem; }
-.scene-btn { flex: 1; display: flex; align-items: center; justify-content: center; padding: 0.55rem 0.6rem; border-radius: var(--r-2); font-size: 0.7rem; font-weight: 700; color: var(--text-3); border: 1px solid var(--border-2); transition: color 0.3s var(--ease-lux), background-color 0.3s var(--ease-lux), border-color 0.3s var(--ease-lux); }
-.scene-btn.on { border-color: var(--accent); background: var(--gold-wash); color: var(--accent); }
-
-/* ─── Mobile nav ─── */
-/* ═══════════════════════════════════════════════════════════════════════════
-   THE MOBILE MENU · a gold lens with the items placed against it
-   ═══════════════════════════════════════════════════════════════════════════
-   Was a column of six 7.6vw rows with a bottom border on each: a full phone
-   scroll to reach a section one tap away, and no focal point — a list has a
-   top, and everything below the top is the same as everything above it.
-
-   The lens gives the menu a centre, so the six items can sit against it rather
-   than under each other. The result is an object on screen, not a queue.
-
-   Three things this block is careful about:
-
-   · THE LENS IS DECORATIVE AND DECLARED AS SUCH. It is three empty spans with
-     aria-hidden, siblings of the links, never a wrapper around them. Wrapping
-     the links in the focal element would put a decorative node between the
-     <nav> and its links, which is exactly the kind of thing that changes how a
-     screen reader announces the menu's contents.
-
-   · IT IS NOT A NEW NAVIGATION MODEL. Same <nav>, same six <a>s, same DOM order,
-     same anchors. Only geometry changed. Anything that counted .mnav a still
-     counts six; the stagger delays below are indexed on the <a> position, which
-     is unchanged.
-
-   · NO ITEM FITS IN LESS THAN 44px, AND NO ITEM IS REACHABLE ONLY BY THE CENTRE.
-     The lens overlaps the middle column, so the two middle pairs are placed
-     clear of it at every breakpoint rather than being tucked under it. A control
-     hidden behind decoration is the one failure mode this design could have
-     shipped with. */
-.mnav {
-  position: fixed; inset: 0; z-index: 98;
-  background:
-    radial-gradient(120% 70% at 50% 42%,
-      color-mix(in oklch, var(--accent) 7%, transparent) 0%, transparent 62%),
-    var(--bg);
-  display: grid;
-  grid-template-rows: 1fr auto;
-  justify-items: center;
-  align-content: center;
-  padding: calc(var(--nav-h) + var(--ann) + 12px) var(--pad) calc(18px + var(--safe-b));
-  transform: translateY(-102%);
-  transition: transform 0.78s var(--ease-cine), visibility 0.78s;
-  visibility: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-.mnav.on, .mnav.open { transform: none; visibility: visible; }
-
-/* ─── The lens ──────────────────────────────────────────────────────────── */
-/* Three stacked spans rather than one background, because each layer wants a
-   different blend: the ring is a hairline, the core is the gradient, and the
-   glint is a specular streak that only reads if it sits above both. */
-.mnav__lens {
-  position: absolute;
-  inset-block-start: 50%;
-  inset-inline-start: 50%;
-  translate: -50% -50%;
-  inline-size: min(56vw, 190px);
-  aspect-ratio: 1 / 2.35;
+  inline-size: min(62vw, 230px);
+  aspect-ratio: 1 / 2.2;
   pointer-events: none;
-  z-index: 0;
+  z-index: -1;
+  opacity: 0.5;
 }
-
-/* The hairline ellipse. It is the outer edge of the lens and the reason the
-   whole thing reads as glass rather than as a gold blob. */
 .mnav__lens-ring {
   position: absolute;
   inset: 0;
@@ -1539,31 +3036,27 @@ body.mnav-on .menu-btn i:last-child { transform: translateY(-3.5px) rotate(-45de
   border: 1px solid var(--gold-line);
   box-shadow:
     0 0 0 1px color-mix(in oklch, var(--bg) 70%, transparent),
-    0 0 60px -12px color-mix(in oklch, var(--accent) 40%, transparent);
+    0 0 70px -18px color-mix(in oklch, var(--accent) 40%, transparent);
 }
-
-/* The gold body. Narrower than the ring and offset upward, so the lens has a
-   shoulder rather than reading as a flat lozenge. */
 .mnav__lens-core {
   position: absolute;
-  inset-block: 7% 12%;
-  inset-inline: 17%;
+  inset-block: 9% 14%;
+  inset-inline: 20%;
   border-radius: 50%;
   background: var(--grad-gold);
-  opacity: 0.9;
-  filter: blur(0.4px);
+  opacity: 0.5;
+  filter: blur(2px);
   box-shadow:
-    0 10px 40px -14px color-mix(in oklch, var(--accent) 70%, transparent),
-    /* the two stops that turn a flat gradient into a lit metal surface */
-    inset -2px 0 6px color-mix(in oklch, oklch(0.2 0.05 80) 55%, transparent),
-    inset 2px 0 5px color-mix(in oklch, oklch(0.98 0.05 92) 40%, transparent);
-  transition: opacity var(--dur-slow) var(--ease-lux), scale var(--dur-slow) var(--ease-lux);
+    0 12px 50px -18px color-mix(in oklch, var(--accent) 60%, transparent),
+    inset -2px 0 5px color-mix(in oklch, oklch(0.2 0.05 80) 45%, transparent),
+    inset 2px 0 4px color-mix(in oklch, oklch(0.98 0.05 92) 32%, transparent);
+  transition: opacity var(--dur-slow) var(--ease-lux);
 }
-.mnav.on .mnav__lens-core { opacity: 1; scale: 1.03; }
+.mnav.on .mnav__lens-core { opacity: 0.78; }
 
-/* The sparkle — the four-point star from the reference. Two gradients crossed
-   make a four-point flare; a single radial-gradient gives a circle, which is
-   the difference between "a lens" and "a lens catching light". */
+/* The four-point star: a crossed conic and radial. One radial alone produces a
+   circle, and the difference between "a lens" and "a lens catching light" is
+   exactly that. */
 .mnav__lens-glint {
   position: absolute;
   inset-block-start: 46%;
@@ -1575,533 +3068,837 @@ body.mnav-on .menu-btn i:last-child { transform: translateY(-3.5px) rotate(-45de
     radial-gradient(closest-side, oklch(0.99 0.02 95) 0%, transparent 72%),
     conic-gradient(from 0deg, transparent 0deg, oklch(0.99 0.02 95) 22deg, transparent 46deg,
                    transparent 180deg, oklch(0.99 0.02 95) 202deg, transparent 226deg);
-  filter: blur(1.1px);
+  filter: blur(1.4px);
   opacity: 0;
-  transition: opacity var(--dur-slow) var(--ease-lux);
 }
-.mnav.on .mnav__lens-glint { opacity: 0.9; animation: lensGlint 5.2s var(--ease-lux) 0.5s infinite; }
-
-@keyframes lensGlint {
-  0%, 62%, 100% { opacity: 0.34; scale: 0.94; }
-  70%           { opacity: 1;    scale: 1.06; }
-  78%           { opacity: 0.6;  scale: 1; }
+.mnav.on .mnav__lens-glint { animation: mnavGlint 5.6s var(--ease-lux) 0.6s infinite; }
+@keyframes mnavGlint {
+  0%, 60%, 100% { opacity: 0.16; scale: 0.94; }
+  69%           { opacity: 0.6;  scale: 1.06; }
+  78%           { opacity: 0.3;  scale: 1; }
 }
 
-/* ─── The six items ─────────────────────────────────────────────────────── */
-/* A two-column stage with the lens down the middle. The item's own label sits
-   on the OUTER edge and its Latin gloss on the inner one, so the eye travels
-   in toward the centre as it reads — which is the order the reference uses and
-   the reason the layout feels deliberate rather than merely balanced. */
-.mnav__stage {
-  position: relative;
-  z-index: 1;
-  inline-size: min(100%, 460px);
+.mnav__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+.mnav__brand {
+  font-family: var(--serif-d);
+  font-size: 1.05rem;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  background: var(--grad-foil);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.mnav__close {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-content: center;
-  gap: 0 clamp(1.1rem, 5vw, 2.2rem);
-  /* The centre column is the lens gutter. It is a real track rather than a
-     margin so the items stay clear of the glass at every width. */
-  grid-template-areas:
-    "ul . ur"
-    "ll . lr"
-    "dl . dr";
-  padding-block: clamp(0.4rem, 2vh, 1.2rem);
+  place-items: center;
+  inline-size: var(--hit);
+  block-size: var(--hit);
+  border-radius: 50%;
+  border: 1px solid var(--border-2);
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+  transition: var(--tr-lux);
 }
+.mnav__close:hover { border-color: var(--accent); color: var(--accent); rotate: 90deg; }
+.mnav__close:focus-visible { outline: 2px solid var(--gold-line); outline-offset: 3px; }
 
+/* One column, start-aligned. Each row is number, name, Latin gloss — so on a
+   Persian screen the number sits on the right and the visual order is
+   right-to-left, matching the direction of the script rather than of the markup.
+
+   min-block-size 44px is the touch minimum and is not negotiable at any width:
+   the type scales with clamp() above that floor, never below it. */
+.mnav__links {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.1rem;
+}
 .mn {
   display: flex;
   align-items: baseline;
-  gap: 0.5rem;
-  min-block-size: 44px;              /* never smaller, at any breakpoint */
-  padding: 0.55rem 0;
-  color: var(--text);
+  gap: 0.85rem;
+  min-block-size: 44px;
+  padding: 0.45rem 0;
   font-family: var(--serif-d);
-  font-weight: 500;
-  transition: color 0.34s var(--ease-lux),
-              opacity 0.62s var(--ease-lux),
-              transform 0.62s var(--ease-lux);
+  color: var(--text-2);
   opacity: 0;
-  transform: translateY(20px);
-}
-.mnav.on .mn { opacity: 1; transform: none; }
-
-/* The delay is indexed on the <a> position, which is unchanged from the flat
-   list — so the cascade still reads top-to-bottom in DOM order. */
-.mnav.on .mn:nth-of-type(1) { transition-delay: 0.12s; }
-.mnav.on .mn:nth-of-type(2) { transition-delay: 0.17s; }
-.mnav.on .mn:nth-of-type(3) { transition-delay: 0.22s; }
-.mnav.on .mn:nth-of-type(4) { transition-delay: 0.27s; }
-.mnav.on .mn:nth-of-type(5) { transition-delay: 0.32s; }
-.mnav.on .mn:nth-of-type(6) { transition-delay: 0.37s; }
-
-.mn--ul { grid-area: ul; justify-content: flex-end;   text-align: end; }
-.mn--ur { grid-area: ur; justify-content: flex-start; text-align: start; }
-.mn--ll { grid-area: ll; justify-content: flex-end;   text-align: end; }
-.mn--lr { grid-area: lr; justify-content: flex-start; text-align: start; }
-.mn--dl { grid-area: dl; justify-content: flex-end;   text-align: end; }
-.mn--dr { grid-area: dr; justify-content: flex-start; text-align: start; }
-
-/* The Persian name is the item. It is the only part that scales. */
-.mn .mn-t {
-  font-size: clamp(1.5rem, 7.4vw, 2.15rem);
-  line-height: 1.18;
-  letter-spacing: -0.005em;
+  translate: 0 18px;
+  transition:
+    opacity 0.5s var(--ease-lux),
+    translate 0.5s var(--ease-lux),
+    color 0.3s var(--ease-lux);
 }
 
-/* The number sits on the OUTER edge so the two columns mirror each other and
-   the row reads symmetrically around the lens. */
-.mn .mn-no {
-  order: -1;
-  font-family: var(--mono);
-  font-size: 0.58rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  color: var(--accent);
-  opacity: 0.75;
-  flex: none;
-}
-.mn--ur .mn-no, .mn--lr .mn-no, .mn--dr .mn-no { order: 1; }
-
-/* The Latin gloss is on the INNER edge, tightest against the glass, and is the
-   smallest type in the menu — a whisper beside the Persian, never a second
-   headline. It is the reference's WORK / CREED / JOURNAL / CONTACT register. */
-.mn .lat {
-  order: 2;
-  font-family: var(--sans);
-  font-size: 0.56rem;
-  font-weight: 600;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--text-4);
-  direction: ltr;
-  flex: none;
-  transition: color 0.34s var(--ease-lux);
-}
-.mn--ur .lat, .mn--lr .lat, .mn--dr .lat { order: -1; }
-
-.mn:hover, .mn:focus-visible { color: var(--accent); }
-.mn:hover .lat, .mn:focus-visible .lat { color: var(--accent-2); }
-.mn:focus-visible { outline: 2px solid var(--gold-line); outline-offset: 3px; border-radius: 4px; }
-
-/* The active section's item, so reopening the menu shows where you are. */
-.mn[aria-current="true"] .mn-t { color: var(--accent); }
-
-.mnav-foot {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  gap: 10px;
-  margin-top: var(--sp-3);
-  padding-top: var(--sp-2);
-  border-top: 1px solid var(--border);
-  opacity: 0;
-  transform: translateY(16px);
-  transition: opacity 0.62s var(--ease-lux) 0.5s, transform 0.62s var(--ease-lux) 0.5s;
-  flex-wrap: wrap;
-}
-.mnav.on .mnav-foot { opacity: 1; transform: none; }
-.mnav-foot .btn { flex: 1 1 0; min-inline-size: 0; }
-
-/* A short landscape phone has no room for three rows plus a footer. Rather than
-   shrink the type below the touch minimum, the lens flattens and the stage
-   tightens — the geometry changes, the sizes do not. */
-@media (max-height: 680px) {
-  .mnav__lens { inline-size: min(34vw, 120px); }
-  .mn .mn-t { font-size: clamp(1.3rem, 5.6vw, 1.7rem); }
-  .mnav-foot { margin-top: var(--sp-2); padding-top: var(--sp-1); }
-}
-
-@media (max-width: 359px) {
-  .mnav__stage { gap: 0 0.7rem; }
-  .mn .mn-t { font-size: 1.24rem; }
-  .mn .lat { font-size: 0.5rem; letter-spacing: 0.14em; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .mnav, .mn, .mnav-foot, .mnav__lens-core, .mnav__lens-glint { transition-duration: 1ms; }
-  .mnav.on .mnav__lens-glint { animation: none; opacity: 0.8; }
-}
 
 /* ─── Side rail ─── */
+
 .rail {
+
   position: fixed; inset-inline-start: clamp(0.6rem, 1.4vw, 1.4rem);
+
   top: 50%; translate: 0 -50%; z-index: 120;
+
   display: none; flex-direction: column; gap: 0.15rem;
+
   padding: 0.75rem 0.6rem;
+
   border: 1px solid var(--line); border-radius: var(--r-pill);
+
   background: color-mix(in oklch, var(--bg) 80%, transparent);
+
   box-shadow: var(--lux-sh-card, var(--sh-2));
+
 }
+
 .rail a { position: relative; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-family: var(--mono); font-size: 0.54rem; color: var(--text-4); transition: color var(--d-2) var(--ease-lux), background var(--d-2) var(--ease-lux); }
+
 .rail a::after { content: attr(data-t); position: absolute; inset-inline-start: calc(100% + 12px); top: 50%; translate: 0 -50%; white-space: nowrap; font-family: var(--sans); font-size: 0.62rem; color: var(--accent); opacity: 0; transform: translateX(-6px); transition: opacity var(--d-2) var(--ease-lux), transform var(--d-2) var(--ease-lux); pointer-events: none; background: var(--bg-2); border: 1px solid var(--gold-line); padding: 0.4rem 0.75rem; border-radius: var(--r-2); }
+
 .rail a:hover, .rail a:focus-visible { color: var(--accent); }
+
 .rail a:hover::after, .rail a:focus-visible::after { opacity: 1; transform: none; }
+
 .rail a[aria-current="true"] { color: var(--invert); background: var(--grad-gold); }
+
 @media (min-width: 768px) { .rail { display: flex; } }
+
 @media (max-width: 1380px) { .rail { display: none; } }
 
+
+
 /* ─── Dock ─── */
+
 .dock {
+
   position: fixed;
+
   inset-block-end: calc(env(safe-area-inset-bottom, 0px) + 12px);
+
   inset-inline: 0; margin-inline: auto;
+
   width: max-content; max-width: calc(100vw - 24px);
+
   z-index: 950; display: none; align-items: center;
+
   gap: 0.25rem; padding: 0.5rem;
+
   background: color-mix(in oklch, var(--bg-2) 96%, transparent);
+
   border: 1px solid color-mix(in oklch, var(--accent) 26%, var(--line-2));
+
   border-radius: var(--r-pill);
+
   box-shadow: var(--lux-sh-elevated, var(--sh-2));
+
   transition: transform var(--d-3) var(--ease-lux), opacity var(--d-3) var(--ease-lux);
+
 }
+
 .dock.is-hidden { transform: translateY(160%); opacity: 0; }
+
 @media (max-width: 1140px) { .dock { display: flex; } }
+
 @media (min-width: 1141px) { .dock { display: none; } }
+
 .dock-a { position: relative; width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; color: var(--text-2); transition: color var(--d-1), background var(--d-1) var(--ease-lux), transform var(--d-1) var(--ease-valet); }
+
 .dock-a[aria-current="true"], .dock-a:hover { color: var(--accent); background: var(--gold-wash); }
+
 .dock-a[aria-current="true"]::after { content: ''; position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+
 .dock-n { position: absolute; top: 4px; inset-inline-end: 2px; min-width: 16px; height: 16px; padding-inline: 4px; border-radius: var(--r-pill); background: var(--grad-gold); color: var(--invert); font-family: var(--mono); font-size: 0.55rem; display: grid; place-items: center; }
 
+
+
 /* ─── Toaster ─── */
+
 #toasts {
+
   position: fixed;
+
   inset-block-end: calc(env(safe-area-inset-bottom, 0px) + 2.4rem);
+
   inset-inline: 0; margin-inline: auto;
+
   width: max-content; z-index: 10002;
+
   background: var(--surface);
+
   border: 1px solid var(--gold-line);
+
   border-radius: var(--r-4);
+
   padding: 1.1rem 2rem;
+
   display: flex; align-items: center; gap: 1.1rem;
+
   font-size: var(--t-sm);
+
   opacity: 0; visibility: hidden;
+
   transition: opacity var(--d-3) var(--ease-lux), transform var(--d-3) var(--ease-lux), visibility var(--d-3);
+
   box-shadow: var(--sh-2);
+
   max-width: 92vw; pointer-events: none;
+
   transform: translateY(24px);
+
 }
+
 #toasts.show { opacity: 1; visibility: visible; transform: translateY(0); pointer-events: auto; }
+
 #toasts .tdm { width: 8px; height: 8px; background: var(--accent); transform: rotate(45deg); flex: none; }
+
 #toasts .tdx { min-width: 0; }
+
 #toasts .toast-act { font-size: 0.62rem; font-weight: 700; color: var(--accent); border: 1px solid var(--gold-line); border-radius: var(--r-2); padding: 0.48rem 0.95rem; min-height: 38px; transition: color var(--d-1), background-color var(--d-1), border-color var(--d-1); flex: none; }
+
 #toasts .toast-act:hover { background: var(--grad-gold); color: var(--invert); border-color: transparent; }
+
 #toasts.err { border-color: color-mix(in oklch, var(--ember) 57%, transparent); }
+
 #toasts.err .tdm { background: var(--ember); }
+
 @media (max-width: 1140px) { #toasts { bottom: calc(env(safe-area-inset-bottom, 0px) + 90px); } }
 
+
+
 /* ─── Network toast ─── */
+
 #p2toast {
+
   position: fixed;
+
   inset-block-end: calc(env(safe-area-inset-bottom, 0px) + 96px);
+
   inset-inline: 0; margin-inline: auto;
+
   width: max-content; z-index: 10003;
+
   display: flex; align-items: center; gap: 1rem;
+
   max-width: 92vw; padding: 0.8rem 1.1rem;
+
   border-radius: 18px; border: 1px solid var(--gold-line);
+
   background: var(--surface); box-shadow: var(--sh-2);
+
   font-size: 0.8rem; line-height: 1.7; color: var(--text);
+
   opacity: 0; visibility: hidden; transform: translateY(16px);
+
   transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.45s;
+
 }
+
 #p2toast.on { opacity: 1; visibility: visible; transform: translateY(0); }
+
 #p2toast .p2g { width: 8px; height: 8px; flex: none; background: var(--accent); transform: rotate(45deg); box-shadow: 0 0 10px var(--accent); }
+
 #p2toast.off .p2g { background: var(--ember); box-shadow: 0 0 10px var(--ember); }
+
 #p2toast.ok .p2g { background: var(--verd); box-shadow: 0 0 10px var(--verd); }
+
 #p2toast .p2tx { min-width: 0; line-height: 1.7; }
 
+
+
 /* ─── Back to top / Chat FAB ─── */
+
 #toTop {
+
   position: fixed;
+
   inset-inline-end: clamp(1.2rem, 3vw, 2.4rem);
+
   bottom: calc(env(safe-area-inset-bottom, 0px) + clamp(1.2rem, 3vw, 2.4rem));
+
   width: 54px; height: 54px; border-radius: 50%;
+
   border: 1px solid var(--line-2);
+
   background: color-mix(in oklch, var(--bg) 94%, transparent);
+
   display: flex; align-items: center; justify-content: center;
+
   z-index: 900; opacity: 0; transform: translateY(16px);
+
   pointer-events: none;
+
   transition: opacity var(--d-2) var(--ease-lux), transform var(--d-2) var(--ease-lux), border-color var(--d-2), color var(--d-2);
+
   color: var(--text-2);
+
 }
+
 #toTop.show { opacity: 1; transform: none; pointer-events: auto; }
+
 #toTop:hover { border-color: var(--accent); color: var(--accent); }
+
 #toTop .prog-ring { position: absolute; inset: -2px; border-radius: 50%; border: 1.5px solid transparent; border-top-color: var(--accent); transform: rotate(var(--rot, 0deg)); }
+
 @media (max-width: 1140px) { #toTop { display: none; } }
+
 @media (min-width: 1141px) { #toTop { display: flex; } }
 
+
+
 .chat-fab {
+
   position: fixed;
+
   inset-inline-start: clamp(1.2rem, 3vw, 2.4rem);
+
   bottom: calc(env(safe-area-inset-bottom, 0px) + clamp(1.2rem, 3vw, 2.4rem));
+
   width: 54px; height: 54px; border-radius: 50%;
+
   border: 1px solid var(--gold-line);
+
   background: color-mix(in oklch, var(--bg) 94%, transparent);
+
   display: flex; align-items: center; justify-content: center;
+
   z-index: 901; color: var(--accent);
+
   transition: transform var(--d-2) var(--ease-lux), box-shadow var(--d-2) var(--ease-lux), border-color var(--d-2) var(--ease-lux);
+
 }
+
 .chat-fab:hover { transform: translateY(-2px); box-shadow: var(--sh-glow); border-color: var(--accent); }
+
 .chat-fab__pulse { position: absolute; inset: -1px; border-radius: 50%; border: 1px solid var(--accent); animation: fabPulse 2.6s var(--ease) infinite; pointer-events: none; }
+
 @media (pointer: coarse) { .chat-fab { bottom: calc(env(safe-area-inset-bottom, 0px) + 86px); } }
 
+
+
 /* ─── Footer ─── */
+
 #mainFooter, footer {
+
   position: relative; z-index: var(--z-content);
+
   border-block-start: 1px solid var(--line-1);
+
   background: var(--bg-2);
+
   padding-block: clamp(4.6rem, 9vw, 7.2rem) 0;
+
   overflow: hidden;
+
 }
+
 .footer__nl { text-align: center; padding-block: clamp(2.6rem, 5vw, 3.7rem); border-block: 1px solid var(--line-1); margin-bottom: clamp(3rem, 6vw, 4.6rem); }
+
 .footer__nl-title { font-size: var(--t-2xl); }
+
 .footer__nl .sub { display: block; margin-top: 0.6rem; font-size: 0.6rem; color: var(--text-3); }
+
 .nl-form { display: flex; gap: 0.7rem; max-width: 420px; margin: 1.65rem auto 0; flex-wrap: wrap; justify-content: center; }
+
 .nl-form input { flex: 1; min-width: 220px; height: 50px; border: 1px solid var(--line-2); border-radius: var(--r-2); background: var(--bg); padding: 0 1.15rem; font-size: 0.68rem; outline: none; }
+
 .nl-form input:focus { border-color: var(--accent); box-shadow: var(--ring); }
+
 .f-top { display: grid; grid-template-columns: 2fr 1fr 1fr 1.2fr; gap: clamp(2rem, 4vw, 4rem); padding-bottom: 4rem; }
+
 @media (max-width: 900px) { .f-top { grid-template-columns: 1fr 1fr; } }
+
 @media (max-width: 500px) { .f-top { grid-template-columns: 1fr; } }
+
 .f-col h4 { font-size: 0.6rem; font-weight: 600; color: var(--accent); margin-bottom: 1.65rem; padding-bottom: 1.15rem; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 0.8rem; text-transform: uppercase; letter-spacing: 0.14em; }
+
 .f-col a, .f-col button { display: inline-flex; align-items: center; gap: 0.6rem; font-size: var(--t-sm); color: var(--text-2); padding: 0.56rem 0; min-height: 38px; transition: color var(--d-2) var(--ease-lux), transform var(--d-2) var(--ease-lux); text-align: start; }
+
 /* Was translateX(-8px), a physical leftward nudge, on a footer whose links
+
    are text-align: start — i.e. right-aligned on this RTL document. "Slide in"
+
    has to move toward the reading edge, which in RTL is +X. The [dir="ltr"] arm
+
    is what actually belongs on an LTR document; the direction-aware form below
+
    is what this RTL one needs, and it is the idiom already used at .mnav a,
+
    .tb-row and the ticker. */
+
 @media (hover: hover) { .f-col a:hover, .f-col button:hover { color: var(--accent); transform: translateX(8px); } }
+
 .f-tag { font-family: var(--serif-d); font-size: 1.28rem; line-height: 1.56; margin-bottom: 1.65rem; max-width: 40ch; color: var(--text-2); }
+
 .f-mark { display: inline-flex; align-items: center; gap: 1.1rem; padding: 1.15rem 1.55rem; border: 1px solid var(--line-2); border-radius: var(--r-2); transition: border-color var(--d-2) var(--ease-lux), background-color var(--d-2) var(--ease-lux); margin-block: 1rem; }
+
 .f-mark:hover { border-color: var(--gold-line); background: var(--gold-ghost); }
+
 .f-mark .dot { width: 8px; height: 8px; background: var(--accent); transform: rotate(45deg); }
+
 .f-mark .name { font-family: var(--serif-d); font-size: 1.06rem; letter-spacing: 0.1em; }
+
 .f-pay { margin-top: 1.65rem; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+
 .pay-sigil { display: inline-flex; align-items: center; justify-content: center; min-width: 54px; height: 34px; padding: 0 0.6rem; border: 1px solid var(--line-2); border-radius: 6px; font-family: var(--mono); font-size: 0.58rem; color: var(--text-3); background: var(--surface); }
+
 .f-giant { font-family: var(--serif-d); font-size: clamp(4.6rem, 19vw, 17.2rem); line-height: 0.82; text-align: center; color: transparent; -webkit-text-stroke: 1px var(--line-3); opacity: 0.6; user-select: none; pointer-events: none; transform: translateY(0.1em); margin: 2.5rem 0 -2.5rem; }
+
 .f-bot { display: flex; justify-content: space-between; align-items: center; gap: 1.4rem; flex-wrap: wrap; border-top: 1px solid var(--line); padding: 1.85rem 0; margin-top: 2.5rem; }
+
 .f-legal { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+
 .f-legal a, .f-legal button { font-size: 0.58rem; font-weight: 500; color: var(--text-4); min-height: 38px; transition: color var(--d-2) var(--ease-lux); }
+
 .f-legal a:hover, .f-legal button:hover { color: var(--accent); }
+
 .f-seals { display: flex; flex-wrap: wrap; gap: 0.8rem; justify-content: center; padding-block: 1.9rem; border-block: 1px solid var(--line); margin-block: var(--sp-5); }
+
 .f-seal { display: inline-flex; align-items: center; gap: 0.7rem; font-size: 0.56rem; font-weight: 500; color: var(--text-3); border: 1px solid var(--line-2); border-radius: var(--r-pill); padding: 0.62rem 1.15rem; }
+
 .f-seal svg { width: 14px; height: 14px; stroke: var(--accent); fill: none; }
 
+
+
 /* ─── Compare bar / dialog ─── */
+
 .cmp-bar {
+
   position: fixed;
+
   bottom: calc(20px + var(--safe-b));
+
   inset-inline: 0; margin-inline: var(--gutter);
+
   z-index: 66; display: none; align-items: center; gap: 0.9rem;
+
   padding: 0.6rem 1.2rem;
+
   background: var(--surface);
+
   border: 1px solid var(--gold-line);
+
   border-radius: var(--r-3);
+
   box-shadow: var(--sh-3);
+
   font-size: 0.72rem; font-weight: 700;
+
   justify-content: center;
+
 }
+
 .cmp-bar.show { display: flex; }
+
 @media (max-width: 1140px) { .cmp-bar { bottom: calc(var(--dock-h) + var(--safe-b) + 88px); } }
+
 .cmp-bar .thumbs { display: flex; gap: 0.3rem; }
+
 .thumbs img { width: 32px; height: 40px; object-fit: cover; border-radius: var(--r-1); border: 1px solid var(--line-2); }
 
+
+
 /* ─── Concierge chat ─── */
+
 .conc {
+
   position: fixed;
+
   bottom: calc(98px + var(--safe-b));
+
   inset-inline-start: clamp(1.2rem, 3vw, 2.4rem);
+
   width: min(440px, calc(100vw - 36px));
+
   max-height: min(600px, 76dvh);
+
   background: var(--surface);
+
   border: 1px solid var(--gold-line);
+
   border-radius: var(--r-4);
+
   box-shadow: var(--sh-lg);
+
   z-index: 71;
+
   display: flex; flex-direction: column;
+
   opacity: 0; visibility: hidden;
+
   transform: translateY(24px) scale(0.95);
+
   transition: opacity 0.5s var(--ease-lux), transform 0.5s var(--ease-lux), visibility 0.5s;
+
   overflow: hidden;
+
 }
+
 .conc.on, .conc.open { opacity: 1; visibility: visible; transform: none; }
+
 .conc-h { display: flex; align-items: center; gap: 0.9rem; padding: 0.8rem 1rem; background: var(--grad-lux); border-block-end: 1px solid var(--line-1); }
+
 .conc-av { width: 36px; height: 36px; border-radius: 50%; background: var(--gold-ghost); border: 1px solid var(--gold-line); color: var(--accent); display: grid; place-items: center; font-family: var(--serif-d); flex: none; }
+
 .conc-h b { font-size: var(--t-xs); font-weight: 700; }
+
 .conc-h small { display: block; font-size: 0.5rem; color: var(--text-4); font-weight: 600; display: flex; align-items: center; gap: 0.3rem; }
+
 .conc-x { margin-inline-start: auto; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--border); display: grid; place-items: center; color: var(--text-3); transition: color 0.3s var(--ease-lux), border-color 0.3s var(--ease-lux), transform 0.3s var(--ease-lux); }
+
 .conc-x:hover { color: var(--text); border-color: var(--border-3); }
+
 .conc-body { flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 0.6rem; background: var(--bg-2); min-height: 180px; }
+
 .cmsg { max-width: 88%; padding: 0.7rem 1rem; border-radius: var(--r-3); font-size: var(--t-xs); line-height: 1.7; animation: msgIn 0.5s var(--ease-lux); }
+
 .cmsg.bot { background: var(--well); border: 1px solid var(--line-1); color: var(--text-2); align-self: flex-start; border-end-start-radius: 5px; }
+
 .cmsg.user { background: var(--grad-gold); color: var(--invert); align-self: flex-end; border-end-end-radius: 5px; font-weight: 600; }
+
 .cmsg b { color: var(--accent); }
+
 .cmsg.user b { color: inherit; }
+
 .cmsg .prod-mini { display: flex; gap: 0.8rem; align-items: center; margin-top: 0.5rem; padding: 0.5rem; border: 1px solid var(--gold-line); border-radius: var(--r-2); background: var(--gold-ghost); cursor: pointer; }
+
 .cmsg .prod-mini .th { width: 36px; height: 36px; flex: none; }
+
 .cmsg .prod-mini b { font-size: var(--t-xs); }
+
 .cmsg .prod-mini small { display: block; font-size: 0.5rem; color: var(--accent); }
+
 .cchips { display: flex; gap: 0.6rem; flex-wrap: wrap; padding: 0.5rem 1rem; border-top: 1px solid var(--border); background: var(--surface); }
+
 .cchips button { font-size: 0.55rem; font-weight: 700; padding: 0.3rem 0.6rem; border-radius: var(--r-pill); border: 1px solid var(--line-2); color: var(--text-3); transition: color 0.3s var(--ease-lux), border-color 0.3s var(--ease-lux), background-color 0.3s var(--ease-lux); min-height: 36px; }
+
 .cchips button:hover { border-color: var(--accent); color: var(--accent); }
+
 .conc-in { display: flex; gap: 0.6rem; padding: 0.8rem 1rem; border-block-start: 1px solid var(--line-1); }
+
 .conc-in input { flex: 1; min-width: 0; height: 44px; padding: 0.5rem 0.8rem; border: 1px solid var(--border-2); border-radius: var(--r-2); background: var(--well); outline: 0; font-size: var(--t-xs); color: var(--text); }
+
 .conc-in input:focus { border-color: var(--accent); }
+
 .conc-in button { width: 38px; height: 38px; border-radius: var(--r-2); background: var(--grad-gold); color: var(--invert); display: grid; place-items: center; }
+
 .conc-in button svg { width: 16px; height: 16px; }
+
 .typing { display: flex; gap: 5px; padding: 0.8rem 1.1rem; align-self: flex-start; background: var(--surface); border-radius: 18px; border: 1px solid var(--border); }
+
 .typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: typ 1.4s ease-in-out infinite; }
+
 .typing i:nth-child(2) { animation-delay: 0.2s; }
+
 .typing i:nth-child(3) { animation-delay: 0.4s; }
+
 @media (max-width: 760px) { .conc { bottom: calc(150px + var(--safe-b)); } }
 
+
+
 /* ─── Ripple / spark / confirm ─── */
+
 .ripple { position: absolute; border-radius: 50%; background: color-mix(in oklch, var(--accent) 40%, transparent); transform: scale(0); animation: ripple 0.6s var(--ease-lux); pointer-events: none; }
+
 .fly-particle {
+
   position: fixed; width: 14px; height: 14px; border-radius: 50%;
+
   background: var(--grad-gold);
+
   box-shadow: 0 0 18px var(--accent), inset 0 0 6px oklch(1 0 0 / 0.4);
+
   pointer-events: none; z-index: 99997;
+
   will-change: transform, opacity;
+
 }
+
 .confirm-pill {
+
   position: fixed;
+
   inset-inline: 0; bottom: var(--pill-bottom, 96px);
+
   margin-inline: auto; width: max-content; max-width: 88vw;
+
   z-index: 10004; display: flex; align-items: center; gap: .6rem;
+
   padding: .7rem 1.1rem; border-radius: var(--r-pill);
+
   background: color-mix(in oklch, var(--surface) 96%, transparent);
+
   border: 1px solid var(--gold-line);
+
   box-shadow: var(--sh-2), 0 0 26px color-mix(in oklch, var(--accent) 18%, transparent);
+
   font-size: .74rem; font-weight: 700; color: var(--text);
+
   pointer-events: none; opacity: 0;
+
   transform: translateY(10px) scale(.96);
+
   animation: confirmIn 260ms var(--ease-lux) forwards;
+
 }
+
 .confirm-pill i { width: 16px; height: 16px; flex: none; border-radius: 50%; background: var(--grad-gold); box-shadow: 0 0 12px color-mix(in oklch, var(--accent) 70%, transparent); position: relative; }
+
 .confirm-pill i::after { content: ''; position: absolute; inset: 0; background: no-repeat center / 9px 9px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23080604' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6L9 17l-5-5'/%3E%3C/svg%3E"); }
+
 /* ═══════════════════════════════════════════════════════════════════════
+
    EDGE-ANCHORED CHROME PULLS INBOARD
+
    ───────────────────────────────────────────────────────────────────────
+
    Relocated from base.css, where it was dead. All three targets below are
+
    declared earlier in THIS file with equal specificity — .chat-fab at :1086,
+
    #toTop at :1067, .conc at :1157 — and a media query carries no specificity,
+
    so from base.css this could never win. It lives here now, last, so it does.
 
+
+
    Why it matters: the dock is centred and needs nothing, but these three float
+
    against a side. Their clamp() puts them ~38px from the viewport edge on a
+
    wide screen, and the bend band reaches 78px — so they were sitting inside the
+
    darkest part of the edge dissolve, reading as though they were sinking into
+
    the page. Pulling them clear by exactly the band's width also aligns them
+
    with the text column, which is what makes them read as belonging to the sheet
+
    rather than to the screen.
 
+
+
    The threshold is a literal 860px rather than var(--edge-min) because media
+
    queries cannot read custom properties — only value-based features like
+
    prefers-reduced-transparency can. That is why the token was removed from
+
    aurelle-tokens.css instead of being "used" here.
 
+
+
    Direction-aware without a second rule: inset-inline already flips, and the
+
    bend is inset-relative on both sides. */
+
 @media (min-width: 860px) {
+
   .chat-fab,
+
   #toTop {
+
     inset-inline-start: calc(clamp(1.2rem, 3vw, 2.4rem) + var(--edge-w));
+
     inset-inline-end:   calc(clamp(1.2rem, 3vw, 2.4rem) + var(--edge-w));
+
   }
+
   .chat-fab { inset-inline-end: auto; }
+
   #toTop   { inset-inline-start: auto; }
+
   .conc {
+
     inset-inline-start: calc(clamp(1.2rem, 3vw, 2.4rem) + var(--edge-w));
+
   }
+
 }
+
+
 
 /* ═══════════════════════════════════════════════════════════════════════
+
    PREFERS-REDUCED-TRANSPARENCY
+
    ───────────────────────────────────────────────────────────────────────
+
    This list named eleven selectors, ten of which have no backdrop-filter
+
    anywhere in the project — and it omitted the two that actually do:
+
    dialog::backdrop (base.css) and .cmp-dialog (dialogs.css). So it was
+
    withdrawing opacity from a dozen decorative panels while leaving both
+
    full-viewport blurs running, which is precisely backwards: those two are the
+
    only two that cost a full-screen resample per frame.
 
+
+
    backdrop-filter now always ships with -webkit-backdrop-filter in the same
+
    declaration block — there is exactly one in dialogs.css that did not, and
+
    iOS Safari below 18 silently drops the unprefixed one. */
+
 @media (prefers-reduced-transparency: reduce) {
+
   dialog::backdrop,
+
   .fit-wiz,
+
   .cmp-dialog,
+
   .hdr {
+
     backdrop-filter: none !important;
+
     -webkit-backdrop-filter: none !important;
+
   }
+
   .hdr { background: var(--bg); }
+
 }
+
+
 
 /* ═══════════════════════════════════════════════════════════════════
+
    SENSOUS UPGRADES — holo ring · plaque foil · φ rail · voice button
+
    (ویژگی‌های ۴ و ۱۰)
+
    ═══════════════════════════════════════════════════════════════════ */
 
+
+
 /* ── ویژگی ۱۰ — Holo Ring روی کارت شاخص مجموعه ───────────────────────
+
    .prod.is-feat را PHP برای نخستین کارتِ چیدمان «ویژهٔ خانه» می‌گذارد.
+
    حلقه بیرون از flow است (outline + animation) پس هیچ reflow/CLS ندارد.
+
    @property در browsers بدون پشتیبانی simply animate نمی‌شود — حلقه
+
    ثابت می‌ماند: degradation امن. */
+
 @property --holo { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+
 .prod.is-feat { position: relative; }
+
 .prod.is-feat::before {
+
   content: ""; position: absolute; inset: -3px; z-index: -1; pointer-events: none;
+
   border-radius: calc(var(--r-2, 14px) + 3px);
+
   background: conic-gradient(from var(--holo, 0deg),
+
     var(--accent), transparent 25%, var(--accent-2) 50%, transparent 75%, var(--accent));
+
   opacity: 0.55;
+
   animation: holoSpin 6s linear infinite;
+
 }
+
 @keyframes holoSpin { to { --holo: 360deg; } }
+
 @media (prefers-reduced-motion: reduce) { .prod.is-feat::before { animation: none; } }
 
+
+
 /* ── ویژگی ۱۰ — Plaque Foil Shine در فوتر ────────────────────────────
+
    لیوا (foil) از روی نشان خانه عبور می‌کند؛ overflow:hidden روی خود
+
    badge. انیمیشن نامحدود ولی با مکث بلند (۷s cycle، ۲s shine). */
+
 .plaque { position: relative; overflow: hidden; }
+
 .plaque::after {
+
   content: ""; position: absolute; inset: 0; pointer-events: none;
+
   background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,.28) 50%, transparent 60%);
+
   transform: translateX(-130%);
+
   animation: plaqueFoil 7s var(--ease-silk) 2s infinite;
+
 }
+
 @keyframes plaqueFoil { 0%, 72% { transform: translateX(-130%); } 88%, 100% { transform: translateX(130%); } }
+
 @media (prefers-reduced-motion: reduce) { .plaque::after { animation: none; opacity: 0; } }
 
+
+
 /* ── ویژگی ۱۰ — φ Index Rail ──────────────────────────────────────────
+
    آیتم فعال ریل با نسبت طلایی بزرگ می‌شود. transform فقط — بدون layout.
+
    origin نزدیک لبهٔ ریل تا tooltip (::after) جابه‌جا نشود. */
+
 .rail a[aria-current="true"] {
+
   scale: 1.618;
+
   transform-origin: center;
+
   transition: scale var(--d-3) var(--ease-lux);
+
 }
+
 @media (prefers-reduced-motion: reduce) { .rail a[aria-current="true"] { scale: 1.25; } }
 
+
+
 /* ── ویژگی ۴ — دکمهٔ صدا (کنار #themeT) ──────────────────────────────
+
    click = ambient toggle، hold/Enter = voice listening. حالت‌ها فقط
+
    رنگ/سایه‌ی box-shadow (بدون layout). */
+
 #voiceBtn { position: relative; }
+
 #voiceBtn.is-amb { color: var(--accent); }
+
 #voiceBtn.is-listen { color: var(--accent); animation: voicePulse 1.2s ease-in-out infinite; }
+
 @keyframes voicePulse {
+
   50% { box-shadow: 0 0 0 6px color-mix(in oklch, var(--accent) 22%, transparent); }
+
 }
+
 @media (prefers-reduced-motion: reduce) { #voiceBtn.is-listen { animation: none; box-shadow: 0 0 0 2px var(--accent); } }
 
+
+
 /* ── ویژگی ۷ — Charcount زندهٔ نشانی ───────────────────────────────── */
+
 .charcount {
+
   display: block;
+
   font-family: var(--mono); font-size: 0.62rem; font-weight: 500;
+
   color: var(--text-4);
+
   margin-block-start: 0.3rem;
+
 }
+
 .charcount.is-warn { color: #c96a5e; }
