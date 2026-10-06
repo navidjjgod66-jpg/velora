@@ -1,6 +1,1 @@
-# Dependencies
-node_modules/
-.three-tmp/
-
-# Build artifacts and bundles
-*.bundle
+(empty)
