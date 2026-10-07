@@ -322,9 +322,16 @@ if (!is_array($p)) {
     smoke_ok('product_upload_path() returns "" for a valid name that is not on disk',
         ($p['path_good'] ?? 'x') === '', var_export($p['path_good'] ?? null, true));
 
+    /* A healthy install answers JSON null, which json_decode turns into PHP
+       null. The old `?? false` defaulted to a boolean when the key was absent
+       and then compared it against null — so the PASSING value could never
+       satisfy the assertion, and a working upload pipeline reported failure.
+       isset/array_key_exists distinguishes "answered null" (healthy) from
+       "did not answer" (broken probe). */
     smoke_ok('product_upload_health() returns null or a string, never an error',
-        ($p['health'] ?? false) === null || is_string($p['health']),
-        var_export($p['health'] ?? null, true));
+        array_key_exists('health', (array) $p)
+            && ($p['health'] === null || is_string($p['health'])),
+        var_export($p['health'] ?? '<absent>', true));
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -681,6 +688,7 @@ section('6 · Constants');
         "totp"     => [VELORA_TOTP_PERIOD, VELORA_TOTP_DIGITS, VELORA_TOTP_WINDOW],
         "db_free"  => VELORA_DB_INDEPENDENT_ACTIONS,
         "sub"      => VELORA_UPLOAD_SUBDIR,
+        "url_sub"  => VELORA_UPLOAD_URL_PATH,
         "ext"      => VELORA_UPLOAD_EXT,
         "name_re"  => VELORA_UPLOAD_NAME_RE,
         "ship"     => SHIPPING_FLAT,
@@ -704,9 +712,15 @@ if (!is_array($c)) {
         ($c['totp'] ?? null) === [30, 6, 1], json_encode($c['totp'] ?? null));
     smoke_ok('VELORA_DB_INDEPENDENT_ACTIONS is readable from config.php',
         ($c['db_free'] ?? null) === ['geo_regions'], json_encode($c['db_free'] ?? null));
+    /* The layout is spelled as two halves anchored at different roots:
+       VELORA_UPLOAD_SUBDIR is relative to STORAGE_DIR (so 'uploads/products'),
+       VELORA_UPLOAD_URL_PATH is relative to APP_URL (so 'storage/uploads/
+       products'). Asserting the URL spelling against the disk constant is how
+       the original nested-directory bug hid: it failed on a correct tree. */
     smoke_ok('the upload layout constants are readable',
-        ($c['sub'] ?? null) === 'storage/uploads/products' && ($c['ext'] ?? null) === 'webp',
-        json_encode([$c['sub'] ?? null, $c['ext'] ?? null]));
+        ($c['sub'] ?? null) === 'uploads/products' && ($c['url_sub'] ?? null) === 'storage/uploads/products'
+            && ($c['ext'] ?? null) === 'webp',
+        json_encode([$c['sub'] ?? null, $c['url_sub'] ?? null, $c['ext'] ?? null]));
     smoke_ok('the filename grammar is the closed whitelist',
         ($c['name_re'] ?? null) === '/^[A-Za-z0-9_-]{1,64}\.webp$/', var_export($c['name_re'] ?? null, true));
     smoke_ok('SHIPPING_FLAT is 0 and MAX_LINE is 5',
