@@ -74,12 +74,13 @@ if (!defined('VELORA_CONFIG_LOADED')) {
    Both are declared with velora_define(), not `defined() or define()`, so a
    second definition carrying a different value is written to the error log
    instead of being silently ignored. */
-velora_define('VELORA_UPLOAD_SUBDIR', 'uploads/products');
-velora_define('VELORA_UPLOAD_URL_PATH', 'storage/uploads/products');
-
-/* The single allowed extension. Lower-case, no leading dot, because it is
-   both compared against and concatenated into a filename. */
-velora_define('VELORA_UPLOAD_EXT', 'webp');
+/* The three layout constants above (VELORA_UPLOAD_SUBDIR,
+   VELORA_UPLOAD_URL_PATH, VELORA_UPLOAD_EXT) used to be declared here, which
+   made them the only application constants living outside their documented
+   home: they now live in config.php, next to STORAGE_DIR and before this file
+   is required. The static census in tests/smoke.php asserts that rule by
+   scanning every PHP file for these names, and the smoke suite reads their
+   values through config.php's own boot. Values unchanged. */
 
 /* The closed filename grammar: an id stem and a fixed suffix. See the header
    for why this is a whitelist rather than a blocklist. */

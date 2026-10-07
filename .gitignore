@@ -1,6 +1,6 @@
-# Environment
-.env
-
-# Logs and Cache
+# Logs and cache
 storage/logs/
+*.log
+
+# Cache files (if generated)
 storage/cache/

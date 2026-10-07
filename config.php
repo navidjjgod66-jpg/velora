@@ -160,6 +160,30 @@ date_default_timezone_set(env('VELORA_TZ', 'Asia/Tehran'));
 define('VELORA_ROOT', __DIR__);
 define('STORAGE_DIR', VELORA_ROOT . '/storage');
 
+/* Product-upload storage layout — the single home for these three facts.
+   They used to live in includes/uploads.php, which made them the only
+   application constants declared outside config.php (the static census in
+   tests/smoke.php forbids exactly that). Values unchanged; they are defined
+   here before includes/uploads.php is required further down, which reads all
+   three at load time and inside its helpers.
+
+   The layout is spelled as TWO halves, because the filesystem half and the
+   URL half are anchored at different roots:
+
+     · VELORA_UPLOAD_SUBDIR  is relative to STORAGE_DIR (the filesystem), so
+       product_upload_dir() = STORAGE_DIR . '/' . VELORA_UPLOAD_SUBDIR.
+     · VELORA_UPLOAD_URL_PATH is relative to APP_URL (the web root), so
+       product_upload_url_base() = APP_URL . '/' . VELORA_UPLOAD_URL_PATH.
+
+   One constant for both was wrong twice for the disk (it created a nested
+   /storage/storage/uploads/products); see the header of uploads.php.
+
+   VELORA_UPLOAD_EXT is the single allowed extension: lower-case, no leading
+   dot, because it is both compared against and concatenated into a filename. */
+velora_define('VELORA_UPLOAD_SUBDIR', 'uploads/products');
+velora_define('VELORA_UPLOAD_URL_PATH', 'storage/uploads/products');
+velora_define('VELORA_UPLOAD_EXT', 'webp');
+
 $__req = env_require_all([
     'VELORA_DB_NAME',
     'VELORA_DB_USER',
