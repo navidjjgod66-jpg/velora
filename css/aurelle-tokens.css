@@ -199,8 +199,20 @@
   /* Aliases kept so no rule outside this file has to know the rename. The
      gradient tokens are defined but used once each; the source used them
      fifty-five times, which is the measurement this whole file is correcting. */
-  --grad-gold: linear-gradient(100deg, var(--foil-3) 0%, var(--foil-2) 22%, var(--foil) 48%, var(--foil-1) 62%, var(--foil-2) 88%, var(--foil-3) 100%);
-  --grad-foil: var(--grad-gold);
+  /* THE FOIL IS FLAT NOW. The gradient it used to resolve to — six stops of
+     gold with a bright core — is the single most recognisable gesture of a
+     luxury template, and the source applied it in fifty-five places: across
+     every headline word, every button, every hairline, every badge. A metal
+     that washes over everything is a decoration; a metal held for one object
+     is a seal.
+
+     So both names now resolve to --foil, a flat value. Anything that asked for
+     "the gold gradient" gets the gold ink instead, which is the same hue at
+     full strength and reads as printed rather than rendered. The sweep
+     survives in exactly one place, declared locally where it is earned: the
+     maison's own mark on the preloader seal. */
+  --grad-gold: var(--foil);
+  --grad-foil: var(--foil);
   --grad-lux: linear-gradient(168deg, var(--surface) 0%, var(--bg-2) 52%, var(--well) 100%);
   --grad-royal: linear-gradient(140deg, var(--bordeaux) 0%, color-mix(in oklch, var(--bordeaux) 58%, var(--foil-2)) 100%);
   --glass: blur(20px) saturate(1.35);
