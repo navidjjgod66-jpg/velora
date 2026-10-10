@@ -137,6 +137,22 @@ $__catalogPath = velora_catalog_path();
 header('X-Catalog-File: ' . basename($__catalogPath));
 header('X-Catalog-Mtime: ' . (string) (is_file($__catalogPath) ? filemtime($__catalogPath) : 0));
 
+/* APCu must be checked BEFORE building the client feed or JSON body; otherwise
+   the cache hit still pays the full serialization cost on every request. The key
+   includes the catalogue content hash, so an edit naturally selects a new entry. */
+$apcuAvailable = function_exists('apcu_fetch')
+    && function_exists('apcu_store')
+    && function_exists('apcu_enabled')
+    && apcu_enabled();
+$cacheKey = 'velora:catalog:' . $version;
+if ($apcuAvailable) {
+    $cachedBody = apcu_fetch($cacheKey, $cacheHit);
+    if ($cacheHit === true && is_string($cachedBody) && $cachedBody !== '') {
+        echo $cachedBody;
+        exit;
+    }
+}
+
 $feed = velora_catalog_client_feed();
 
 /* A bad file must not 500 the storefront's boot path. An empty catalogue with
@@ -185,19 +201,8 @@ if ($body === false) {
     exit;
 }
 
-/* apcu_enabled() takes no arguments. It reports whether APCu is available
-   in the current SAPI; passing the INI key here raises ArgumentCountError and
-   breaks the catalogue endpoint on hosts where APCu is installed. */
-if (function_exists('apcu_fetch') && function_exists('apcu_store')
-    && function_exists('apcu_enabled') && apcu_enabled()
-) {
-    $key = 'velora:catalog:' . $version;
-    $hit = apcu_fetch($key, $ok);
-    if ($ok === true && is_string($hit) && $hit !== '') {
-        echo $hit;
-        exit;
-    }
-    apcu_store($key, $body, 3600);
+if ($apcuAvailable) {
+    apcu_store($cacheKey, $body, 3600);
 }
 
 echo $body;
