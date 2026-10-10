@@ -1,6 +1,17 @@
-# Logs and cache
-storage/logs/
-*.log
+# Local environment and secrets
+.env
+.env.*
+!.env.example
 
-# Cache files (if generated)
-storage/cache/
+# Runtime logs, cache, and generated uploads
+storage/logs/*
+!storage/logs/.gitkeep
+storage/cache/*
+!storage/cache/.gitkeep
+storage/uploads/products/*.webp
+
+# Local tooling
+/node_modules/
+.DS_Store
+Thumbs.db
+*.log
