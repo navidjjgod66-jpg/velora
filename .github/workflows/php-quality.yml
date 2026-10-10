@@ -1,0 +1,45 @@
+name: PHP Quality Gate
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: php-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: PHP lint and smoke/regression suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: none
+          coverage: none
+          extensions: curl, gd, mbstring, pdo_mysql
+
+      - name: Lint every PHP file
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          count=0
+          while IFS= read -r -d '' file; do
+            php -l "$file"
+            count=$((count + 1))
+          done < <(find . -type f -name '*.php' -not -path './node_modules/*' -print0)
+          test "$count" -gt 0
+          echo "Successfully linted $count PHP files."
+
+      - name: Run smoke and regression tests
+        run: php tests/smoke.php
