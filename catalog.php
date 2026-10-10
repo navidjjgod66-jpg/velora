@@ -185,12 +185,11 @@ if ($body === false) {
     exit;
 }
 
-/* apcu_enabled('apc.enabled') is the honest check: the functions exist in some
-   builds where the cache is switched off, and calling them then returns false
-   every time — which would turn this into a store on every request, i.e. slower
-   than not caching at all. */
+/* apcu_enabled() takes no arguments. It reports whether APCu is available
+   in the current SAPI; passing the INI key here raises ArgumentCountError and
+   breaks the catalogue endpoint on hosts where APCu is installed. */
 if (function_exists('apcu_fetch') && function_exists('apcu_store')
-    && function_exists('apcu_enabled') && apcu_enabled('apc.enabled')
+    && function_exists('apcu_enabled') && apcu_enabled()
 ) {
     $key = 'velora:catalog:' . $version;
     $hit = apcu_fetch($key, $ok);
